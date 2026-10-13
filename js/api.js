@@ -1,0 +1,198 @@
+// Florilège — échanges avec le serveur (Apps Script ou back-end simulé) et file d'événements.
+// Chaque action produit un événement (event_id unique) placé dans une file locale,
+// envoyée par lots : toutes les N actions, toutes les N secondes, au passage en
+// arrière-plan et à la fermeture. En cas d'échec, nouvel essai avec délai croissant.
+// © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
+
+import { CONFIG, modeDemo } from './config.js';
+import { backendSimule } from './simulation.js';
+import { lireStockage, ecrireStockage } from './stockage.js';
+import { appliquer } from './etat.js';
+
+// ---------------------------------------------------------------- back-end Apps Script
+// Les requêtes POST sont en text/plain (corps JSON) pour éviter la requête CORS préalable.
+// Les actions côté serveur seront écrites au jalon 2.
+
+function base64VersBlob(b64, type = 'image/jpeg') {
+  const bin = atob(b64);
+  const octets = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) octets[i] = bin.charCodeAt(i);
+  return new Blob([octets], { type });
+}
+
+async function appel(action, donnees) {
+  const rep = await fetch(CONFIG.urlApi, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action, ...donnees }),
+  });
+  if (!rep.ok) throw new Error(`HTTP ${rep.status}`);
+  const json = await rep.json();
+  if (json.erreur) throw new Error(json.erreur);
+  return json;
+}
+
+const backendHttp = {
+  etat: jeton => appel('etat', { jeton }),
+  envoyer: (jeton, evenements) => appel('evenements', { jeton, evenements }),
+  // Envoi « au mieux » lors de la fermeture de la page (aucune réponse attendue).
+  envoyerSansAttendre(jeton, evenements) {
+    const corps = new Blob([JSON.stringify({ action: 'evenements', jeton, evenements })], { type: 'text/plain' });
+    return navigator.sendBeacon?.(CONFIG.urlApi, corps);
+  },
+  async miniatures(jeton, ids) {
+    const json = await appel('miniatures', { jeton, ids });
+    const res = {};
+    for (const [id, b64] of Object.entries(json.images || {})) res[id] = base64VersBlob(b64);
+    return res;
+  },
+  async image(jeton, id) {
+    const json = await appel('image', { jeton, id });
+    return base64VersBlob(json.donnees, json.type);
+  },
+};
+
+export const backend = modeDemo() ? backendSimule : backendHttp;
+
+// ---------------------------------------------------------------- identité
+
+// Jeton personnel : paramètre ?v= de l'adresse, sinon celui mémorisé sur cet appareil.
+export function lireJeton() {
+  const p = new URLSearchParams(location.search);
+  let jeton = p.get('v');
+  if (jeton) {
+    ecrireStockage('florilege-jeton', jeton);
+  } else {
+    jeton = lireStockage('florilege-jeton') || (modeDemo() ? 'demo' : null);
+  }
+  return jeton;
+}
+
+function nouvelId() {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  const o = crypto.getRandomValues(new Uint8Array(16));
+  return [...o].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+export function nouvelEvenement(champs) {
+  return { event_id: nouvelId(), horodatage: new Date().toISOString(), ...champs };
+}
+
+// ---------------------------------------------------------------- file d'événements
+
+export class FileEvenements {
+  constructor(jeton) {
+    this.jeton = jeton;
+    this.cle = `florilege-file-${jeton}`;
+    this.file = lireStockage(this.cle, []);
+    this.enCours = false;
+    this.echecs = 0;
+    this.horsLigne = false;
+    this.minuteur = null;
+    this.ecouteurs = new Set();
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') this.envoyerEnPartant();
+    });
+    window.addEventListener('pagehide', () => this.envoyerEnPartant());
+    window.addEventListener('online', () => { this.echecs = 0; this.envoyer(); });
+    window.addEventListener('offline', () => { this.horsLigne = true; this.signaler(); });
+  }
+
+  enAttente() {
+    return this.file.length;
+  }
+
+  statut() {
+    if (this.horsLigne) return 'horsligne';
+    return this.file.length ? 'attente' : 'ok';
+  }
+
+  surChangement(fn) {
+    this.ecouteurs.add(fn);
+  }
+
+  signaler() {
+    for (const fn of this.ecouteurs) fn(this.statut(), this.file.length);
+  }
+
+  sauver() {
+    ecrireStockage(this.cle, this.file);
+  }
+
+  ajouter(ev) {
+    this.file.push(ev);
+    this.sauver();
+    this.signaler();
+    if (this.file.length >= CONFIG.envoiToutesLesNActions) this.envoyer();
+    else this.planifier(CONFIG.envoiToutesLesNSecondes * 1000);
+  }
+
+  planifier(delai) {
+    if (this.minuteur) return;
+    this.minuteur = setTimeout(() => {
+      this.minuteur = null;
+      this.envoyer();
+    }, delai);
+  }
+
+  async envoyer() {
+    if (this.enCours || !this.file.length) return;
+    clearTimeout(this.minuteur);
+    this.minuteur = null;
+    this.enCours = true;
+    const lot = this.file.slice(0, 50);
+    let reussi = false;
+    try {
+      const rep = await backend.envoyer(this.jeton, lot);
+      const acceptes = new Set(rep.acceptes || lot.map(e => e.event_id));
+      this.file = this.file.filter(e => !acceptes.has(e.event_id));
+      this.sauver();
+      this.echecs = 0;
+      this.horsLigne = false;
+      reussi = true;
+    } catch {
+      this.echecs++;
+      this.horsLigne = !navigator.onLine || this.echecs >= 2;
+    } finally {
+      this.enCours = false;
+      this.signaler();
+    }
+    if (reussi && this.file.length) this.envoyer();
+    else if (!reussi) this.planifier(Math.min(60, 2 ** this.echecs) * 1000);
+  }
+
+  // À la fermeture ou au passage en arrière-plan : on tente un envoi immédiat.
+  // Les événements restent dans la file tant qu'ils ne sont pas confirmés ;
+  // un éventuel doublon sera ignoré par le serveur grâce à event_id.
+  envoyerEnPartant() {
+    if (!this.file.length) return;
+    if (backend.envoyerSansAttendre) backend.envoyerSansAttendre(this.jeton, this.file.slice(0, 50));
+    else this.envoyer();
+  }
+}
+
+// ---------------------------------------------------------------- chargement de l'état
+
+// Récupère l'état complet auprès du serveur, puis rejoue les événements locaux non confirmés.
+// Hors ligne, on repart du dernier état connu sur cet appareil.
+export async function chargerEtat(jeton, file) {
+  const cle = `florilege-etat-${jeton}`;
+  let etat;
+  let horsLigne = false;
+  try {
+    etat = await backend.etat(jeton);
+  } catch (e) {
+    etat = lireStockage(cle);
+    if (!etat) throw e;
+    horsLigne = true;
+  }
+  for (const ev of file.file) appliquer(etat, ev);
+  ecrireStockage(cle, etat);
+  return { etat, horsLigne };
+}
+
+// Mémorise l'état courant sur l'appareil (pour une réouverture hors ligne).
+export function memoriserEtat(jeton, etat) {
+  ecrireStockage(`florilege-etat-${jeton}`, etat);
+}

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Florilège — tests</title>
+  <!-- Florilège — © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE). -->
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 760px; margin: 2em auto; padding: 0 16px; }
+    .ok { color: #1b7f4a; } .ko { color: #c62828; }
+  </style>
+</head>
+<body>
+  <h1>Florilège — tests des modules</h1>
+  <div id="resultat">Exécution…</div>
+  <script type="module">
+    import { executer } from './js/tests/mini_test.js';
+    import './js/tests/etat.test.js';
+    const { reussis, echecs } = await executer();
+    const zone = document.getElementById('resultat');
+    zone.innerHTML = '';
+    for (const e of echecs) {
+      const p = document.createElement('p');
+      p.className = 'ko';
+      p.textContent = `✗ ${e.nom} : ${e.erreur}`;
+      zone.append(p);
+    }
+    const bilan = document.createElement('p');
+    bilan.className = echecs.length ? 'ko' : 'ok';
+    bilan.textContent = `${reussis} test(s) réussi(s), ${echecs.length} échec(s).`;
+    zone.append(bilan);
+  </script>
+</body>
+</html>

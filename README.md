@@ -1,0 +1,123 @@
+# Florilège — CGExcel
+
+<img src="img/florilege-icone.svg" alt="" width="96" align="right">
+
+**Sélection collective de photos**, sur téléphone ou PC, sans installation ni compte : un lien personnel suffit.
+Chaque sélectionneur trie des ensembles de photos en quelques minutes, de façon un peu ludique ; l'outil combine
+ensuite les avis de tous et équilibre la présence des personnes dans la sélection finale.
+
+L'outil est réutilisable dans d'autres contextes (famille, association, événement…) : tout ce qui est propre à une
+sélection passe par la configuration. Le détail est dans [`SPECIFICATIONS.md`](SPECIFICATIONS.md).
+
+© 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (Bonne Action License), voir [`LICENSE`](LICENSE).
+
+En échange, une seule chose vous est demandée, sur l'honneur : faire une bonne action chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
+
+---
+
+## État d'avancement
+
+| Jalon | Contenu | État |
+|---|---|---|
+| 1 | Prototype de la manche 1 (photos factices, back-end simulé) | **livré, à tester** |
+| 2 | Apps Script, Google Sheet, images sur Drive | à venir |
+| 3 | Script de préparation des photos | à venir |
+| 4 | Administration, partie 1 | à venir |
+| 5 | Manche 2 (duels) | à venir |
+| 6 | Étiquetage des personnes | à venir |
+| 7 | Optimisation finale | à venir |
+| 8 | Révélation, badges, finitions | à venir |
+
+## Essayer le prototype (jalon 1)
+
+Tant que `js/config.js` ne contient pas d'URL d'Apps Script, l'application fonctionne en **mode démonstration** :
+4 ensembles de photos factices, dessinées dans le navigateur ; rien n'est envoyé sur Internet, les choix sont
+gardés dans le navigateur.
+
+### Mise en ligne sur GitHub Pages
+
+1. Déposer le contenu du dépôt sur la branche `main` (aucun fichier caché n'est nécessaire).
+2. Sur GitHub : **Settings → Pages → Build and deployment → Source : « Deploy from a branch »**,
+   branche `main`, dossier `/ (root)`, puis **Save**.
+3. Après une à deux minutes, l'application est disponible à l'adresse
+   `https://<compte>.github.io/florilege/`.
+
+### Paramètres utiles dans l'adresse (mode démonstration)
+
+| Paramètre | Effet |
+|---|---|
+| `?reinit=1` | Remet la démonstration à zéro (efface les choix simulés). |
+| `?nom=Paul` | Change le prénom affiché. |
+| `?latence=1500` | Simule un réseau lent (en millisecondes par requête ; 400 par défaut). |
+| `?horsligne=1` | Simule l'absence de réseau : les choix restent en attente sur l'appareil. |
+| `?phase=preparation` | Affiche l'écran d'attente d'une phase fermée. |
+
+Les paramètres se combinent : `index.html?reinit=1&latence=1500`.
+
+### En local sur le PC
+
+Les modules JavaScript ne fonctionnent pas en ouvrant `index.html` par double-clic (`file://`). Il faut un petit
+serveur, par exemple avec Python : `python -m http.server 8000` dans le dossier, puis ouvrir
+`http://localhost:8000/`.
+
+### Vérifications à faire (jalon 1)
+
+Sur **téléphone** (Android et iPhone si possible) :
+
+- [ ] L'accueil dit « Bonjour Marie ! », la phrase d'explication tient en une ou deux lignes.
+- [ ] « Commencer » ouvre le premier ensemble ; la photo s'affiche en grand.
+- [ ] Glisser à **droite** = ❤️ je garde, à **gauche** = ✖️ je passe, vers le **haut** = ⭐ coup de cœur ;
+      un tampon apparaît pendant le geste ; un petit geste hésitant ramène la photo au centre.
+- [ ] Les trois boutons font la même chose que les gestes.
+- [ ] ↶ annule le dernier choix (plusieurs fois de suite).
+- [ ] Au-delà de 4 coups de cœur dans un ensemble, la photo tremble et un message l'explique.
+- [ ] Toucher deux fois la photo, pincer ou 🔍 : agrandissement ; on peut pincer et se déplacer ; ✕ pour fermer.
+- [ ] En fin d'ensemble : animation, résumé, « Ensemble suivant » / « Pause » / « Revoir mes choix ».
+- [ ] Dans « Revoir mes choix », toucher une photo change son choix (❤️ → ⭐ → ✖️).
+- [ ] La carte des ensembles se colorie (gris → bordure colorée → coche).
+- [ ] Le bouton « retour » du téléphone ramène à l'accueil sans quitter l'application.
+- [ ] Fermer l'onglet en plein tri puis rouvrir : « Continuer » reprend au bon endroit.
+- [ ] En mode avion : on peut continuer à trier ; le pied de page indique « Hors ligne » ; au retour du réseau,
+      il repasse à « Tout est enregistré ».
+- [ ] Le mode sombre du téléphone est respecté.
+- [ ] « À propos » (en bas de l'accueil) affiche la licence et la marque CGExcel.
+
+Sur **PC** :
+
+- [ ] Touches ← → ↑ pour trier, Retour arrière pour annuler, Échap pour revenir à l'accueil.
+- [ ] Clic sur la photo : agrandissement qui suit la souris ; molette pour zoomer ; clic ou Échap pour fermer.
+
+Avec `?latence=1500` : la photo suivante doit tout de même apparaître immédiatement (préchargement).
+
+## Structure du dépôt
+
+```
+index.html            interface des sélectionneurs
+tests.html            tests des modules (dans le navigateur)
+manifest.json         ajout à l'écran d'accueil du téléphone
+css/style.css
+img/                  icône (SVG et PNG)
+js/
+  config.js           URL de l'Apps Script et réglages
+  app.js              démarrage, accueil, navigation
+  api.js              échanges avec le serveur, file d'événements (hors-ligne, envois groupés)
+  simulation.js       back-end simulé et photos factices (mode démonstration)
+  images.js           miniatures par lots, préchargement, cache de l'appareil
+  etat.js             calculs sur l'état du sélectionneur (fonctions pures, testées)
+  tri.js              manche 1 : tri éclair et grille de revue
+  zoom.js             agrandissement d'une photo
+  ludique.js          carte des ensembles, jauge, badges, confettis
+  stockage.js         accès protégé à localStorage
+  tests/              tests (navigateur et Node)
+```
+
+## Tests
+
+- Dans le navigateur : ouvrir `tests.html`.
+- Avec Node (version 22 ou plus) : `node js/tests/lancer.js`.
+
+## Confidentialité
+
+Le dépôt GitHub ne contient que le logiciel : aucune photo, aucune donnée de sélection. Pas de mesure d'audience,
+pas de traceur, pas de police chargée depuis un service tiers. Les pages demandent aux moteurs de recherche de ne
+pas les indexer (`robots.txt` et balise `noindex`).
