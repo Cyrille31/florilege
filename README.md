@@ -143,8 +143,11 @@ qui ont un lien personnel valide.
    `urlApi: 'https://script.google.com/macros/s/…/exec',` puis **Commit changes**.
    Tant que `urlApi` est vide, l'application reste en mode démonstration.
 
-> Après une modification de `Code.gs` : **Déployer → Gérer les déploiements → crayon → Version : Nouvelle version →
-> Déployer**. L'URL ne change pas.
+> **Plus tard, quand une nouvelle version de `Code.gs` sera livrée** (rien à faire lors de la première installation) :
+> coller le nouveau code dans l'éditeur et enregistrer, puis **Déployer → Gérer les déploiements → crayon (Modifier) →
+> Version : Nouvelle version → Déployer**. L'URL `…/exec` ne change pas (ne pas faire « Nouveau déploiement », qui en
+> créerait une autre). Sans cette étape, l'application web continue d'utiliser l'ancien code ; le menu du classeur,
+> lui, utilise le nouveau dès l'enregistrement.
 
 ### 4. Des photos pour essayer
 
