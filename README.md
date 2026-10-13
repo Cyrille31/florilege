@@ -97,6 +97,23 @@ Sur **PC** :
 
 Avec `?latence=1500` : la photo suivante doit tout de même apparaître immédiatement (préchargement).
 
+## Versions
+
+Le numéro de version est affiché en bas de l'accueil (par exemple « v0.5.0 ») et dans « À propos ».
+Pour en changer : `python outils/version.py 0.6.0`. Le script met à jour le numéro affiché et ajoute
+`?v=0.6.0` aux chemins des fichiers JavaScript et CSS, ce qui force les navigateurs à recharger les fichiers.
+
+Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub Pages autorise ensuite les navigateurs
+à garder l'ancienne page jusqu'à 10 minutes : si le numéro affiché n'a pas changé, recharger la page un peu plus tard.
+
+| Version | Contenu |
+|---|---|
+| 0.5.0 | Numéro de version affiché ; rechargement forcé des fichiers à chaque version. |
+| 0.4.0 | Défilement : un geste court (1 à 2 cm) ne passe qu'une photo ; inertie plus douce. |
+| 0.3.0 | Mode « Retenues », défilement avec inertie, pourtours colorés, pastille de choix sur la photo, bouton « 🏠 Accueil », plus d'avance automatique après un choix (option). |
+| 0.2.0 | Défilement libre avec photos voisines, haut / bas pour garder / passer, étoile du coup de cœur, effacement d'un choix, visionneuse plein écran, remise à zéro de la démo. |
+| 0.1.0 | Premier prototype de la manche 1 (photos factices, back-end simulé). |
+
 ## Structure du dépôt
 
 ```
@@ -117,6 +134,7 @@ js/
   ludique.js          carte des ensembles, jauge, badges, confettis
   stockage.js         accès protégé à localStorage
   tests/              tests (navigateur et Node)
+outils/version.py     change le numéro de version
 ```
 
 ## Tests

@@ -5,7 +5,7 @@
 // met la visionneuse à jour avec changerPhoto() et majChoix().
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el } from './ludique.js';
+import { el } from './ludique.js?v=0.5.0';
 
 const ZOOM_INITIAL = 2.5;
 const ZOOM_MAX = 6;

@@ -1,13 +1,13 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js';
-import { backend, lireJeton, FileEvenements, chargerEtat, memoriserEtat, nouvelEvenement } from './api.js';
-import { ChargeurImages } from './images.js';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js';
-import { ecranEnsemble } from './tri.js';
-import { supprimerStockage } from './stockage.js';
+import { CONFIG, modeDemo } from './config.js?v=0.5.0';
+import { backend, lireJeton, FileEvenements, chargerEtat, memoriserEtat, nouvelEvenement } from './api.js?v=0.5.0';
+import { ChargeurImages } from './images.js?v=0.5.0';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.5.0';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.5.0';
+import { ecranEnsemble } from './tri.js?v=0.5.0';
+import { supprimerStockage } from './stockage.js?v=0.5.0';
 
 const PHRASE_BAL = 'En échange, une seule chose vous est demandée, sur l\'honneur : faire une bonne action '
   + 'chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -92,7 +92,7 @@ function entete() {
 
 function pied() {
   return el('footer', { class: 'pied' },
-    indicateur,
+    el('span', {}, indicateur, el('span', { class: 'version', title: 'Numéro de version de Florilège' }, ` · v${CONFIG.version}`)),
     el('span', {},
       modeDemo() ? el('button', { class: 'btn-lien', onclick: razDemo }, 'Remettre la démo à zéro') : null,
       el('button', { class: 'btn-lien', onclick: ouvrirAPropos }, 'À propos')));

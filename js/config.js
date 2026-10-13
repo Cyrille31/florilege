@@ -7,7 +7,7 @@ export const CONFIG = {
   urlApi: '',
 
   // Version affichée dans l'écran « À propos ».
-  version: '0.1.0',
+  version: '0.5.0',
 
   // Envoi groupé des événements (section 7.4 des spécifications).
   envoiToutesLesNActions: 10,

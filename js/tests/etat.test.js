@@ -1,11 +1,11 @@
 // Florilège — tests du module etat.js.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { test, egal, vrai } from './mini_test.js';
+import { test, egal, vrai } from './mini_test.js?v=0.5.0';
 import {
   PASSE, GARDE, COEUR, photosDe, progressionEnsemble, progressionGlobale, indexProchaine,
   ensembleAContinuer, peutMettreCoeur, appliquer, valeurSuivante, prochaineATrier, comptesEnsemble,
-} from '../etat.js';
+} from '../etat.js?v=0.5.0';
 
 function etatExemple() {
   return {

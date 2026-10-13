@@ -185,6 +185,7 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
   border-top: 1px solid var(--bord);
   font-size: .85rem; color: var(--texte-doux);
 }
+.version { color: var(--texte-doux); opacity: .8; }
 .synchro[data-statut="attente"] { color: #b7791f; }
 .synchro[data-statut="horsligne"] { color: var(--rouge); }
 
