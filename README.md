@@ -153,7 +153,9 @@ qui ont un lien personnel valide.
 
 Au choix, depuis le menu **Florilège** :
 
-- **Créer des photos de test** : 72 dessins (3 ensembles) dans `images/_test`, pour vérifier que tout fonctionne ;
+- **Créer des photos de test** : 72 dessins (3 ensembles) dans `images/_test`, pour vérifier que tout fonctionne.
+  La première fois, cela peut dépasser la durée autorisée par Google (6 minutes) : relancer simplement, les images
+  déjà créées sont réutilisées ;
 - **Utiliser mes photos (sous-dossiers de images/)** : créer dans le dossier `images` un sous-dossier par ensemble et
   y déposer quelques photos (de préférence pas trop lourdes : le script de préparation du jalon 3 produira des images
   allégées ; ici, les photos sont servies telles quelles).
@@ -208,6 +210,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.8.1 | Création des photos de test relançable (les images déjà créées sont réutilisées) ; rappel d'ouvrir la manche 1. |
 | 0.8.0 | Jalon 2 : script Apps Script (API, images servies depuis Drive, menu Florilège), connexion de l'application au serveur, reprise multi-appareils, journal des erreurs, diagnostic `?diag=1`, nouvel essai automatique en cas d'échec réseau. |
 | 0.7.0 | Imagettes : sélection multiple (appui long pour commencer, appui court pour ajouter ou retirer, appui long pour toute une plage ; Ctrl+clic et Maj+clic sur PC), puis ❤️ ⭐ ✖️ ou · pour toute la sélection. |
 | 0.6.3 | Fin d'ensemble : un bandeau apparaît puis s'estompe, sans empêcher de continuer à retoucher les choix ; correction d'un « null » affiché dans les compteurs. |

@@ -15,7 +15,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.8.0';
+const VERSION = '0.8.1';
 
 // Onglets du classeur et leurs colonnes (section 5 des spécifications).
 const ONGLETS = {
@@ -518,10 +518,16 @@ function afficherLiens() {
 // avant d'avoir préparé les vraies photos.
 function creerPhotosDeTest() {
   const ok = ui().alert('Photos de test',
-    'Créer 3 ensembles de photos factices (72 images SVG) ? Les onglets Ensembles et Photos seront remplacés.',
+    'Créer 3 ensembles de photos factices (72 images SVG) ? Les onglets Ensembles et Photos seront remplacés.\n\n'
+    + 'La première fois, cela peut prendre quelques minutes. Si Google signale « Durée d\'exécution dépassée », '
+    + 'relancez simplement : les images déjà créées sont réutilisées.',
     ui().ButtonSet.OK_CANCEL);
   if (ok !== ui().Button.OK) return;
   const dossier = sousDossier(dossierImages(), '_test');
+  // Images déjà créées lors d'un essai précédent (ou interrompu) : on les réutilise, ce qui rend la relance rapide.
+  const existants = {};
+  const it = dossier.getFiles();
+  while (it.hasNext()) { const f = it.next(); existants[f.getName()] = f.getId(); }
   const ensembles = [
     ['t1', 'Test — Plage', 24, 200],
     ['t2', 'Test — Fête', 36, 20],
@@ -535,15 +541,18 @@ function creerPhotosDeTest() {
     for (let i = 1; i <= nb; i++) {
       const pid = `${id}p${String(i).padStart(3, '0')}`;
       const [L, H] = formats[(i * 7 + k) % formats.length];
-      const fichier = dossier.createFile(Utilities.newBlob(svgDeTest(nom, i, L, H, teinte + i * 9), 'image/svg+xml', `${pid}.svg`));
-      lignesPhotos.push([pid, id, `${pid}.svg`, `${pid}.svg`, fichier.getId(), fichier.getId(), L, H, '', i]);
+      const nomFichier = `${pid}.svg`;
+      const idFichier = existants[nomFichier]
+        || dossier.createFile(Utilities.newBlob(svgDeTest(nom, i, L, H, teinte + i * 9), 'image/svg+xml', nomFichier)).getId();
+      lignesPhotos.push([pid, id, nomFichier, nomFichier, idFichier, idFichier, L, H, '', i]);
     }
   });
   remplacerTable('Ensembles', lignesEnsembles);
   remplacerTable('Photos', lignesPhotos);
   nouvelleGeneration();
   journal('', 'admin', 'photos de test créées');
-  ui().alert('Florilège', `${lignesPhotos.length} photos de test créées dans images/_test.`, ui().ButtonSet.OK);
+  ui().alert('Florilège', `${lignesPhotos.length} photos de test prêtes dans images/_test.\n\n`
+    + 'Étape suivante : Florilège → Ouvrir la manche 1.', ui().ButtonSet.OK);
 }
 
 function svgDeTest(nom, numero, L, H, teinte) {
