@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Florilège — icône</title>
+  <defs>
+    <linearGradient id="fond" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a9d7f"/>
+      <stop offset="1" stop-color="#155e4d"/>
+    </linearGradient>
+    <linearGradient id="p0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb199"/><stop offset="1" stop-color="#ff6f61"/></linearGradient>
+    <linearGradient id="p1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd29a"/><stop offset="1" stop-color="#ff9a3d"/></linearGradient>
+    <linearGradient id="p2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#f4a623"/></linearGradient>
+    <linearGradient id="p3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9f0a0"/><stop offset="1" stop-color="#5cbf4a"/></linearGradient>
+    <linearGradient id="p4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fe3f0"/><stop offset="1" stop-color="#22a8c4"/></linearGradient>
+    <linearGradient id="p5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd8ff"/><stop offset="1" stop-color="#3d8bfd"/></linearGradient>
+    <linearGradient id="p6" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9c2ff"/><stop offset="1" stop-color="#8e5cf7"/></linearGradient>
+    <linearGradient id="p7" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc2e2"/><stop offset="1" stop-color="#e85aa7"/></linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#fond)"/>
+
+  <!-- Tige et feuille -->
+  <path d="M256 330 C 256 390, 252 425, 240 468" stroke="#0e4538" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <path d="M250 428 C 281 392, 331 396, 353 408 C 323 436, 281 444, 250 428 Z" fill="#7fd36b"/>
+
+  <!-- Huit pétales-photos (diagonales derrière, axes devant) -->
+  <g transform="translate(256 222)">
+    <g transform="rotate(45)">
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#000" opacity=".2" transform="translate(3 4)"/>
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#fffdf8"/>
+      <rect x="-29" y="-133" width="58" height="60" rx="3" fill="url(#p1)"/>
+      <circle cx="12" cy="-120" r="6" fill="#fff6d6"/>
+      <path d="M-29 -73 L-9 -97 L5 -82 L14 -91 L29 -73 Z" fill="#fff" opacity=".55"/>
+    </g>
+    <g transform="rotate(135)">
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#000" opacity=".2" transform="translate(3 4)"/>
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#fffdf8"/>
+      <rect x="-29" y="-133" width="58" height="60" rx="3" fill="url(#p3)"/>
+      <circle cx="12" cy="-120" r="6" fill="#fff6d6"/>
+      <path d="M-29 -73 L-9 -97 L5 -82 L14 -91 L29 -73 Z" fill="#fff" opacity=".55"/>
+    </g>
+    <g transform="rotate(225)">
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#000" opacity=".2" transform="translate(3 4)"/>
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#fffdf8"/>
+      <rect x="-29" y="-133" width="58" height="60" rx="3" fill="url(#p5)"/>
+      <circle cx="12" cy="-120" r="6" fill="#fff6d6"/>
+      <path d="M-29 -73 L-9 -97 L5 -82 L14 -91 L29 -73 Z" fill="#fff" opacity=".55"/>
+    </g>
+    <g transform="rotate(315)">
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#000" opacity=".2" transform="translate(3 4)"/>
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#fffdf8"/>
+      <rect x="-29" y="-133" width="58" height="60" rx="3" fill="url(#p7)"/>
+      <circle cx="12" cy="-120" r="6" fill="#fff6d6"/>
+      <path d="M-29 -73 L-9 -97 L5 -82 L14 -91 L29 -73 Z" fill="#fff" opacity=".55"/>
+    </g>
+    <g transform="rotate(0)">
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#000" opacity=".2" transform="translate(3 4)"/>
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#fffdf8"/>
+      <rect x="-29" y="-133" width="58" height="60" rx="3" fill="url(#p0)"/>
+      <circle cx="12" cy="-120" r="6" fill="#fff6d6"/>
+      <path d="M-29 -73 L-9 -97 L5 -82 L14 -91 L29 -73 Z" fill="#fff" opacity=".55"/>
+    </g>
+    <g transform="rotate(90)">
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#000" opacity=".2" transform="translate(3 4)"/>
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#fffdf8"/>
+      <rect x="-29" y="-133" width="58" height="60" rx="3" fill="url(#p2)"/>
+      <circle cx="12" cy="-120" r="6" fill="#fff6d6"/>
+      <path d="M-29 -73 L-9 -97 L5 -82 L14 -91 L29 -73 Z" fill="#fff" opacity=".55"/>
+    </g>
+    <g transform="rotate(180)">
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#000" opacity=".2" transform="translate(3 4)"/>
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#fffdf8"/>
+      <rect x="-29" y="-133" width="58" height="60" rx="3" fill="url(#p4)"/>
+      <circle cx="12" cy="-120" r="6" fill="#fff6d6"/>
+      <path d="M-29 -73 L-9 -97 L5 -82 L14 -91 L29 -73 Z" fill="#fff" opacity=".55"/>
+    </g>
+    <g transform="rotate(270)">
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#000" opacity=".2" transform="translate(3 4)"/>
+      <rect x="-36" y="-140" width="72" height="96" rx="9" fill="#fffdf8"/>
+      <rect x="-29" y="-133" width="58" height="60" rx="3" fill="url(#p6)"/>
+      <circle cx="12" cy="-120" r="6" fill="#fff6d6"/>
+      <path d="M-29 -73 L-9 -97 L5 -82 L14 -91 L29 -73 Z" fill="#fff" opacity=".55"/>
+    </g>
+
+    <!-- Cœur de la fleur : le coup de cœur collectif -->
+    <circle r="44" fill="#000" opacity=".2" transform="translate(3 5)"/>
+    <circle r="44" fill="#ffc94a"/>
+    <path d="M0 21 C -29 2, -27 -23, -11.5 -23 C -4 -23, 0 -15, 0 -11.5 C 0 -15, 4 -23, 11.5 -23 C 27 -23, 29 2, 0 21 Z" fill="#e8434f"/>
+  </g>
+</svg>
