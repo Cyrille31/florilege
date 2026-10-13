@@ -248,7 +248,7 @@ L'admin ouvre et ferme chaque phase. Quand une phase est fermée, l'interface de
 - Par défaut, la photo reste affichée après un choix ; une case « Passer à la photo suivante après ❤️ ou ✖️ » (mémorisée sur l'appareil) permet d'avancer automatiquement.
 - Le nombre de **coups de cœur est limité par ensemble** (paramètre, 4 par défaut) pour qu'ils gardent leur valeur. Des compteurs affichent : ⭐ utilisés / limite, ❤️+⭐ (photos gardées), ✖️, et le nombre de photos restant à trier.
 - **Préchargement** des 5 photos suivantes (voir 3.3) ; la miniature s'affiche instantanément, puis la version 1 080 px.
-- En fin d'ensemble (dernière photo triée) : une courte animation de félicitations, puis le choix « ensemble suivant » ou « pause ».
+- En fin d'ensemble (dernière photo triée) : une courte animation de félicitations et un bandeau (résumé, bouton « ensemble suivant ») qui s'estompe de lui-même, sans empêcher de continuer à retoucher les choix.
 - **Imagettes** : grille de miniatures avec un badge par photo ; toucher une imagette l'ouvre en grand, toucher son badge change le choix (· → ❤️ → ⭐ → ✖️ → ·).
 - Un bouton **« 🏠 Accueil »** bien visible ramène à l'accueil.
 - Les choix sont acceptés à tout moment, même sans réseau (voir 7.4).

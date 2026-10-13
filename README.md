@@ -82,7 +82,7 @@ Sur **téléphone** (Android et iPhone si possible) :
 - [ ] Dans la visionneuse (sans zoom) : glisser gauche / droite pour défiler, haut pour ❤️, bas pour ✖️ ;
       la barre de boutons ✖️ ‹ ⭐ › ❤️ fait de même ; en haut, le choix et le compteur ⭐ x/4 · ❤️+⭐.
 - [ ] Le bouton « 🏠 Accueil » ramène à l'accueil.
-- [ ] En fin d'ensemble : animation, résumé, « Ensemble suivant » / « Pause ».
+- [ ] En fin d'ensemble : un bandeau (résumé, bouton « Suivant ») apparaît puis s'estompe ; on peut continuer à retoucher les choix.
 - [ ] La carte des ensembles se colorie (gris → bordure colorée → coche).
 - [ ] Le bouton « retour » du téléphone ramène à l'accueil sans quitter l'application.
 - [ ] Fermer l'onglet en plein tri puis rouvrir : « Continuer » reprend au bon endroit.
@@ -110,6 +110,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.6.3 | Fin d'ensemble : un bandeau apparaît puis s'estompe, sans empêcher de continuer à retoucher les choix ; correction d'un « null » affiché dans les compteurs. |
 | 0.6.2 | Flèches et gestes haut / bas : échelle ✖️ ↔ ❤️ ↔ ⭐ (haut sur ❤️ donne ⭐, bas sur ⭐ redonne ❤️) ; photo écartée grisée, aussi en plein écran. |
 | 0.6.1 | Les flèches du clavier marchent de nouveau après avoir coché « Passer à la photo suivante » ; pourtour de couleur aussi dans la visionneuse plein écran. |
 | 0.6.0 | Visionneuse plein écran : gestes, flèches, barre de boutons et compteur ⭐ / ❤️+⭐ ; défilement selon la longueur du geste (≤ 4 cm : 1 photo, plus : 2, plusieurs grands gestes de suite : 5). |

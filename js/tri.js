@@ -10,11 +10,11 @@
 import {
   PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.6.2';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.6.2';
-import { ouvrirVisionneuse } from './zoom.js?v=0.6.2';
-import { CONFIG } from './config.js?v=0.6.2';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.6.2';
+} from './etat.js?v=0.6.3';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.6.3';
+import { ouvrirVisionneuse } from './zoom.js?v=0.6.3';
+import { CONFIG } from './config.js?v=0.6.3';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.6.3';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };
@@ -73,11 +73,12 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     const c = comptesEnsemble(etat, ensembleId);
     const triees = photos.length - c.nonTries;
     compteur.textContent = `${vue?.compteur?.() ?? ''}${triees} / ${photos.length} triée${triees > 1 ? 's' : ''}`;
-    stats.replaceChildren(
+    stats.replaceChildren(...[
       el('span', { class: `pilule${c.coeurs >= max ? ' plein' : ''}`, title: 'Coups de cœur utilisés' }, `⭐ ${c.coeurs}/${max}`),
       el('span', { class: 'pilule', title: 'Photos gardées (❤️ et ⭐)' }, `❤️+⭐ ${c.gardes + c.coeurs}`),
       el('span', { class: 'pilule', title: 'Photos écartées' }, `✖️ ${c.passes}`),
-      c.nonTries ? el('span', { class: 'pilule discrete', title: 'Photos sans choix' }, `${c.nonTries} à trier`) : null);
+      c.nonTries ? el('span', { class: 'pilule discrete', title: 'Photos sans choix' }, `${c.nonTries} à trier`) : null,
+    ].filter(Boolean));
     barre.style.width = `${photos.length ? 100 * triees / photos.length : 0}%`;
     for (const b of selecteur.children) b.setAttribute('aria-selected', b.dataset.mode === mode ? 'true' : 'false');
   }
@@ -416,7 +417,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     // fleche : true pour une flèche ou un geste (échelle ✖️ ↔ ❤️ ↔ ⭐, voir valeurApresFleche),
     // false pour les boutons ❤️ et ✖️ (valeur directe).
     function choisir(valeur, fleche = false) {
-      if (fin || !ordre.length) return;
+      if (!ordre.length) return;
       const i = cur;
       if (fleche) {
         const actuelle = etat.votes[photos[i].id];
@@ -436,7 +437,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         void carte.offsetWidth;
         carte.classList.add('pulse');
       }
-      if (fin || !avanceAuto) return;
+      if (!avanceAuto) return;
       if (!ordre.includes(i)) return; // en mode « retenues », la photo écartée a déjà laissé place à la suivante
       if (pos + 1 < ordre.length) { allerPos(pos + 1); return; }
       if (!seulementRetenues) {
@@ -470,7 +471,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     }
 
     scene.addEventListener('pointerdown', e => {
-      if (fin || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
       arreterInertie();
       pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY });
       scene.setPointerCapture(e.pointerId);
@@ -661,35 +662,45 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   }
 
   // ---------------------------------------------------------------- fin d'ensemble
+  // Un bandeau monte puis s'estompe de lui-même : il n'empêche pas de continuer à retoucher les choix.
 
   function fermerFin() {
+    clearTimeout(fin?.minuteur);
     fin?.remove();
     fin = null;
   }
 
   function terminer() {
-    if (fin) return;
+    fermerFin();
     const c = comptesEnsemble(etat, ensembleId);
     const prochain = ensembleAContinuer(etat);
-    const principal = prochain
-      ? el('button', { class: 'btn-principal', onclick: () => nav.ensemble(prochain, 'photo') }, 'Ensemble suivant')
-      : el('button', { class: 'btn-principal', onclick: nav.accueil }, 'Retour à l\'accueil');
-    fin = el('div', { class: 'fin-ensemble' },
-      el('div', { class: 'fin-carte', role: 'dialog', 'aria-label': 'Ensemble terminé' },
-        el('div', { class: 'fin-icone', 'aria-hidden': 'true' }, '🌸'),
-        el('h2', {}, 'Ensemble terminé !'),
-        el('p', {}, prochain ? encouragement() : 'Vous avez tout trié. Merci beaucoup !'),
-        el('p', { class: 'fin-resume' },
-          `${SYMBOLES[COEUR]} ${c.coeurs}   ${SYMBOLES[GARDE]}+${SYMBOLES[COEUR]} ${c.gardes + c.coeurs}   ${SYMBOLES[PASSE]} ${c.passes}`),
-        principal,
-        prochain ? el('button', { class: 'btn-secondaire', onclick: nav.accueil }, 'Pause') : null,
-        el('div', { class: 'fin-liens' },
-          el('button', { class: 'btn-lien', onclick: () => { fermerFin(); changerMode('retenues'); } }, 'Revoir mes retenues'),
-          el('button', { class: 'btn-lien', onclick: fermerFin }, 'Fermer'))));
+    fin = el('div', { class: 'fin-bandeau', role: 'status' },
+      el('div', { class: 'fin-icone', 'aria-hidden': 'true' }, '🌸'),
+      el('div', { class: 'fin-texte' },
+        el('strong', {}, 'Ensemble terminé !'),
+        el('span', {}, prochain ? ` ${encouragement()}` : ' Vous avez tout trié, merci !'),
+        el('div', { class: 'fin-resume' },
+          `${SYMBOLES[COEUR]} ${c.coeurs} · ${SYMBOLES[GARDE]}+${SYMBOLES[COEUR]} ${c.gardes + c.coeurs} · ${SYMBOLES[PASSE]} ${c.passes}`)),
+      prochain
+        ? el('button', { class: 'btn-principal petit', onclick: () => nav.ensemble(prochain, 'photo') }, 'Suivant ›')
+        : null);
+    // Survoler ou toucher le bandeau le garde affiché.
+    fin.addEventListener('pointerenter', () => { clearTimeout(fin?.minuteur); fin?.classList.remove('estompe'); });
+    fin.addEventListener('pointerleave', () => programmerEstompage());
     racine.append(fin);
-    principal.focus();
+    programmerEstompage();
     confettis();
     for (const b of nouveauxBadges(etat, ctx.jeton)) annoncerBadge(b);
+  }
+
+  function programmerEstompage() {
+    if (!fin) return;
+    const bandeau = fin;
+    clearTimeout(bandeau.minuteur);
+    bandeau.minuteur = setTimeout(() => {
+      bandeau.classList.add('estompe');
+      bandeau.minuteur = setTimeout(() => { if (fin === bandeau) fermerFin(); }, 1200);
+    }, 5000);
   }
 
   // ---------------------------------------------------------------- clavier
@@ -698,11 +709,11 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     if (e.key === 'Escape') {
       e.preventDefault();
-      if (fin) fermerFin(); else nav.accueil();
+      nav.accueil();
       return;
     }
     // Dans une zone de texte, les touches servent à écrire (une case à cocher ne bloque rien).
-    if (fin || e.target.closest?.('textarea, input:not([type="checkbox"])')) return;
+    if (e.target.closest?.('textarea, input:not([type="checkbox"])')) return;
     // Entrée ou espace sur un bouton : laisser le bouton agir.
     if ((e.key === 'Enter' || e.key === ' ') && e.target.closest?.('button')) return;
     const touche = e.key.toLowerCase();
@@ -719,6 +730,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   return {
     racine,
     detruire() {
+      fermerFin();
       document.removeEventListener('keydown', clavier);
       vue?.detruire();
       visionneuse?.fermer();

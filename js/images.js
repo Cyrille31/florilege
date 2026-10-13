@@ -3,7 +3,7 @@
 // cache Cache Storage pour ne jamais retélécharger une image déjà vue sur cet appareil.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.6.2';
+import { CONFIG, modeDemo } from './config.js?v=0.6.3';
 
 const NOM_CACHE = modeDemo() ? 'florilege-demo-v1' : 'florilege-images-v1';
 const GRANDES_EN_MEMOIRE = 40;
