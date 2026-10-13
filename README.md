@@ -66,8 +66,8 @@ Sur **téléphone** (Android et iPhone si possible) :
 
 - [ ] L'accueil dit « Bonjour Marie ! » ; les ronds 🌱 🌿 🌸 sont les badges (les toucher affiche leur signification).
 - [ ] « Commencer » ouvre le premier ensemble en mode « Une à une » ; les photos voisines sont visibles de part et d'autre.
-- [ ] Glisser à **gauche / droite** fait défiler sans rien valider (ou boutons ‹ ›) ; un geste court (1 à 2 cm) passe une seule photo ; un geste **long et vif** fait
-      défiler plusieurs photos avec un ralentissement, d'autant plus loin que le geste est vif.
+- [ ] Glisser à **gauche / droite** fait défiler sans rien valider (ou boutons ‹ ›) : jusqu'à 4 cm (rapide ou lent),
+      une seule photo ; au-delà, 2 photos ; plusieurs grands gestes de suite, 5 photos.
 - [ ] Glisser vers le **haut** = ❤️ je garde, vers le **bas** = ✖️ je passe (un tampon apparaît pendant le geste) ;
       la photo reste affichée, sauf si la case « Passer à la photo suivante… » est cochée.
 - [ ] Le **pourtour** de la photo prend la couleur du choix (rouge, doré, gris).
@@ -78,7 +78,9 @@ Sur **téléphone** (Android et iPhone si possible) :
 - [ ] Les compteurs ⭐ x/4, ❤️+⭐, ✖️ et « à trier » suivent les choix.
 - [ ] Les trois modes « Une à une », « Retenues », « Imagettes » se choisissent à tout moment ; en « Retenues »,
       une photo passée à ✖️ ou effacée disparaît.
-- [ ] Toucher deux fois la photo, pincer ou 🔍 : visionneuse ; on peut pincer et se déplacer ; ✕ pour fermer.
+- [ ] Toucher deux fois la photo, pincer ou 🔍 : visionneuse plein écran ; on peut pincer et se déplacer ; ✕ pour fermer.
+- [ ] Dans la visionneuse (sans zoom) : glisser gauche / droite pour défiler, haut pour ❤️, bas pour ✖️ ;
+      la barre de boutons ✖️ ‹ ⭐ › ❤️ fait de même ; en haut, le choix et le compteur ⭐ x/4 · ❤️+⭐.
 - [ ] Le bouton « 🏠 Accueil » ramène à l'accueil.
 - [ ] En fin d'ensemble : animation, résumé, « Ensemble suivant » / « Pause ».
 - [ ] La carte des ensembles se colorie (gris → bordure colorée → coche).
@@ -108,6 +110,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.6.0 | Visionneuse plein écran : gestes, flèches, barre de boutons et compteur ⭐ / ❤️+⭐ ; défilement selon la longueur du geste (≤ 4 cm : 1 photo, plus : 2, plusieurs grands gestes de suite : 5). |
 | 0.5.0 | Numéro de version affiché ; rechargement forcé des fichiers à chaque version. |
 | 0.4.0 | Défilement : un geste court (1 à 2 cm) ne passe qu'une photo ; inertie plus douce. |
 | 0.3.0 | Mode « Retenues », défilement avec inertie, pourtours colorés, pastille de choix sur la photo, bouton « 🏠 Accueil », plus d'avance automatique après un choix (option). |

@@ -518,15 +518,42 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
   background: rgba(0, 0, 0, .55); color: #fff;
   font-size: 1.4rem;
 }
-.visionneuse-choix {
+.visionneuse-haut {
   position: absolute;
   top: max(14px, env(safe-area-inset-top)); left: max(14px, env(safe-area-inset-left));
+  right: 70px;
+  display: flex; flex-wrap: wrap; gap: 8px;
+  pointer-events: none;
+}
+.visionneuse-choix, .visionneuse-compteur {
   padding: 6px 12px;
   border-radius: 999px;
   background: rgba(0, 0, 0, .55); color: #fff;
   font-weight: 700;
-  pointer-events: none;
+  font-variant-numeric: tabular-nums;
 }
+.visionneuse-barre {
+  position: absolute;
+  left: 50%; bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex; gap: 10px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .45);
+}
+.btn-visionneuse {
+  width: 52px; height: 52px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .15);
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.btn-visionneuse:hover { background: rgba(255, 255, 255, .3); }
+.btn-visionneuse.fleche { font-size: 2rem; }
+.btn-visionneuse.etoile-visionneuse { color: #d4d4d4; font-size: 1.8rem; }
+.btn-visionneuse.etoile-visionneuse.doree { color: #ffc94a; text-shadow: 0 0 10px rgba(255, 201, 74, .8); }
 
 /* ---------------------------------------------------------------- notifications, confettis, à propos */
 

@@ -228,7 +228,7 @@ L'admin ouvre et ferme chaque phase. Quand une phase est fermée, l'interface de
 ### 7.2 Manche 1 — Tri éclair
 
 - Trois modes d'affichage, au choix à tout moment (que l'ensemble ait été examiné en entier ou non) : **une à une**, **retenues** (comme « une à une », mais seules les photos gardées ❤️ ou ⭐ restent affichées) et **imagettes**.
-- **Une à une** : la photo courante en grand ; les 3 photos précédentes et les 3 suivantes sont visibles de part et d'autre, de plus en plus petites et à moitié cachées. On peut **défiler en avant et en arrière sans rien valider**. Un geste court (moins de 2 cm environ) passe une seule photo ; un geste long et vif en fait défiler plusieurs, avec un ralentissement progressif.
+- **Une à une** : la photo courante en grand ; les 3 photos précédentes et les 3 suivantes sont visibles de part et d'autre, de plus en plus petites et à moitié cachées. On peut **défiler en avant et en arrière sans rien valider**. Le défilement dépend de la longueur du geste, pas de sa vitesse : jusqu'à 4 cm, une photo ; au-delà, 2 photos ; plusieurs grands gestes de suite dans le même sens, 5 photos (avec un ralentissement progressif).
 - Un **pourtour de couleur** indique le choix (rouge : gardée, doré : coup de cœur, gris : écartée), en mode photo comme en imagettes.
 - Gestes et commandes :
 
@@ -241,6 +241,8 @@ L'admin ouvre et ferme chaque phase. Quand une phase est fermée, l'interface de
 | Changer le choix | pastille dans l'autre coin de la photo : · → ❤️ → ⭐ → ✖️ → · | clic sur la pastille | — |
 | Effacer le choix (la photo redevient « à trier »), même longtemps après | bouton ⌫ | Suppr ou Retour arrière | vide |
 | Voir en grand | toucher deux fois, pincer, ou 🔍 | clic sur la photo, Entrée ou 🔍 (plein écran si possible) | — |
+
+- **Visionneuse plein écran** : les mêmes commandes y restent disponibles (sans zoom : glisser gauche / droite / haut / bas ; flèches du clavier ; barre de boutons ✖️ ‹ ⭐ › ❤️), avec en haut le choix de la photo et un petit compteur ⭐ x/4 · ❤️+⭐.
 
 - Par défaut, la photo reste affichée après un choix ; une case « Passer à la photo suivante après ❤️ ou ✖️ » (mémorisée sur l'appareil) permet d'avancer automatiquement.
 - Le nombre de **coups de cœur est limité par ensemble** (paramètre, 4 par défaut) pour qu'ils gardent leur valeur. Des compteurs affichent : ⭐ utilisés / limite, ❤️+⭐ (photos gardées), ✖️, et le nombre de photos restant à trier.

@@ -10,11 +10,11 @@
 import {
   PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble,
-} from './etat.js?v=0.5.0';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.5.0';
-import { ouvrirVisionneuse } from './zoom.js?v=0.5.0';
-import { CONFIG } from './config.js?v=0.5.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.5.0';
+} from './etat.js?v=0.6.0';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.6.0';
+import { ouvrirVisionneuse } from './zoom.js?v=0.6.0';
+import { CONFIG } from './config.js?v=0.6.0';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.6.0';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };
@@ -87,7 +87,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     ctx.voter(photos[i].id, valeur);
     vue?.majPhoto(i);
     actualiserEntete();
-    if (visionneuse) visionneuse.majChoix(TEXTES[etat.votes[photos[cur].id]] || 'À trier');
+    if (visionneuse) visionneuse.maj(etatVisionneuse());
     const termine = progressionEnsemble(etat, ensembleId).statut === 'termine';
     if (termine && !etaitTermine) terminer();
     etaitTermine = termine;
@@ -119,10 +119,29 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     notifier('Choix effacé : la photo est de nouveau « à trier ».');
   }
 
+  // État affiché dans la visionneuse : choix de la photo et compteurs de l'ensemble.
+  function etatVisionneuse() {
+    const v = etat.votes[photos[cur].id];
+    const c = comptesEnsemble(etat, ensembleId);
+    return {
+      choix: TEXTES[v] || 'À trier',
+      coeur: v === COEUR,
+      compteur: `⭐ ${c.coeurs}/${max} · ❤️+⭐ ${c.gardes + c.coeurs}`,
+    };
+  }
+
   function ouvrirGrand() {
     if (visionneuse || !photos.length) return;
-    visionneuse = ouvrirVisionneuse(images, photos[cur].id, { surFermeture: () => { visionneuse = null; } });
-    visionneuse.majChoix(TEXTES[etat.votes[photos[cur].id]] || 'À trier');
+    visionneuse = ouvrirVisionneuse(images, photos[cur].id, {
+      surFermeture: () => { visionneuse = null; },
+      actions: {
+        defiler: (sens, distance) => vue?.defiler?.(sens, distance),
+        garder: () => vue?.choisir?.(GARDE),
+        passer: () => vue?.choisir?.(PASSE),
+        etoile: () => basculerEtoile(),
+      },
+    });
+    visionneuse.maj(etatVisionneuse());
   }
 
   function changerMode(m) {
@@ -329,7 +348,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       actualiserEntete();
       if (visionneuse) {
         visionneuse.changerPhoto(photos[cur].id);
-        visionneuse.majChoix(TEXTES[etat.votes[photos[cur].id]] || 'À trier');
+        visionneuse.maj(etatVisionneuse());
       }
       return true;
     }
@@ -371,6 +390,21 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         inertie = setTimeout(pas, duree);
       };
       pas();
+    }
+
+    // Défilement selon la longueur du geste (la vitesse ne compte pas) :
+    // jusqu'à 4 cm, une photo ; au-delà, 2 photos ; plusieurs grands gestes de suite, 5 photos.
+    let dernierGrandGeste = { t: 0, sens: 0 };
+    function defilerSelonGeste(sens, distance) {
+      if (distance <= CM * 4) {
+        dernierGrandGeste = { t: 0, sens: 0 };
+        allerPos(pos + sens);
+        return;
+      }
+      const maintenant = performance.now();
+      const enSerie = dernierGrandGeste.sens === sens && maintenant - dernierGrandGeste.t < 2000;
+      dernierGrandGeste = { t: maintenant, sens };
+      lancerInertie(sens, enSerie ? 5 : 2);
     }
 
     // ❤️ ou ✖️ : on enregistre ; on passe à la suivante seulement si l'option est cochée.
@@ -483,19 +517,10 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         const a = g.traces[0];
         const b = g.traces[g.traces.length - 1];
         const v = (b.x - a.x) / Math.max(b.t - a.t, 1);
-        const sens = g.dx < 0 ? 1 : -1;
         const distance = Math.abs(g.dx);
         const lance = Math.abs(v) > 0.3 && Math.sign(v) === Math.sign(g.dx);
-        // Geste court (moins d'environ 2 cm) : une seule photo, quelle que soit la vitesse.
-        if (distance < CM * 2) {
-          if (distance > CM * 0.8 || (lance && distance > 15)) allerPos(pos + sens);
-          else placer();
-          return;
-        }
-        // Geste long et vif : plusieurs photos, avec ralentissement.
-        const nombre = lance ? Math.min(25, 1 + Math.round(Math.max(0, Math.abs(v) - 0.8) * 3)) : 1;
-        if (nombre > 1) lancerInertie(sens, nombre);
-        else allerPos(pos + sens);
+        if (distance > CM * 0.8 || (lance && distance > 15)) defilerSelonGeste(g.dx < 0 ? 1 : -1, distance);
+        else placer();
         return;
       }
       const s = Math.min(110, scene.clientHeight * 0.2);
@@ -520,6 +545,8 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       racine: racineVue,
       afficher() { placer(); precharger(); },
       detruire() { observateurTaille.disconnect(); clearTimeout(inertie); },
+      defiler: (sens, distance) => { arreterInertie(); defilerSelonGeste(sens, distance); },
+      choisir,
       compteur() {
         if (!ordre.length) return '';
         return seulementRetenues

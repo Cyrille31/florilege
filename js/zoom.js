@@ -1,11 +1,12 @@
 // Florilège — visionneuse : la photo en grand, en plein écran si l'appareil le permet.
 // Téléphone : pincer pour zoomer, glisser pour se déplacer, toucher deux fois pour basculer 1× / 2,5×.
 // PC : clic pour zoomer (la photo suit alors la souris), nouveau clic pour revenir ; molette pour régler.
-// Les touches du clavier (photo précédente / suivante, choix) restent actives : l'écran appelant
-// met la visionneuse à jour avec changerPhoto() et majChoix().
+// Les touches du clavier (flèches, E…) restent actives. Sans zoom, on peut aussi glisser :
+// gauche / droite pour défiler, haut pour ❤️, bas pour ✖️ ; une barre de boutons fait de même.
+// L'écran appelant fournit les actions et met la visionneuse à jour avec changerPhoto() et maj().
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el } from './ludique.js?v=0.5.0';
+import { el } from './ludique.js?v=0.6.0';
 
 const ZOOM_INITIAL = 2.5;
 const ZOOM_MAX = 6;
@@ -14,11 +15,23 @@ function pleinEcranPossible() {
   return !!(document.documentElement.requestFullscreen && document.fullscreenEnabled);
 }
 
-export function ouvrirVisionneuse(images, photoId, { surFermeture } = {}) {
+// actions : { defiler(sens, distance), garder(), passer(), etoile() }
+export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {} } = {}) {
   const img = el('img', { alt: 'Photo agrandie', draggable: 'false' });
   const choix = el('span', { class: 'visionneuse-choix', 'aria-live': 'polite' });
+  const compteur = el('span', { class: 'visionneuse-compteur' });
   const fermer = el('button', { class: 'btn-icone visionneuse-fermer', 'aria-label': 'Fermer (Échap)', title: 'Fermer (Échap)' }, '✕');
-  const couche = el('div', { class: 'zoom', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Photo agrandie' }, img, choix, fermer);
+  const bouton = (libelle, titre, fn, classe = '') => el('button', { class: `btn-visionneuse ${classe}`, 'aria-label': titre, title: titre, onclick: e => { e.stopPropagation(); fn?.(); } }, libelle);
+  const etoile = bouton('★', 'Coup de cœur (E)', actions.etoile, 'etoile-visionneuse');
+  const barre = el('div', { class: 'visionneuse-barre' },
+    bouton('✖️', 'Je passe (↓)', actions.passer),
+    bouton('‹', 'Photo précédente (←)', () => actions.defiler?.(-1, 0), 'fleche'),
+    etoile,
+    bouton('›', 'Photo suivante (→)', () => actions.defiler?.(1, 0), 'fleche'),
+    bouton('❤️', 'Je garde (↑)', actions.garder));
+  const couche = el('div', { class: 'zoom', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Photo agrandie' },
+    img, el('div', { class: 'visionneuse-haut' }, choix, compteur), fermer, barre);
+  for (const b of [fermer, ...barre.children]) b.addEventListener('pointerdown', e => e.stopPropagation());
   const precedent = document.activeElement;
   let pleinEcranDemande = false;
   let ferme = false;
@@ -74,9 +87,11 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture } = {}) {
     if (!grande) images.grande(id, 0).then(url => { if (photoId === id) img.src = url; }).catch(() => {});
   }
 
-  function majChoix(texte) {
-    choix.textContent = texte || '';
-    choix.hidden = !texte;
+  // etat : { choix: texte, coeur: booléen, compteur: texte }
+  function maj({ choix: texte, coeur, compteur: tc } = {}) {
+    if (texte !== undefined) { choix.textContent = texte || ''; choix.hidden = !texte; }
+    if (coeur !== undefined) etoile.classList.toggle('doree', !!coeur);
+    if (tc !== undefined) compteur.textContent = tc;
   }
 
   function detruire() {
@@ -105,7 +120,6 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture } = {}) {
   document.addEventListener('keydown', clavier, true);
   document.addEventListener('fullscreenchange', surPleinEcran);
   fermer.addEventListener('click', e => { e.stopPropagation(); detruire(); });
-  fermer.addEventListener('pointerdown', e => e.stopPropagation());
 
   // ---- gestes
   const pointeurs = new Map();
@@ -143,6 +157,11 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture } = {}) {
       pincement.my = my;
       zoomerVers(pincement.s0 * d / pincement.d0, mx, my);
     } else if (glisse && e.pointerType !== 'mouse') {
+      if (s <= 1.01) {
+        // Sans zoom : la photo suit un peu le doigt, pour montrer le geste (défiler ou choisir).
+        img.style.transform = `translate(${(e.clientX - glisse.x) * 0.6}px, ${(e.clientY - glisse.y) * 0.6}px)`;
+        return;
+      }
       tx = glisse.tx + e.clientX - glisse.x;
       ty = glisse.ty + e.clientY - glisse.y;
       appliquer();
@@ -154,10 +173,17 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture } = {}) {
     pointeurs.delete(e.pointerId);
     if (pointeurs.size < 2) pincement = null;
     if (!glisse || e.type === 'pointercancel') { glisse = null; return; }
-    const immobile = Math.hypot(e.clientX - glisse.x0, e.clientY - glisse.y0) < 10
-      && performance.now() - glisse.t0 < 350;
+    const dx = e.clientX - glisse.x0;
+    const dy = e.clientY - glisse.y0;
+    const immobile = Math.hypot(dx, dy) < 10 && performance.now() - glisse.t0 < 350;
     glisse = null;
-    if (!immobile) return;
+    if (!immobile) {
+      if (e.pointerType === 'mouse' || s > 1.01) return;
+      appliquer();
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) actions.defiler?.(dx < 0 ? 1 : -1, Math.abs(dx));
+      else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 60) (dy < 0 ? actions.garder : actions.passer)?.();
+      return;
+    }
     if (e.pointerType === 'mouse') {
       if (s > 1.01) reinitialiser();
       else { s = ZOOM_INITIAL; suivreSouris(e.clientX, e.clientY); }
@@ -181,11 +207,11 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture } = {}) {
 
   document.body.append(couche);
   changerPhoto(photoId);
-  majChoix('');
+  maj({ choix: '' });
   fermer.focus();
   if (pleinEcranPossible()) {
     pleinEcranDemande = true;
     document.documentElement.requestFullscreen().catch(() => { pleinEcranDemande = false; });
   }
-  return { fermer: detruire, changerPhoto, majChoix };
+  return { fermer: detruire, changerPhoto, maj };
 }
