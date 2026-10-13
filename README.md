@@ -65,17 +65,21 @@ serveur, par exemple avec Python : `python -m http.server 8000` dans le dossier,
 Sur **téléphone** (Android et iPhone si possible) :
 
 - [ ] L'accueil dit « Bonjour Marie ! » ; les ronds 🌱 🌿 🌸 sont les badges (les toucher affiche leur signification).
-- [ ] « Commencer » ouvre le premier ensemble en mode photo par photo ; les photos voisines sont visibles de part et d'autre.
-- [ ] Glisser à **gauche / droite** fait défiler sans rien valider (ou boutons ‹ ›).
+- [ ] « Commencer » ouvre le premier ensemble en mode « Une à une » ; les photos voisines sont visibles de part et d'autre.
+- [ ] Glisser à **gauche / droite** fait défiler sans rien valider (ou boutons ‹ ›) ; un geste **rapide** fait
+      défiler plusieurs photos avec un ralentissement, d'autant plus loin que le geste est vif.
 - [ ] Glisser vers le **haut** = ❤️ je garde, vers le **bas** = ✖️ je passe (un tampon apparaît pendant le geste) ;
-      la photo suivante s'affiche ensuite. Les boutons ❤️ et ✖️ font la même chose.
-- [ ] L'**étoile** dans le coin de la photo : grise → dorée (coup de cœur) → grise ; au-delà de 4 dans un ensemble,
+      la photo reste affichée, sauf si la case « Passer à la photo suivante… » est cochée.
+- [ ] Le **pourtour** de la photo prend la couleur du choix (rouge, doré, gris).
+- [ ] L'**étoile** dans le coin : grise → dorée (coup de cœur) → grise ; au-delà de 4 dans un ensemble,
       la photo tremble et un message l'explique.
+- [ ] La **pastille** de l'autre coin change le choix : · → ❤️ → ⭐ → ✖️ → ·.
 - [ ] ⌫ efface le choix de la photo affichée, même ancienne : elle redevient « à trier ».
 - [ ] Les compteurs ⭐ x/4, ❤️+⭐, ✖️ et « à trier » suivent les choix.
-- [ ] « Imagettes » / « Photo par photo » bascule entre les deux modes à tout moment ; toucher une imagette
-      l'ouvre en grand ; toucher sa pastille change le choix.
+- [ ] Les trois modes « Une à une », « Retenues », « Imagettes » se choisissent à tout moment ; en « Retenues »,
+      une photo passée à ✖️ ou effacée disparaît.
 - [ ] Toucher deux fois la photo, pincer ou 🔍 : visionneuse ; on peut pincer et se déplacer ; ✕ pour fermer.
+- [ ] Le bouton « 🏠 Accueil » ramène à l'accueil.
 - [ ] En fin d'ensemble : animation, résumé, « Ensemble suivant » / « Pause ».
 - [ ] La carte des ensembles se colorie (gris → bordure colorée → coche).
 - [ ] Le bouton « retour » du téléphone ramène à l'accueil sans quitter l'application.
@@ -87,7 +91,7 @@ Sur **téléphone** (Android et iPhone si possible) :
 
 Sur **PC** :
 
-- [ ] ← → pour défiler, ↑ je garde, ↓ je passe, E coup de cœur, Suppr effacer, G imagettes, Échap accueil.
+- [ ] ← → pour défiler, ↑ je garde, ↓ je passe, E coup de cœur, Suppr effacer, R retenues, G imagettes, Échap accueil.
 - [ ] Clic sur la photo (ou Entrée, ou 🔍) : visionneuse en plein écran ; les touches restent actives ;
       clic pour zoomer (la photo suit la souris), molette pour régler ; Échap pour fermer.
 
@@ -108,7 +112,7 @@ js/
   simulation.js       back-end simulé et photos factices (mode démonstration)
   images.js           miniatures par lots, préchargement, cache de l'appareil
   etat.js             calculs sur l'état du sélectionneur (fonctions pures, testées)
-  tri.js              manche 1 : examen d'un ensemble (photo par photo ou imagettes)
+  tri.js              manche 1 : examen d'un ensemble (une à une, retenues, imagettes)
   zoom.js             visionneuse plein écran
   ludique.js          carte des ensembles, jauge, badges, confettis
   stockage.js         accès protégé à localStorage

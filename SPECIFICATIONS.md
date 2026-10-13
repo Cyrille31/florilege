@@ -227,8 +227,9 @@ L'admin ouvre et ferme chaque phase. Quand une phase est fermée, l'interface de
 
 ### 7.2 Manche 1 — Tri éclair
 
-- Deux modes d'affichage, au choix à tout moment (que l'ensemble ait été examiné en entier ou non) : **photo par photo** et **imagettes**.
-- **Photo par photo** : la photo courante en grand ; les 3 photos précédentes et les 3 suivantes sont visibles de part et d'autre, de plus en plus petites et à moitié cachées. On peut **défiler en avant et en arrière sans rien valider**.
+- Trois modes d'affichage, au choix à tout moment (que l'ensemble ait été examiné en entier ou non) : **une à une**, **retenues** (comme « une à une », mais seules les photos gardées ❤️ ou ⭐ restent affichées) et **imagettes**.
+- **Une à une** : la photo courante en grand ; les 3 photos précédentes et les 3 suivantes sont visibles de part et d'autre, de plus en plus petites et à moitié cachées. On peut **défiler en avant et en arrière sans rien valider**. Un geste rapide fait défiler plusieurs photos d'un coup, avec un ralentissement progressif, d'autant plus loin que le geste est vif.
+- Un **pourtour de couleur** indique le choix (rouge : gardée, doré : coup de cœur, gris : écartée), en mode photo comme en imagettes.
 - Gestes et commandes :
 
 | Action | Téléphone | PC | Valeur |
@@ -237,14 +238,16 @@ L'admin ouvre et ferme chaque phase. Quand une phase est fermée, l'interface de
 | ❤️ Je garde | glisser vers le haut, ou bouton | ↑ | 1 |
 | ✖️ Je passe | glisser vers le bas, ou bouton | ↓ | 0 |
 | ⭐ Coup de cœur | étoile dans le coin de la photo (grise si non choisie, dorée si choisie) | E, ou clic sur l'étoile | 2 |
+| Changer le choix | pastille dans l'autre coin de la photo : · → ❤️ → ⭐ → ✖️ → · | clic sur la pastille | — |
 | Effacer le choix (la photo redevient « à trier »), même longtemps après | bouton ⌫ | Suppr ou Retour arrière | vide |
 | Voir en grand | toucher deux fois, pincer, ou 🔍 | clic sur la photo, Entrée ou 🔍 (plein écran si possible) | — |
 
-- Après ❤️ ou ✖️, la photo suivante s'affiche ; le coup de cœur (et son retrait) ne fait pas avancer.
+- Par défaut, la photo reste affichée après un choix ; une case « Passer à la photo suivante après ❤️ ou ✖️ » (mémorisée sur l'appareil) permet d'avancer automatiquement.
 - Le nombre de **coups de cœur est limité par ensemble** (paramètre, 4 par défaut) pour qu'ils gardent leur valeur. Des compteurs affichent : ⭐ utilisés / limite, ❤️+⭐ (photos gardées), ✖️, et le nombre de photos restant à trier.
 - **Préchargement** des 5 photos suivantes (voir 3.3) ; la miniature s'affiche instantanément, puis la version 1 080 px.
 - En fin d'ensemble (dernière photo triée) : une courte animation de félicitations, puis le choix « ensemble suivant » ou « pause ».
-- **Imagettes** : grille de miniatures avec un badge par photo ; toucher une imagette l'ouvre en mode photo par photo, toucher son badge change le choix (· → ❤️ → ⭐ → ✖️ → ·).
+- **Imagettes** : grille de miniatures avec un badge par photo ; toucher une imagette l'ouvre en grand, toucher son badge change le choix (· → ❤️ → ⭐ → ✖️ → ·).
+- Un bouton **« 🏠 Accueil »** bien visible ramène à l'accueil.
 - Les choix sont acceptés à tout moment, même sans réseau (voir 7.4).
 
 ### 7.3 Manche 2 — Finale par duels

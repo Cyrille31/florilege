@@ -201,17 +201,42 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
 .tri-infos { flex: 1; min-width: 0; }
 .tri-titre { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tri-compteur { font-size: .85rem; color: var(--texte-doux); font-variant-numeric: tabular-nums; }
-.btn-mode {
+.btn-accueil {
   flex: none;
   min-height: 44px;
   padding: 0 14px;
-  border: 2px solid var(--bord);
+  border: 0;
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--vert-fonce);
+  color: #fff;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: var(--ombre);
+}
+.btn-accueil:hover { background: #1b725e; }
+@media (prefers-color-scheme: dark) { .btn-accueil { background: var(--vert); color: #06261f; } }
+
+/* Sélecteur des trois modes d'affichage */
+.selecteur-mode {
+  display: flex;
+  margin-top: 10px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--bord);
+}
+.selecteur-mode button {
+  flex: 1;
+  min-height: 40px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
   font-size: .9rem;
   font-weight: 600;
   white-space: nowrap;
+  color: var(--texte-doux);
 }
+.selecteur-mode button[aria-selected="true"] { background: var(--surface); color: var(--texte); box-shadow: var(--ombre); }
 .tri-stats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .pilule {
   padding: 3px 10px;
@@ -247,13 +272,14 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
   position: absolute;
   left: 50%;
   top: 50%;
-  transition: transform .3s cubic-bezier(.2, .8, .3, 1), width .3s, height .3s, opacity .3s, filter .3s;
+  transition: transform var(--duree, .3s) cubic-bezier(.2, .8, .3, 1), width var(--duree, .3s), height var(--duree, .3s), opacity .3s, filter .3s;
   will-change: transform;
   cursor: pointer;
 }
 .defil.centre { cursor: zoom-in; }
 .scene.glisse .defil, .defil.nouvelle { transition: none; }
 .defil.nouvelle { opacity: 0; }
+.defil.part { opacity: 0; pointer-events: none; }
 .defil[data-distance="1"] { filter: brightness(.8); opacity: .95; }
 .defil[data-distance="2"] { filter: brightness(.65); opacity: .85; }
 .defil[data-distance="3"] { filter: brightness(.5); opacity: .7; }
@@ -273,22 +299,35 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
   --o-haut: 0; --o-bas: 0;
 }
 .cadre img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; transition: opacity .2s, filter .2s; }
+/* Pourtour de couleur selon le choix : rouge = gardée, doré = coup de cœur, gris = écartée. */
+.defil[data-valeur="1"] .cadre { box-shadow: 0 0 0 6px var(--rouge), 0 8px 30px rgba(0, 0, 0, .3); }
+.defil[data-valeur="2"] .cadre { box-shadow: 0 0 0 6px var(--jaune), 0 8px 30px rgba(0, 0, 0, .3); }
+.defil[data-valeur="0"] .cadre { box-shadow: 0 0 0 6px #8a9590, 0 8px 30px rgba(0, 0, 0, .3); }
+.defil:not(.centre) .cadre { box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
+.defil:not(.centre)[data-valeur="1"] .cadre { box-shadow: 0 0 0 4px var(--rouge); }
+.defil:not(.centre)[data-valeur="2"] .cadre { box-shadow: 0 0 0 4px var(--jaune); }
+.defil:not(.centre)[data-valeur="0"] .cadre { box-shadow: 0 0 0 4px #8a9590; }
 .defil[data-valeur="0"] img { opacity: .55; filter: grayscale(.8); }
 .defil.centre[data-valeur="0"] img { opacity: .8; filter: grayscale(.5); }
 
-/* Pastille du choix (❤️ / ✖️) en haut à gauche. */
+/* Pastille du choix (· / ❤️ / ✖️) en haut à gauche : la toucher change le choix. */
 .choix {
-  position: absolute; top: 8px; left: 8px;
-  min-width: 34px; height: 34px;
+  position: absolute; top: 6px; left: 6px;
+  width: 48px; height: 48px;
+  padding: 0;
   display: grid; place-items: center;
+  border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, .9);
-  font-size: 1.1rem;
+  background: rgba(255, 255, 255, .92);
+  color: #555;
+  font-size: 1.4rem;
+  line-height: 1;
   box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
-  pointer-events: none;
 }
-.choix:empty { display: none; }
-.defil:not(.centre) .choix { transform: scale(.65); transform-origin: top left; }
+.choix:active { transform: scale(.85); }
+.defil[data-valeur=""] .choix { background: rgba(255, 255, 255, .6); }
+.defil:not(.centre) .choix { transform: scale(.55); transform-origin: top left; pointer-events: none; }
+.defil:not(.centre)[data-valeur=""] .choix { display: none; }
 
 /* Étoile du coup de cœur, dans le coin : grise si non choisie, dorée si choisie. */
 .etoile {
@@ -363,6 +402,23 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
 .btn-rond.petit { width: 48px; height: 48px; font-size: 1.3rem; }
 .btn-rond.garde { box-shadow: var(--ombre), inset 0 0 0 3px color-mix(in srgb, var(--rouge) 35%, transparent); }
 
+.option-avance {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px;
+  font-size: .9rem; color: var(--texte-doux);
+  flex: none;
+}
+.option-avance input { width: 22px; height: 22px; accent-color: var(--vert-fonce); }
+
+.scene-vide {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; justify-items: center;
+  padding: 16px;
+  text-align: center; color: var(--texte-doux);
+}
+.scene-vide[hidden] { display: none; }
+.scene-vide .btn-secondaire { width: auto; padding: 0 20px; }
+
 .aide-clavier { display: none; margin: 8px 0 0; text-align: center; font-size: .8rem; color: var(--texte-doux); flex: none; }
 @media (hover: hover) and (pointer: fine) { .aide-clavier { display: block; } }
 
@@ -402,15 +458,16 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
 .vignette {
   position: relative;
   aspect-ratio: 1;
-  border: 3px solid transparent;
+  border: 5px solid transparent;
   border-radius: 10px;
   background: var(--bord);
   overflow: hidden;
 }
 .vignette .ouvrir { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; }
 .vignette img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vignette[data-valeur="0"] { border-color: #8a9590; }
 .vignette[data-valeur="0"] img { opacity: .45; filter: grayscale(.7); }
-.vignette[data-valeur="1"] { border-color: color-mix(in srgb, var(--rouge) 60%, transparent); }
+.vignette[data-valeur="1"] { border-color: var(--rouge); }
 .vignette[data-valeur="2"] { border-color: var(--jaune); }
 .vignette.courante { outline: 3px solid var(--vert); outline-offset: 2px; }
 .etoile-mini {
