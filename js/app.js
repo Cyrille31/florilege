@@ -1,13 +1,15 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.7.0';
-import { backend, lireJeton, FileEvenements, chargerEtat, memoriserEtat, nouvelEvenement } from './api.js?v=0.7.0';
-import { ChargeurImages } from './images.js?v=0.7.0';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.7.0';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.7.0';
-import { ecranEnsemble } from './tri.js?v=0.7.0';
-import { supprimerStockage } from './stockage.js?v=0.7.0';
+import { CONFIG, modeDemo } from './config.js?v=0.8.0';
+import {
+  backend, lireJeton, FileEvenements, chargerEtat, memoriserEtat, nouvelEvenement, ErreurServeur, signalerErreur, mesures,
+} from './api.js?v=0.8.0';
+import { ChargeurImages } from './images.js?v=0.8.0';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.8.0';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.8.0';
+import { ecranEnsemble } from './tri.js?v=0.8.0';
+import { supprimerStockage } from './stockage.js?v=0.8.0';
 
 const PHRASE_BAL = 'En échange, une seule chose vous est demandée, sur l\'honneur : faire une bonne action '
   + 'chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -16,6 +18,7 @@ const PHRASES_PHASE = {
   manche1: 'Triez les photos : ✖️ je passe, ❤️ je garde, ⭐ coup de cœur.',
   manche2: 'La finale arrive bientôt : vous choisirez entre deux photos.',
   preparation: 'Les photos sont en cours de préparation. Revenez un peu plus tard !',
+  attente: 'La sélection est en pause pour le moment. Merci, et à bientôt pour la suite !',
 };
 
 const app = document.getElementById('app');
@@ -176,8 +179,9 @@ async function demarrer() {
     ctx.etat = etat;
     majIndicateur(horsLigne ? 'horsligne' : ctx.file.statut(), ctx.file.enAttente());
     if (horsLigne) notifier('Hors ligne : vous pouvez continuer, tout sera envoyé plus tard.');
-  } catch {
-    montrerMessage('Connexion impossible', 'Vérifiez votre connexion Internet puis rechargez la page.');
+  } catch (e) {
+    if (e instanceof ErreurServeur) montrerMessage('Lien non reconnu', e.message);
+    else montrerMessage('Connexion impossible', 'Vérifiez votre connexion Internet puis rechargez la page.');
     return;
   }
   // Un rechargement en plein tri rouvre l'accueil (l'historique du navigateur est remis à zéro).
@@ -185,5 +189,32 @@ async function demarrer() {
   montrerAccueil();
   ctx.file.envoyer();
 }
+
+// Erreurs JavaScript : remontées dans l'onglet Journal du classeur.
+window.addEventListener('error', e => signalerErreur(ctx.jeton, `${e.message} (${e.filename}:${e.lineno})`));
+window.addEventListener('unhandledrejection', e => signalerErreur(ctx.jeton, `Promesse rejetée : ${e.reason?.message || e.reason}`));
+
+// ---------------------------------------------------------------- diagnostic (?diag=1)
+// Affiche les temps de réponse du serveur, pour juger de la fluidité (section 3.3 des spécifications).
+
+function panneauDiagnostic() {
+  const panneau = el('pre', { class: 'diagnostic', 'aria-hidden': 'true' });
+  document.body.append(panneau);
+  setInterval(() => {
+    const parAction = {};
+    for (const m of mesures) (parAction[m.action] ||= []).push(m);
+    const lignes = Object.entries(parAction).map(([action, liste]) => {
+      const ms = liste.map(m => m.ms).sort((a, b) => a - b);
+      const moyenne = ms.reduce((t, x) => t + x, 0) / ms.length;
+      const ko = liste.reduce((t, m) => t + m.octets, 0) / liste.length / 1024;
+      return `${action.padEnd(11)} n=${String(ms.length).padStart(3)}  moy ${Math.round(moyenne)} ms  `
+        + `méd ${Math.round(ms[Math.floor(ms.length / 2)])}  max ${Math.round(ms[ms.length - 1])}  ${ko.toFixed(0)} Ko`;
+    });
+    const connexion = navigator.connection ? ` · réseau ${navigator.connection.effectiveType}` : '';
+    panneau.textContent = `Diagnostic v${CONFIG.version}${connexion}\n${lignes.join('\n') || 'aucune requête'}`;
+  }, 1000);
+}
+
+if (new URLSearchParams(location.search).get('diag') === '1') panneauDiagnostic();
 
 demarrer();

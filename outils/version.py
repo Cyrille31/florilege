@@ -5,7 +5,7 @@ Florilège — change le numéro de version partout où il apparaît.
 
     python outils/version.py 0.6.0
 
-Met à jour js/config.js (version affichée) et ajoute « ?v=<version> » à tous les chemins
+Met à jour js/config.js et apps-script/Code.gs (version affichée) et ajoute « ?v=<version> » à tous les chemins
 de fichiers JavaScript et CSS chargés par les pages : chaque nouvelle version force ainsi
 les navigateurs à recharger les fichiers au lieu d'utiliser leur copie en cache.
 
@@ -41,6 +41,14 @@ def main():
         if nouveau != texte:
             chemin.write_text(nouveau, encoding="utf-8")
             modifies.append(chemin.relative_to(RACINE).as_posix())
+
+    # Version du script Apps Script (affichée par doGet et « À propos »).
+    gs = RACINE / "apps-script" / "Code.gs"
+    texte = gs.read_text(encoding="utf-8")
+    nouveau = re.sub(r"const VERSION = '[^']*';", f"const VERSION = '{v}';", texte)
+    if nouveau != texte:
+        gs.write_text(nouveau, encoding="utf-8")
+        modifies.append("apps-script/Code.gs")
 
     print(f"Version {v} : {len(modifies)} fichier(s) mis à jour.")
     for m in modifies:

@@ -10,11 +10,11 @@
 import {
   PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.7.0';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.7.0';
-import { ouvrirVisionneuse } from './zoom.js?v=0.7.0';
-import { CONFIG } from './config.js?v=0.7.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.7.0';
+} from './etat.js?v=0.8.0';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.8.0';
+import { ouvrirVisionneuse } from './zoom.js?v=0.8.0';
+import { CONFIG } from './config.js?v=0.8.0';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.8.0';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };
@@ -30,7 +30,9 @@ const MODES = [
 ];
 
 const estRetenue = v => v === GARDE || v === COEUR;
-const ratioDe = p => `${p.largeur} / ${p.hauteur}`;
+// Proportions d'une photo ; inconnues (0) tant que l'image n'est pas chargée : 4/3 par défaut.
+const rapport = p => (p.largeur > 0 && p.hauteur > 0 ? p.largeur / p.hauteur : 4 / 3);
+const ratioDe = p => (p.largeur > 0 && p.hauteur > 0 ? `${p.largeur} / ${p.hauteur}` : '4 / 3');
 
 function badgeDe(v) {
   return v === PASSE ? SYMBOLES[PASSE] : estRetenue(v) ? SYMBOLES[GARDE] : '·';
@@ -237,6 +239,16 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       carte.etoile = etoile;
       carte.choix = choix;
       images.mini(p.id, 1).then(url => { if (!carte.grande) img.src = url; }).catch(() => {});
+      // Dimensions inconnues du serveur : on les déduit de la première image chargée.
+      if (!(p.largeur > 0 && p.hauteur > 0)) {
+        img.addEventListener('load', () => {
+          if (p.largeur > 0 || !img.naturalWidth) return;
+          p.largeur = img.naturalWidth;
+          p.hauteur = img.naturalHeight;
+          placer();
+          if (visionneuse && cur === i) visionneuse.changerPhoto(p.id, ratioDe(p));
+        });
+      }
       majCarte(carte);
       return carte;
     }
@@ -270,7 +282,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       const maxL = L * (L < H ? 0.8 : 0.6);
       const maxH = H * 0.94;
       const taille = (i, f) => {
-        const r = photos[i].largeur / photos[i].hauteur;
+        const r = rapport(photos[i]);
         let w = maxL * f;
         let h = w / r;
         if (h > maxH * f) { h = maxH * f; w = h * r; }

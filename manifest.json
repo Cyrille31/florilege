@@ -3,7 +3,6 @@
   "short_name": "Florilège",
   "description": "Sélection collective de photos",
   "lang": "fr",
-  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

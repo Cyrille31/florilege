@@ -2,12 +2,13 @@
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
 export const CONFIG = {
-  // URL de l'application web Apps Script (se termine par /exec).
+  // URL de l'application web Apps Script (se termine par /exec), obtenue au déploiement (voir le README).
   // Laisser vide pour utiliser le back-end simulé (mode démonstration, photos factices).
+  // Exemple : urlApi: 'https://script.google.com/macros/s/AKfycb…/exec',
   urlApi: '',
 
   // Version affichée dans l'écran « À propos ».
-  version: '0.7.0',
+  version: '0.8.0',
 
   // Envoi groupé des événements (section 7.4 des spécifications).
   envoiToutesLesNActions: 10,
@@ -15,7 +16,7 @@ export const CONFIG = {
 
   // Préchargement des grandes images (section 3.3).
   prechargementAvance: 5,
-  requetesSimultanees: 4,
+  requetesSimultanees: 3, // Apps Script limite le nombre d'exécutions simultanées
   miniaturesParLot: 16,
 };
 

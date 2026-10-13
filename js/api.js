@@ -4,14 +4,14 @@
 // arrière-plan et à la fermeture. En cas d'échec, nouvel essai avec délai croissant.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.7.0';
-import { backendSimule } from './simulation.js?v=0.7.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.7.0';
-import { appliquer } from './etat.js?v=0.7.0';
+import { CONFIG, modeDemo } from './config.js?v=0.8.0';
+import { backendSimule } from './simulation.js?v=0.8.0';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.8.0';
+import { appliquer } from './etat.js?v=0.8.0';
 
 // ---------------------------------------------------------------- back-end Apps Script
 // Les requêtes POST sont en text/plain (corps JSON) pour éviter la requête CORS préalable.
-// Les actions côté serveur seront écrites au jalon 2.
+// Les actions correspondantes sont dans apps-script/Code.gs.
 
 function base64VersBlob(b64, type = 'image/jpeg') {
   const bin = atob(b64);
@@ -20,15 +20,40 @@ function base64VersBlob(b64, type = 'image/jpeg') {
   return new Blob([octets], { type });
 }
 
+// Erreur renvoyée par le serveur (lien inconnu, photo inconnue…), à distinguer d'une coupure réseau.
+export class ErreurServeur extends Error {
+  constructor(message, code) {
+    super(message);
+    this.code = code;
+  }
+}
+
+// Mesure des temps de réponse, affichée avec le paramètre ?diag=1 (voir app.js).
+export const mesures = [];
+
+// Un échec réseau (ou Apps Script momentanément saturé) donne lieu à un second essai.
 async function appel(action, donnees) {
+  try {
+    return await appelUnique(action, donnees);
+  } catch (e) {
+    if (e instanceof ErreurServeur) throw e;
+    await new Promise(r => setTimeout(r, 800));
+    return appelUnique(action, donnees);
+  }
+}
+
+async function appelUnique(action, donnees) {
+  const debut = performance.now();
   const rep = await fetch(CONFIG.urlApi, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({ action, ...donnees }),
   });
   if (!rep.ok) throw new Error(`HTTP ${rep.status}`);
-  const json = await rep.json();
-  if (json.erreur) throw new Error(json.erreur);
+  const texte = await rep.text();
+  mesures.push({ action, ms: performance.now() - debut, octets: texte.length });
+  const json = JSON.parse(texte);
+  if (json.erreur) throw new ErreurServeur(json.erreur, json.code);
   return json;
 }
 
@@ -43,13 +68,14 @@ const backendHttp = {
   async miniatures(jeton, ids) {
     const json = await appel('miniatures', { jeton, ids });
     const res = {};
-    for (const [id, b64] of Object.entries(json.images || {})) res[id] = base64VersBlob(b64);
+    for (const [id, b64] of Object.entries(json.images || {})) res[id] = base64VersBlob(b64, json.types?.[id]);
     return res;
   },
   async image(jeton, id) {
     const json = await appel('image', { jeton, id });
     return base64VersBlob(json.donnees, json.type);
   },
+  erreur: (jeton, message) => appel('erreur', { jeton, message }),
 };
 
 export const backend = modeDemo() ? backendSimule : backendHttp;
@@ -183,6 +209,8 @@ export async function chargerEtat(jeton, file) {
   try {
     etat = await backend.etat(jeton);
   } catch (e) {
+    // Lien refusé par le serveur : pas question de repartir d'un état mémorisé.
+    if (e instanceof ErreurServeur) throw e;
     etat = lireStockage(cle);
     if (!etat) throw e;
     horsLigne = true;
@@ -195,4 +223,14 @@ export async function chargerEtat(jeton, file) {
 // Mémorise l'état courant sur l'appareil (pour une réouverture hors ligne).
 export function memoriserEtat(jeton, etat) {
   ecrireStockage(`florilege-etat-${jeton}`, etat);
+}
+
+// ---------------------------------------------------------------- erreurs du client
+
+// Les erreurs JavaScript sont remontées dans l'onglet Journal (au plus 5 par visite).
+let erreursSignalees = 0;
+export function signalerErreur(jeton, message) {
+  if (!backend.erreur || erreursSignalees >= 5) return;
+  erreursSignalees++;
+  backend.erreur(jeton, `${String(message).slice(0, 800)} — ${navigator.userAgent}`).catch(() => {});
 }

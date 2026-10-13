@@ -657,6 +657,15 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
 .apropos .licence { font-size: .9rem; color: var(--texte-doux); }
 .apropos .demo { font-size: .85rem; padding: 8px; border-radius: 10px; background: color-mix(in srgb, var(--jaune) 25%, transparent); }
 
+.diagnostic {
+  position: fixed; left: 4px; top: 4px; z-index: 50;
+  margin: 0; padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, .75); color: #9f9;
+  font: 11px/1.4 ui-monospace, monospace;
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
