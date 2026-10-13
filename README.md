@@ -113,19 +113,21 @@ qui ont un lien personnel valide.
 1. Sur [drive.google.com](https://drive.google.com), créer un dossier, par exemple `Florilège/Essai`.
 2. Dans ce dossier : **Nouveau → Google Sheets**. Le nommer, par exemple `Florilège — Essai`.
 3. Dans le classeur : menu **Extensions → Apps Script**. Un éditeur s'ouvre dans un nouvel onglet.
-4. Dans le fichier `Code.gs` de l'éditeur, tout effacer puis coller le contenu de
+4. (Facultatif) Cliquer sur « Projet sans titre » en haut de l'éditeur et le renommer « Florilège ».
+5. Dans le fichier `Code.gs` de l'éditeur, tout effacer puis coller le contenu de
    [`apps-script/Code.gs`](apps-script/Code.gs) (sur GitHub, bouton « Copy raw file »).
-5. Toujours dans l'éditeur : roue dentée **Paramètres du projet** (à gauche) → cocher **« Afficher le fichier manifeste
+6. Toujours dans l'éditeur : roue dentée **Paramètres du projet** (à gauche) → cocher **« Afficher le fichier manifeste
    "appsscript.json" dans l'éditeur »**. Revenir à l'éditeur (icône `< >`), ouvrir `appsscript.json`, tout remplacer
    par le contenu de [`apps-script/appsscript.json`](apps-script/appsscript.json).
-6. Enregistrer (icône disquette ou Ctrl+S).
+7. Enregistrer (icône disquette ou Ctrl+S).
 
 ### 2. Installer le classeur
 
 1. Revenir à l'onglet du classeur et **recharger la page** : un menu **Florilège** apparaît (après quelques secondes).
 2. **Florilège → 1. Installer / vérifier le classeur**.
-3. Google demande une autorisation : choisir votre compte, puis **Paramètres avancés → Accéder à … (non sécurisé)**
-   → **Autoriser**. (L'avertissement apparaît parce que le script est le vôtre et n'a pas été « vérifié » par Google ;
+3. Google demande une autorisation : choisir votre compte, puis **Paramètres avancés → Accéder à … (non sécurisé)**.
+   Sur l'écran suivant, **cocher « Tout sélectionner »** (Drive : dossiers et images ; Sheets : le classeur ;
+   contenu Web : les fenêtres du menu, comme celle des liens), puis **Continuer**. (L'avertissement apparaît parce que le script est le vôtre et n'a pas été « vérifié » par Google ;
    il n'accède qu'à ce classeur et à votre Drive, sous votre contrôle.) Si l'installation s'est arrêtée pendant
    l'autorisation, la relancer.
 4. Le message final affiche un **jeton administrateur** : le noter (il servira à l'interface d'administration, jalon 4).
