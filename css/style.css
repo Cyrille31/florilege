@@ -493,6 +493,49 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
   box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
 }
 
+/* Sélection multiple */
+.grille-revue { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.vignette .ouvrir img { -webkit-touch-callout: none; }
+.coche {
+  position: absolute; top: 4px; left: 4px;
+  width: 30px; height: 30px;
+  display: none; place-items: center;
+  border-radius: 50%;
+  background: var(--bleu); color: #fff;
+  font-weight: 800;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .4);
+  pointer-events: none;
+}
+.vignette.choisie { outline: 4px solid var(--bleu); outline-offset: 2px; }
+.vignette.choisie .coche { display: grid; }
+.vignette.choisie img { filter: brightness(.8); }
+.grille-revue.en-selection .vignette:not(.choisie) img { opacity: .8; }
+.barre-selection {
+  position: sticky; bottom: 0; z-index: 5;
+  display: flex; align-items: center; gap: 6px; justify-content: center;
+  width: fit-content; max-width: 100%;
+  margin: 10px auto 0;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .3);
+}
+.barre-selection[hidden] { display: none; }
+.selection-compte {
+  min-width: 34px; height: 34px; padding: 0 8px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  background: var(--bleu); color: #fff;
+  font-weight: 800; font-size: .95rem;
+}
+.btn-selection {
+  width: 44px; height: 44px; flex: none;
+  border: 0; border-radius: 50%;
+  background: var(--fond);
+  font-size: 1.3rem; line-height: 1;
+}
+.btn-selection.annuler { background: transparent; color: var(--texte-doux); }
+
 .vignette[data-valeur=""] .pastille { min-width: 34px; height: 34px; background: rgba(255, 255, 255, .55); color: #555; }
 
 /* ---------------------------------------------------------------- visionneuse */

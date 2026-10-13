@@ -76,6 +76,9 @@ Sur **téléphone** (Android et iPhone si possible) :
 - [ ] La **pastille** de l'autre coin change le choix : · → ❤️ → ⭐ → ✖️ → ·.
 - [ ] ⌫ efface le choix de la photo affichée, même ancienne : elle redevient « à trier ».
 - [ ] Les compteurs ⭐ x/4, ❤️+⭐, ✖️ et « à trier » suivent les choix.
+- [ ] Imagettes : un appui long sélectionne une photo ; ensuite un appui court ajoute ou retire une photo,
+      un appui long sélectionne toute la plage depuis la précédente ; la barre en bas applique ❤️ ⭐ ✖️ ou ·
+      à toute la sélection (✕ ou Échap pour annuler). Sur PC : Ctrl+clic et Maj+clic.
 - [ ] Les trois modes « Une à une », « Retenues », « Imagettes » se choisissent à tout moment ; en « Retenues »,
       une photo passée à ✖️ ou effacée disparaît.
 - [ ] Toucher deux fois la photo, pincer ou 🔍 : visionneuse plein écran ; on peut pincer et se déplacer ; ✕ pour fermer.
@@ -110,6 +113,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.7.0 | Imagettes : sélection multiple (appui long pour commencer, appui court pour ajouter ou retirer, appui long pour toute une plage ; Ctrl+clic et Maj+clic sur PC), puis ❤️ ⭐ ✖️ ou · pour toute la sélection. |
 | 0.6.3 | Fin d'ensemble : un bandeau apparaît puis s'estompe, sans empêcher de continuer à retoucher les choix ; correction d'un « null » affiché dans les compteurs. |
 | 0.6.2 | Flèches et gestes haut / bas : échelle ✖️ ↔ ❤️ ↔ ⭐ (haut sur ❤️ donne ⭐, bas sur ⭐ redonne ❤️) ; photo écartée grisée, aussi en plein écran. |
 | 0.6.1 | Les flèches du clavier marchent de nouveau après avoir coché « Passer à la photo suivante » ; pourtour de couleur aussi dans la visionneuse plein écran. |

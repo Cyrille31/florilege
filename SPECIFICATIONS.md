@@ -250,6 +250,7 @@ L'admin ouvre et ferme chaque phase. Quand une phase est fermée, l'interface de
 - **Préchargement** des 5 photos suivantes (voir 3.3) ; la miniature s'affiche instantanément, puis la version 1 080 px.
 - En fin d'ensemble (dernière photo triée) : une courte animation de félicitations et un bandeau (résumé, bouton « ensemble suivant ») qui s'estompe de lui-même, sans empêcher de continuer à retoucher les choix.
 - **Imagettes** : grille de miniatures avec un badge par photo ; toucher une imagette l'ouvre en grand, toucher son badge change le choix (· → ❤️ → ⭐ → ✖️ → ·).
+- **Sélection multiple en imagettes** : un appui long sur une imagette la sélectionne ; ensuite, un appui court ajoute ou retire une imagette, un appui long sélectionne toutes celles comprises entre la précédente et celle-ci. Une barre permet d'appliquer ❤️, ⭐, ✖️ ou · (à trier) à toute la sélection (la limite de coups de cœur est vérifiée). Sur PC : Ctrl+clic (ajouter / retirer) et Maj+clic (plage).
 - Un bouton **« 🏠 Accueil »** bien visible ramène à l'accueil.
 - Les choix sont acceptés à tout moment, même sans réseau (voir 7.4).
 
