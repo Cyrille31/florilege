@@ -46,7 +46,7 @@ gardés dans le navigateur.
 
 | Paramètre | Effet |
 |---|---|
-| `?reinit=1` | Remet la démonstration à zéro (efface les choix simulés). |
+| `?reinit=1` | Remet la démonstration à zéro (comme le bouton « Remettre la démo à zéro » de l'accueil). |
 | `?nom=Paul` | Change le prénom affiché. |
 | `?latence=1500` | Simule un réseau lent (en millisecondes par requête ; 400 par défaut). |
 | `?horsligne=1` | Simule l'absence de réseau : les choix restent en attente sur l'appareil. |
@@ -64,28 +64,32 @@ serveur, par exemple avec Python : `python -m http.server 8000` dans le dossier,
 
 Sur **téléphone** (Android et iPhone si possible) :
 
-- [ ] L'accueil dit « Bonjour Marie ! », la phrase d'explication tient en une ou deux lignes.
-- [ ] « Commencer » ouvre le premier ensemble ; la photo s'affiche en grand.
-- [ ] Glisser à **droite** = ❤️ je garde, à **gauche** = ✖️ je passe, vers le **haut** = ⭐ coup de cœur ;
-      un tampon apparaît pendant le geste ; un petit geste hésitant ramène la photo au centre.
-- [ ] Les trois boutons font la même chose que les gestes.
-- [ ] ↶ annule le dernier choix (plusieurs fois de suite).
-- [ ] Au-delà de 4 coups de cœur dans un ensemble, la photo tremble et un message l'explique.
-- [ ] Toucher deux fois la photo, pincer ou 🔍 : agrandissement ; on peut pincer et se déplacer ; ✕ pour fermer.
-- [ ] En fin d'ensemble : animation, résumé, « Ensemble suivant » / « Pause » / « Revoir mes choix ».
-- [ ] Dans « Revoir mes choix », toucher une photo change son choix (❤️ → ⭐ → ✖️).
+- [ ] L'accueil dit « Bonjour Marie ! » ; les ronds 🌱 🌿 🌸 sont les badges (les toucher affiche leur signification).
+- [ ] « Commencer » ouvre le premier ensemble en mode photo par photo ; les photos voisines sont visibles de part et d'autre.
+- [ ] Glisser à **gauche / droite** fait défiler sans rien valider (ou boutons ‹ ›).
+- [ ] Glisser vers le **haut** = ❤️ je garde, vers le **bas** = ✖️ je passe (un tampon apparaît pendant le geste) ;
+      la photo suivante s'affiche ensuite. Les boutons ❤️ et ✖️ font la même chose.
+- [ ] L'**étoile** dans le coin de la photo : grise → dorée (coup de cœur) → grise ; au-delà de 4 dans un ensemble,
+      la photo tremble et un message l'explique.
+- [ ] ⌫ efface le choix de la photo affichée, même ancienne : elle redevient « à trier ».
+- [ ] Les compteurs ⭐ x/4, ❤️+⭐, ✖️ et « à trier » suivent les choix.
+- [ ] « Imagettes » / « Photo par photo » bascule entre les deux modes à tout moment ; toucher une imagette
+      l'ouvre en grand ; toucher sa pastille change le choix.
+- [ ] Toucher deux fois la photo, pincer ou 🔍 : visionneuse ; on peut pincer et se déplacer ; ✕ pour fermer.
+- [ ] En fin d'ensemble : animation, résumé, « Ensemble suivant » / « Pause ».
 - [ ] La carte des ensembles se colorie (gris → bordure colorée → coche).
 - [ ] Le bouton « retour » du téléphone ramène à l'accueil sans quitter l'application.
 - [ ] Fermer l'onglet en plein tri puis rouvrir : « Continuer » reprend au bon endroit.
 - [ ] En mode avion : on peut continuer à trier ; le pied de page indique « Hors ligne » ; au retour du réseau,
       il repasse à « Tout est enregistré ».
 - [ ] Le mode sombre du téléphone est respecté.
-- [ ] « À propos » (en bas de l'accueil) affiche la licence et la marque CGExcel.
+- [ ] « Remettre la démo à zéro » (en bas de l'accueil) efface tout et relance la démonstration.
 
 Sur **PC** :
 
-- [ ] Touches ← → ↑ pour trier, Retour arrière pour annuler, Échap pour revenir à l'accueil.
-- [ ] Clic sur la photo : agrandissement qui suit la souris ; molette pour zoomer ; clic ou Échap pour fermer.
+- [ ] ← → pour défiler, ↑ je garde, ↓ je passe, E coup de cœur, Suppr effacer, G imagettes, Échap accueil.
+- [ ] Clic sur la photo (ou Entrée, ou 🔍) : visionneuse en plein écran ; les touches restent actives ;
+      clic pour zoomer (la photo suit la souris), molette pour régler ; Échap pour fermer.
 
 Avec `?latence=1500` : la photo suivante doit tout de même apparaître immédiatement (préchargement).
 
@@ -104,8 +108,8 @@ js/
   simulation.js       back-end simulé et photos factices (mode démonstration)
   images.js           miniatures par lots, préchargement, cache de l'appareil
   etat.js             calculs sur l'état du sélectionneur (fonctions pures, testées)
-  tri.js              manche 1 : tri éclair et grille de revue
-  zoom.js             agrandissement d'une photo
+  tri.js              manche 1 : examen d'un ensemble (photo par photo ou imagettes)
+  zoom.js             visionneuse plein écran
   ludique.js          carte des ensembles, jauge, badges, confettis
   stockage.js         accès protégé à localStorage
   tests/              tests (navigateur et Node)

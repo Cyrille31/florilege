@@ -4,7 +4,7 @@
 import { test, egal, vrai } from './mini_test.js';
 import {
   PASSE, GARDE, COEUR, photosDe, progressionEnsemble, progressionGlobale, indexProchaine,
-  ensembleAContinuer, peutMettreCoeur, appliquer, valeurSuivante,
+  ensembleAContinuer, peutMettreCoeur, appliquer, valeurSuivante, prochaineATrier, comptesEnsemble,
 } from '../etat.js';
 
 function etatExemple() {
@@ -70,10 +70,27 @@ test('limite des coups de cœur', () => {
   vrai(peutMettreCoeur(e, 'a', 'a1'), 'une photo déjà en coup de cœur le reste');
 });
 
-test('valeurSuivante dans la grille de revue', () => {
+test('valeurSuivante sur la pastille d\'une imagette', () => {
   egal(valeurSuivante(undefined, true), GARDE);
   egal(valeurSuivante(GARDE, true), COEUR);
   egal(valeurSuivante(GARDE, false), PASSE);
   egal(valeurSuivante(COEUR, true), PASSE);
-  egal(valeurSuivante(PASSE, true), GARDE);
+  egal(valeurSuivante(PASSE, true), null);
+});
+
+test('prochaineATrier repart du début si besoin', () => {
+  const e = etatExemple();
+  appliquer(e, { type: 'tri', photo_id: 'a2', valeur: PASSE });
+  egal(prochaineATrier(e, 'a', 0), 2);
+  egal(prochaineATrier(e, 'a', 2), 0);
+  appliquer(e, { type: 'tri', photo_id: 'a1', valeur: PASSE });
+  appliquer(e, { type: 'tri', photo_id: 'a3', valeur: PASSE });
+  egal(prochaineATrier(e, 'a', 0), -1);
+});
+
+test('comptesEnsemble', () => {
+  const e = etatExemple();
+  appliquer(e, { type: 'tri', photo_id: 'a1', valeur: COEUR });
+  appliquer(e, { type: 'tri', photo_id: 'a2', valeur: GARDE });
+  egal(comptesEnsemble(e, 'a'), { passes: 0, gardes: 1, coeurs: 1, nonTries: 1 });
 });

@@ -1,6 +1,8 @@
-// Florilège — affichage agrandi d'une photo.
+// Florilège — visionneuse : la photo en grand, en plein écran si l'appareil le permet.
 // Téléphone : pincer pour zoomer, glisser pour se déplacer, toucher deux fois pour basculer 1× / 2,5×.
-// PC : la photo suit la souris ; molette pour régler le zoom ; clic ou Échap pour fermer.
+// PC : clic pour zoomer (la photo suit alors la souris), nouveau clic pour revenir ; molette pour régler.
+// Les touches du clavier (photo précédente / suivante, choix) restent actives : l'écran appelant
+// met la visionneuse à jour avec changerPhoto() et majChoix().
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
 import { el } from './ludique.js';
@@ -8,16 +10,18 @@ import { el } from './ludique.js';
 const ZOOM_INITIAL = 2.5;
 const ZOOM_MAX = 6;
 
-export function ouvrirZoom(images, photoId, { x, y, souris = false } = {}) {
-  const img = el('img', { alt: 'Photo agrandie', draggable: 'false' });
-  const fermer = el('button', { class: 'btn-icone zoom-fermer', 'aria-label': 'Fermer l\'agrandissement' }, '✕');
-  const couche = el('div', { class: 'zoom', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Photo agrandie' }, img, fermer);
-  const precedent = document.activeElement;
+function pleinEcranPossible() {
+  return !!(document.documentElement.requestFullscreen && document.fullscreenEnabled);
+}
 
-  const mini = images.urlSiDisponible(photoId, 'mini');
-  const grande = images.urlSiDisponible(photoId, 'grande');
-  img.src = grande || mini || '';
-  if (!grande) images.grande(photoId, 0).then(url => { img.src = url; }).catch(() => {});
+export function ouvrirVisionneuse(images, photoId, { surFermeture } = {}) {
+  const img = el('img', { alt: 'Photo agrandie', draggable: 'false' });
+  const choix = el('span', { class: 'visionneuse-choix', 'aria-live': 'polite' });
+  const fermer = el('button', { class: 'btn-icone visionneuse-fermer', 'aria-label': 'Fermer (Échap)', title: 'Fermer (Échap)' }, '✕');
+  const couche = el('div', { class: 'zoom', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Photo agrandie' }, img, choix, fermer);
+  const precedent = document.activeElement;
+  let pleinEcranDemande = false;
+  let ferme = false;
 
   let s = 1;
   let tx = 0;
@@ -36,6 +40,12 @@ export function ouvrirZoom(images, photoId, { x, y, souris = false } = {}) {
   function appliquer() {
     borner();
     img.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+    couche.classList.toggle('zoome', s > 1.01);
+  }
+
+  function reinitialiser() {
+    s = 1; tx = 0; ty = 0;
+    appliquer();
   }
 
   // Zoome en gardant le point (px, py) de l'écran immobile.
@@ -49,28 +59,53 @@ export function ouvrirZoom(images, photoId, { x, y, souris = false } = {}) {
     appliquer();
   }
 
-  // Mode souris : la photo suit le curseur (bord droit de la photo visible quand le curseur est à droite).
+  // Souris : la photo suit le curseur (bord droit de la photo visible quand le curseur est à droite).
   function suivreSouris(px, py) {
     tx = -(px - L() / 2) * (s - 1);
     ty = -(py - H() / 2) * (s - 1);
     appliquer();
   }
 
+  function changerPhoto(id) {
+    photoId = id;
+    reinitialiser();
+    const grande = images.urlSiDisponible(id, 'grande');
+    img.src = grande || images.urlSiDisponible(id, 'mini') || '';
+    if (!grande) images.grande(id, 0).then(url => { if (photoId === id) img.src = url; }).catch(() => {});
+  }
+
+  function majChoix(texte) {
+    choix.textContent = texte || '';
+    choix.hidden = !texte;
+  }
+
   function detruire() {
+    if (ferme) return;
+    ferme = true;
     document.removeEventListener('keydown', clavier, true);
+    document.removeEventListener('fullscreenchange', surPleinEcran);
+    if (pleinEcranDemande && document.fullscreenElement) document.exitFullscreen().catch(() => {});
     couche.remove();
     precedent?.focus?.();
+    surFermeture?.();
+  }
+
+  // Quitter le plein écran (touche Échap du navigateur) ferme aussi la visionneuse.
+  function surPleinEcran() {
+    if (pleinEcranDemande && !document.fullscreenElement) detruire();
   }
 
   function clavier(e) {
-    if (e.key === 'Escape' || e.key === 'Backspace') {
+    if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
       detruire();
     }
   }
   document.addEventListener('keydown', clavier, true);
+  document.addEventListener('fullscreenchange', surPleinEcran);
   fermer.addEventListener('click', e => { e.stopPropagation(); detruire(); });
+  fermer.addEventListener('pointerdown', e => e.stopPropagation());
 
   // ---- gestes
   const pointeurs = new Map();
@@ -79,7 +114,6 @@ export function ouvrirZoom(images, photoId, { x, y, souris = false } = {}) {
   let dernierTap = 0;
 
   couche.addEventListener('pointerdown', e => {
-    if (e.target === fermer) return;
     couche.setPointerCapture(e.pointerId);
     pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointeurs.size === 2) {
@@ -124,11 +158,15 @@ export function ouvrirZoom(images, photoId, { x, y, souris = false } = {}) {
       && performance.now() - glisse.t0 < 350;
     glisse = null;
     if (!immobile) return;
-    if (e.pointerType === 'mouse') { detruire(); return; }
+    if (e.pointerType === 'mouse') {
+      if (s > 1.01) reinitialiser();
+      else { s = ZOOM_INITIAL; suivreSouris(e.clientX, e.clientY); }
+      return;
+    }
     const maintenant = performance.now();
     if (maintenant - dernierTap < 320) {
       dernierTap = 0;
-      if (s > 1.05) { s = 1; tx = 0; ty = 0; appliquer(); } else zoomerVers(ZOOM_INITIAL, e.clientX, e.clientY);
+      if (s > 1.01) reinitialiser(); else zoomerVers(ZOOM_INITIAL, e.clientX, e.clientY);
     } else {
       dernierTap = maintenant;
     }
@@ -142,13 +180,12 @@ export function ouvrirZoom(images, photoId, { x, y, souris = false } = {}) {
   }, { passive: false });
 
   document.body.append(couche);
+  changerPhoto(photoId);
+  majChoix('');
   fermer.focus();
-
-  // Ouverture directement zoomée sur le point touché ou cliqué.
-  if (x != null) {
-    if (souris) { s = ZOOM_INITIAL; suivreSouris(x, y); } else zoomerVers(ZOOM_INITIAL, x, y);
-  } else {
-    appliquer();
+  if (pleinEcranPossible()) {
+    pleinEcranDemande = true;
+    document.documentElement.requestFullscreen().catch(() => { pleinEcranDemande = false; });
   }
-  return { fermer: detruire };
+  return { fermer: detruire, changerPhoto, majChoix };
 }

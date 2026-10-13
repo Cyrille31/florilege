@@ -4,9 +4,10 @@
 import { CONFIG, modeDemo } from './config.js';
 import { backend, lireJeton, FileEvenements, chargerEtat, memoriserEtat, nouvelEvenement } from './api.js';
 import { ChargeurImages } from './images.js';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale, progressionEnsemble } from './etat.js';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js';
 import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js';
-import { ecranTri, ecranRevue } from './tri.js';
+import { ecranEnsemble } from './tri.js';
+import { supprimerStockage } from './stockage.js';
 
 const PHRASE_BAL = 'En échange, une seule chose vous est demandée, sur l\'honneur : faire une bonne action '
   + 'chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -52,13 +53,10 @@ const nav = {
     if (history.state?.ecran) history.back();
     else montrerAccueil();
   },
-  tri(ensembleId) {
-    entrer({ ecran: 'tri', ensembleId });
-    montrer(ecranTri(ctx, ensembleId, nav));
-  },
-  revue(ensembleId) {
-    entrer({ ecran: 'revue', ensembleId });
-    montrer(ecranRevue(ctx, ensembleId, nav));
+  // mode : 'photo' (photo par photo), 'grille' (imagettes) ; sans mode, le dernier utilisé.
+  ensemble(ensembleId, mode) {
+    entrer({ ecran: 'ensemble', ensembleId });
+    montrer(ecranEnsemble(ctx, ensembleId, nav, { mode }));
   },
 };
 
@@ -95,7 +93,29 @@ function entete() {
 function pied() {
   return el('footer', { class: 'pied' },
     indicateur,
-    el('button', { class: 'btn-lien', onclick: ouvrirAPropos }, 'À propos'));
+    el('span', {},
+      modeDemo() ? el('button', { class: 'btn-lien', onclick: razDemo }, 'Remettre la démo à zéro') : null,
+      el('button', { class: 'btn-lien', onclick: ouvrirAPropos }, 'À propos')));
+}
+
+// Démonstration uniquement : efface tous les choix simulés et relance.
+function razDemo() {
+  if (!confirm('Effacer tous les choix de la démonstration et recommencer ?')) return;
+  clearTimeout(minuteurMemo);
+  const cles = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const cle = localStorage.key(i);
+      if (cle.startsWith('florilege-') && cle !== 'florilege-mode') cles.push(cle);
+    }
+  } catch { /* stockage indisponible */ }
+  cles.forEach(supprimerStockage);
+  [`florilege-file-${ctx.jeton}`, `florilege-etat-${ctx.jeton}`, `florilege-demo-serveur-${ctx.jeton}`,
+    `florilege-badges-${ctx.jeton}`].forEach(supprimerStockage);
+  ctx.file.file = [];
+  const p = new URLSearchParams(location.search);
+  p.delete('reinit');
+  location.replace(`${location.pathname}${p.toString() ? `?${p}` : ''}`);
 }
 
 function montrerAccueil() {
@@ -108,14 +128,12 @@ function montrerAccueil() {
     const aContinuer = ensembleAContinuer(etat);
     const g = progressionGlobale(etat);
     contenu.push(aContinuer
-      ? el('button', { class: 'btn-principal grand', onclick: () => nav.tri(aContinuer) }, g.faits ? 'Continuer' : 'Commencer')
+      ? el('button', { class: 'btn-principal grand', onclick: () => nav.ensemble(aContinuer, 'photo') }, g.faits ? 'Continuer' : 'Commencer')
       : el('p', { class: 'tout-fini' }, '🌸 Tout est trié, merci ! Vous pouvez encore revoir vos choix.'));
     contenu.push(jaugeCollective(etat));
     contenu.push(rangeeBadges(etat));
     contenu.push(el('h2', {}, 'Vos ensembles'));
-    contenu.push(carteEnsembles(etat, ctx.images, id => {
-      if (progressionEnsemble(etat, id).statut === 'termine') nav.revue(id); else nav.tri(id);
-    }));
+    contenu.push(carteEnsembles(etat, ctx.images, id => nav.ensemble(id)));
   } else {
     contenu.push(jaugeCollective(etat));
   }

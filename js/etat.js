@@ -83,10 +83,34 @@ export function appliquer(etat, ev) {
   return etat;
 }
 
-// Valeur suivante quand on touche une miniature dans la grille de revue :
-// non trié → garde → coup de cœur → passe → garde… (le coup de cœur est sauté si la limite est atteinte).
+// Valeur suivante quand on touche la pastille d'une imagette :
+// non trié → garde → coup de cœur → passe → non trié (le coup de cœur est sauté si la limite est atteinte).
 export function valeurSuivante(valeur, coeurPossible) {
-  if (!estTrie(valeur) || valeur === PASSE) return GARDE;
+  if (!estTrie(valeur)) return GARDE;
   if (valeur === GARDE) return coeurPossible ? COEUR : PASSE;
-  return PASSE;
+  if (valeur === COEUR) return PASSE;
+  return null;
+}
+
+// Indice de la prochaine photo non triée après « apres » (en repartant du début si besoin), ou -1.
+export function prochaineATrier(etat, ensembleId, apres = -1) {
+  const photos = photosDe(etat, ensembleId);
+  for (let k = 1; k <= photos.length; k++) {
+    const i = (apres + k + photos.length) % photos.length;
+    if (!estTrie(etat.votes[photos[i].id])) return i;
+  }
+  return -1;
+}
+
+// Comptes d'un ensemble par choix : { passes, gardes, coeurs, nonTries }.
+export function comptesEnsemble(etat, ensembleId) {
+  const c = { passes: 0, gardes: 0, coeurs: 0, nonTries: 0 };
+  for (const p of photosDe(etat, ensembleId)) {
+    const v = etat.votes[p.id];
+    if (v === PASSE) c.passes++;
+    else if (v === GARDE) c.gardes++;
+    else if (v === COEUR) c.coeurs++;
+    else c.nonTries++;
+  }
+  return c;
 }

@@ -227,22 +227,24 @@ L'admin ouvre et ferme chaque phase. Quand une phase est fermée, l'interface de
 
 ### 7.2 Manche 1 — Tri éclair
 
-- Les photos d'un ensemble défilent **une par une, en grand**, en plein écran sur téléphone.
-- Trois choix :
+- Deux modes d'affichage, au choix à tout moment (que l'ensemble ait été examiné en entier ou non) : **photo par photo** et **imagettes**.
+- **Photo par photo** : la photo courante en grand ; les 3 photos précédentes et les 3 suivantes sont visibles de part et d'autre, de plus en plus petites et à moitié cachées. On peut **défiler en avant et en arrière sans rien valider**.
+- Gestes et commandes :
 
-| Choix | Téléphone | PC | Valeur |
+| Action | Téléphone | PC | Valeur |
 |---|---|---|---|
-| ✖️ Je passe | glisser à gauche, ou bouton | ← | 0 |
-| ❤️ Je garde | glisser à droite, ou bouton | → | 1 |
-| ⭐ Coup de cœur | glisser vers le haut, ou bouton | ↑ | 2 |
+| Photo précédente / suivante (sans valider) | glisser à droite / à gauche, ou boutons ‹ › | ← / → | — |
+| ❤️ Je garde | glisser vers le haut, ou bouton | ↑ | 1 |
+| ✖️ Je passe | glisser vers le bas, ou bouton | ↓ | 0 |
+| ⭐ Coup de cœur | étoile dans le coin de la photo (grise si non choisie, dorée si choisie) | E, ou clic sur l'étoile | 2 |
+| Effacer le choix (la photo redevient « à trier »), même longtemps après | bouton ⌫ | Suppr ou Retour arrière | vide |
+| Voir en grand | toucher deux fois, pincer, ou 🔍 | clic sur la photo, Entrée ou 🔍 (plein écran si possible) | — |
 
-- Le nombre de **coups de cœur est limité par ensemble** (paramètre, 4 par défaut) pour qu'ils gardent leur valeur. Un compteur l'affiche.
-- **Annuler** le dernier choix : bouton ↶, ou touche Retour arrière sur PC.
-- **Zoom** : toucher deux fois ou pincer sur téléphone, cliquer sur PC.
+- Après ❤️ ou ✖️, la photo suivante s'affiche ; le coup de cœur (et son retrait) ne fait pas avancer.
+- Le nombre de **coups de cœur est limité par ensemble** (paramètre, 4 par défaut) pour qu'ils gardent leur valeur. Des compteurs affichent : ⭐ utilisés / limite, ❤️+⭐ (photos gardées), ✖️, et le nombre de photos restant à trier.
 - **Préchargement** des 5 photos suivantes (voir 3.3) ; la miniature s'affiche instantanément, puis la version 1 080 px.
-- Une barre de progression dans l'ensemble (« 37 / 112 »).
-- En fin d'ensemble : une courte animation de félicitations, puis le choix « ensemble suivant » ou « pause ».
-- On peut **revoir et modifier** ses choix d'un ensemble terminé, sous forme de grille de miniatures avec un badge par photo.
+- En fin d'ensemble (dernière photo triée) : une courte animation de félicitations, puis le choix « ensemble suivant » ou « pause ».
+- **Imagettes** : grille de miniatures avec un badge par photo ; toucher une imagette l'ouvre en mode photo par photo, toucher son badge change le choix (· → ❤️ → ⭐ → ✖️ → ·).
 - Les choix sont acceptés à tout moment, même sans réseau (voir 7.4).
 
 ### 7.3 Manche 2 — Finale par duels

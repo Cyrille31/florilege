@@ -109,12 +109,17 @@ export function nouveauxBadges(etat, jeton) {
 
 export function rangeeBadges(etat) {
   const obtenus = new Set(badgesObtenus(etat).map(b => b.id));
-  return el('div', { class: 'badges', 'aria-label': 'Badges' },
-    BADGES.map(b => el('span', {
-      class: `badge${obtenus.has(b.id) ? ' obtenu' : ''}`,
-      title: b.titre,
-      'aria-label': `${b.titre}${obtenus.has(b.id) ? ' (obtenu)' : ' (à obtenir)'}`,
-    }, b.icone)));
+  return el('div', { class: 'badges' },
+    el('span', { class: 'badges-titre' }, `Mes badges (${obtenus.size}/${BADGES.length})`),
+    BADGES.map(b => {
+      const texte = `${b.icone} ${b.titre}${obtenus.has(b.id) ? ' : obtenu !' : ' : pas encore obtenu'}`;
+      return el('button', {
+        class: `badge${obtenus.has(b.id) ? ' obtenu' : ''}`,
+        title: texte,
+        'aria-label': texte,
+        onclick: () => notifier(texte),
+      }, b.icone);
+    }));
 }
 
 // ---------------------------------------------------------------- animations
