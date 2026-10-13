@@ -1,11 +1,11 @@
 // Florilège — tests du module etat.js.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { test, egal, vrai } from './mini_test.js?v=0.6.1';
+import { test, egal, vrai } from './mini_test.js?v=0.6.2';
 import {
   PASSE, GARDE, COEUR, photosDe, progressionEnsemble, progressionGlobale, indexProchaine,
-  ensembleAContinuer, peutMettreCoeur, appliquer, valeurSuivante, prochaineATrier, comptesEnsemble,
-} from '../etat.js?v=0.6.1';
+  ensembleAContinuer, peutMettreCoeur, appliquer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
+} from '../etat.js?v=0.6.2';
 
 function etatExemple() {
   return {
@@ -93,4 +93,16 @@ test('comptesEnsemble', () => {
   appliquer(e, { type: 'tri', photo_id: 'a1', valeur: COEUR });
   appliquer(e, { type: 'tri', photo_id: 'a2', valeur: GARDE });
   egal(comptesEnsemble(e, 'a'), { passes: 0, gardes: 1, coeurs: 1, nonTries: 1 });
+});
+
+test('valeurApresFleche : échelle ✖️ ↔ ❤️ ↔ ⭐', () => {
+  egal(valeurApresFleche(undefined, true, true), GARDE);
+  egal(valeurApresFleche(PASSE, true, true), GARDE);
+  egal(valeurApresFleche(GARDE, true, true), COEUR);
+  egal(valeurApresFleche(GARDE, true, false), GARDE);
+  egal(valeurApresFleche(COEUR, true, true), COEUR);
+  egal(valeurApresFleche(undefined, false, true), PASSE);
+  egal(valeurApresFleche(COEUR, false, true), GARDE);
+  egal(valeurApresFleche(GARDE, false, true), PASSE);
+  egal(valeurApresFleche(PASSE, false, true), PASSE);
 });

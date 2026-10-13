@@ -9,12 +9,12 @@
 
 import {
   PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
-  ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble,
-} from './etat.js?v=0.6.1';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.6.1';
-import { ouvrirVisionneuse } from './zoom.js?v=0.6.1';
-import { CONFIG } from './config.js?v=0.6.1';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.6.1';
+  ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
+} from './etat.js?v=0.6.2';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.6.2';
+import { ouvrirVisionneuse } from './zoom.js?v=0.6.2';
+import { CONFIG } from './config.js?v=0.6.2';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.6.2';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };
@@ -141,6 +141,8 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         defiler: (sens, distance) => vue?.defiler?.(sens, distance),
         garder: () => vue?.choisir?.(GARDE),
         passer: () => vue?.choisir?.(PASSE),
+        haut: () => vue?.choisir?.(GARDE, true),
+        bas: () => vue?.choisir?.(PASSE, true),
         etoile: () => basculerEtoile(),
       },
     });
@@ -411,9 +413,22 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     }
 
     // ❤️ ou ✖️ : on enregistre ; on passe à la suivante seulement si l'option est cochée.
-    function choisir(valeur) {
+    // fleche : true pour une flèche ou un geste (échelle ✖️ ↔ ❤️ ↔ ⭐, voir valeurApresFleche),
+    // false pour les boutons ❤️ et ✖️ (valeur directe).
+    function choisir(valeur, fleche = false) {
       if (fin || !ordre.length) return;
       const i = cur;
+      if (fleche) {
+        const actuelle = etat.votes[photos[i].id];
+        const coeurPossible = peutMettreCoeur(etat, ensembleId, photos[i].id);
+        valeur = valeurApresFleche(actuelle, valeur === GARDE, coeurPossible);
+        if (actuelle === GARDE && valeur === GARDE) {
+          secouer(cartes.get(i));
+          notifier(`Déjà ${max} coups de cœur dans cet ensemble : retirez-en un pour en donner un autre.`);
+          return;
+        }
+        if (valeur === actuelle) return; // déjà en haut (⭐) ou en bas (✖️) de l'échelle
+      }
       voter(i, valeur);
       const carte = cartes.get(i);
       if (carte) {
@@ -529,8 +544,8 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       const s = Math.min(110, scene.clientHeight * 0.2);
       const lance = Math.abs(g.dy) / Math.max(duree, 1) > 0.6;
       remettreCentre();
-      if (g.dy < -s || (lance && g.dy < -40)) choisir(GARDE);
-      else if (g.dy > s || (lance && g.dy > 40)) choisir(PASSE);
+      if (g.dy < -s || (lance && g.dy < -40)) choisir(GARDE, true);
+      else if (g.dy > s || (lance && g.dy > 40)) choisir(PASSE, true);
     }
     scene.addEventListener('pointerup', finGeste);
     scene.addEventListener('pointercancel', finGeste);
@@ -570,8 +585,8 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         const actions = {
           ArrowLeft: () => allerPos(pos - 1),
           ArrowRight: () => allerPos(pos + 1),
-          ArrowUp: () => choisir(GARDE),
-          ArrowDown: () => choisir(PASSE),
+          ArrowUp: () => choisir(GARDE, true),
+          ArrowDown: () => choisir(PASSE, true),
           e: () => { if (ordre.length && !basculerEtoile()) secouer(cartes.get(cur)); },
           '*': () => ordre.length && basculerEtoile(),
           Delete: () => ordre.length && effacer(),

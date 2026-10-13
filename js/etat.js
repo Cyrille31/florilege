@@ -114,3 +114,16 @@ export function comptesEnsemble(etat, ensembleId) {
   }
   return c;
 }
+
+// Flèche (ou geste) vers le haut ou vers le bas : on monte ou on descend d'un cran sur l'échelle
+// ✖️ ↔ ❤️ ↔ ⭐. Une photo non triée devient ❤️ (haut) ou ✖️ (bas).
+// Si le coup de cœur n'est pas possible (limite atteinte), la valeur ne change pas.
+export function valeurApresFleche(valeur, versLeHaut, coeurPossible) {
+  if (versLeHaut) {
+    if (valeur === GARDE) return coeurPossible ? COEUR : GARDE;
+    if (valeur === COEUR) return COEUR;
+    return GARDE;
+  }
+  if (valeur === COEUR) return GARDE;
+  return PASSE;
+}

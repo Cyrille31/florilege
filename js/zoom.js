@@ -6,7 +6,7 @@
 // L'écran appelant fournit les actions et met la visionneuse à jour avec changerPhoto() et maj().
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el } from './ludique.js?v=0.6.1';
+import { el } from './ludique.js?v=0.6.2';
 
 const ZOOM_INITIAL = 2.5;
 const ZOOM_MAX = 6;
@@ -15,7 +15,8 @@ function pleinEcranPossible() {
   return !!(document.documentElement.requestFullscreen && document.fullscreenEnabled);
 }
 
-// actions : { defiler(sens, distance), garder(), passer(), etoile() }
+// actions : { defiler(sens, distance), garder(), passer(), haut(), bas(), etoile() }
+// (garder / passer : boutons ❤️ ✖️ ; haut / bas : gestes, qui montent ou descendent d'un cran)
 export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {}, ratio } = {}) {
   const img = el('img', { alt: 'Photo agrandie', draggable: 'false' });
   // Cadre aux proportions de la photo : il porte le pourtour de couleur du choix.
@@ -185,7 +186,7 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
       if (e.pointerType === 'mouse' || s > 1.01) return;
       appliquer();
       if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) actions.defiler?.(dx < 0 ? 1 : -1, Math.abs(dx));
-      else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 60) (dy < 0 ? actions.garder : actions.passer)?.();
+      else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 60) (dy < 0 ? actions.haut : actions.bas)?.();
       return;
     }
     if (e.pointerType === 'mouse') {

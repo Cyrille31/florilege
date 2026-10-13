@@ -309,7 +309,7 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
 .defil:not(.centre)[data-valeur="2"] .cadre { box-shadow: 0 0 0 4px var(--jaune); }
 .defil:not(.centre)[data-valeur="0"] .cadre { box-shadow: 0 0 0 4px #8a9590; }
 .defil[data-valeur="0"] img { opacity: .55; filter: grayscale(.8); }
-.defil.centre[data-valeur="0"] img { opacity: .8; filter: grayscale(.5); }
+.defil.centre[data-valeur="0"] img { opacity: .75; filter: grayscale(1); }
 
 /* Pastille du choix (· / ❤️ / ✖️) en haut à gauche : la toucher change le choix. */
 .choix {
@@ -515,6 +515,7 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
 .zoom-cadre[data-valeur="1"] { box-shadow: 0 0 0 6px var(--rouge); }
 .zoom-cadre[data-valeur="2"] { box-shadow: 0 0 0 6px var(--jaune); }
 .zoom-cadre[data-valeur="0"] { box-shadow: 0 0 0 6px #8a9590; }
+.zoom-cadre[data-valeur="0"] img { opacity: .75; filter: grayscale(1); }
 .zoom img {
   width: 100%; height: 100%;
   object-fit: contain;

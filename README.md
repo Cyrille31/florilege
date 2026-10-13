@@ -68,7 +68,7 @@ Sur **téléphone** (Android et iPhone si possible) :
 - [ ] « Commencer » ouvre le premier ensemble en mode « Une à une » ; les photos voisines sont visibles de part et d'autre.
 - [ ] Glisser à **gauche / droite** fait défiler sans rien valider (ou boutons ‹ ›) : jusqu'à 4 cm (rapide ou lent),
       une seule photo ; au-delà, 2 photos ; plusieurs grands gestes de suite, 5 photos.
-- [ ] Glisser vers le **haut** = ❤️ je garde, vers le **bas** = ✖️ je passe (un tampon apparaît pendant le geste) ;
+- [ ] Glisser vers le **haut** = ❤️ je garde (et sur un ❤️ : ⭐), vers le **bas** = ✖️ je passe (et sur un ⭐ : ❤️) (un tampon apparaît pendant le geste) ;
       la photo reste affichée, sauf si la case « Passer à la photo suivante… » est cochée.
 - [ ] Le **pourtour** de la photo prend la couleur du choix (rouge, doré, gris).
 - [ ] L'**étoile** dans le coin : grise → dorée (coup de cœur) → grise ; au-delà de 4 dans un ensemble,
@@ -110,6 +110,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.6.2 | Flèches et gestes haut / bas : échelle ✖️ ↔ ❤️ ↔ ⭐ (haut sur ❤️ donne ⭐, bas sur ⭐ redonne ❤️) ; photo écartée grisée, aussi en plein écran. |
 | 0.6.1 | Les flèches du clavier marchent de nouveau après avoir coché « Passer à la photo suivante » ; pourtour de couleur aussi dans la visionneuse plein écran. |
 | 0.6.0 | Visionneuse plein écran : gestes, flèches, barre de boutons et compteur ⭐ / ❤️+⭐ ; défilement selon la longueur du geste (≤ 4 cm : 1 photo, plus : 2, plusieurs grands gestes de suite : 5). |
 | 0.5.0 | Numéro de version affiché ; rechargement forcé des fichiers à chaque version. |

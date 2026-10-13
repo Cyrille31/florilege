@@ -244,6 +244,7 @@ L'admin ouvre et ferme chaque phase. Quand une phase est fermée, l'interface de
 
 - **Visionneuse plein écran** : les mêmes commandes y restent disponibles (sans zoom : glisser gauche / droite / haut / bas ; flèches du clavier ; barre de boutons ✖️ ‹ ⭐ › ❤️), avec en haut le choix de la photo et un petit compteur ⭐ x/4 · ❤️+⭐ ; la photo y garde son pourtour de couleur.
 
+- Flèches et gestes haut / bas font monter ou descendre d'un cran sur l'échelle ✖️ ↔ ❤️ ↔ ⭐ : haut sur un ❤️ donne ⭐, bas sur un ⭐ redonne ❤️ ; les boutons ❤️ et ✖️ donnent directement leur valeur. Une photo écartée est grisée, y compris en plein écran.
 - Par défaut, la photo reste affichée après un choix ; une case « Passer à la photo suivante après ❤️ ou ✖️ » (mémorisée sur l'appareil) permet d'avancer automatiquement.
 - Le nombre de **coups de cœur est limité par ensemble** (paramètre, 4 par défaut) pour qu'ils gardent leur valeur. Des compteurs affichent : ⭐ utilisés / limite, ❤️+⭐ (photos gardées), ✖️, et le nombre de photos restant à trier.
 - **Préchargement** des 5 photos suivantes (voir 3.3) ; la miniature s'affiche instantanément, puis la version 1 080 px.
