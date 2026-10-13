@@ -504,10 +504,21 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
   animation: apparait .2s;
 }
 .zoom.zoome { cursor: zoom-out; }
+.zoom { display: grid; place-items: center; container-type: size; }
+.zoom-cadre {
+  --ratio: 4 / 3;
+  width: min(calc(100cqw - 16px), calc((100cqh - 16px) * var(--ratio)));
+  aspect-ratio: var(--ratio);
+  transform-origin: center;
+}
+/* Pourtour de couleur selon le choix, comme en mode photo. */
+.zoom-cadre[data-valeur="1"] { box-shadow: 0 0 0 6px var(--rouge); }
+.zoom-cadre[data-valeur="2"] { box-shadow: 0 0 0 6px var(--jaune); }
+.zoom-cadre[data-valeur="0"] { box-shadow: 0 0 0 6px #8a9590; }
 .zoom img {
   width: 100%; height: 100%;
   object-fit: contain;
-  transform-origin: center;
+  display: block;
   user-select: none;
   -webkit-user-select: none;
   pointer-events: none;

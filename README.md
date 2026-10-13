@@ -110,6 +110,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.6.1 | Les flèches du clavier marchent de nouveau après avoir coché « Passer à la photo suivante » ; pourtour de couleur aussi dans la visionneuse plein écran. |
 | 0.6.0 | Visionneuse plein écran : gestes, flèches, barre de boutons et compteur ⭐ / ❤️+⭐ ; défilement selon la longueur du geste (≤ 4 cm : 1 photo, plus : 2, plusieurs grands gestes de suite : 5). |
 | 0.5.0 | Numéro de version affiché ; rechargement forcé des fichiers à chaque version. |
 | 0.4.0 | Défilement : un geste court (1 à 2 cm) ne passe qu'une photo ; inertie plus douce. |

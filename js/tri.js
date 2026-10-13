@@ -10,11 +10,11 @@
 import {
   PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble,
-} from './etat.js?v=0.6.0';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.6.0';
-import { ouvrirVisionneuse } from './zoom.js?v=0.6.0';
-import { CONFIG } from './config.js?v=0.6.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.6.0';
+} from './etat.js?v=0.6.1';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.6.1';
+import { ouvrirVisionneuse } from './zoom.js?v=0.6.1';
+import { CONFIG } from './config.js?v=0.6.1';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.6.1';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };
@@ -30,6 +30,7 @@ const MODES = [
 ];
 
 const estRetenue = v => v === GARDE || v === COEUR;
+const ratioDe = p => `${p.largeur} / ${p.hauteur}`;
 
 function badgeDe(v) {
   return v === PASSE ? SYMBOLES[PASSE] : estRetenue(v) ? SYMBOLES[GARDE] : '·';
@@ -125,6 +126,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     const c = comptesEnsemble(etat, ensembleId);
     return {
       choix: TEXTES[v] || 'À trier',
+      valeur: estTrie(v) ? v : null,
       coeur: v === COEUR,
       compteur: `⭐ ${c.coeurs}/${max} · ❤️+⭐ ${c.gardes + c.coeurs}`,
     };
@@ -133,6 +135,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   function ouvrirGrand() {
     if (visionneuse || !photos.length) return;
     visionneuse = ouvrirVisionneuse(images, photos[cur].id, {
+      ratio: ratioDe(photos[cur]),
       surFermeture: () => { visionneuse = null; },
       actions: {
         defiler: (sens, distance) => vue?.defiler?.(sens, distance),
@@ -347,7 +350,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       if (!leger) precharger();
       actualiserEntete();
       if (visionneuse) {
-        visionneuse.changerPhoto(photos[cur].id);
+        visionneuse.changerPhoto(photos[cur].id, ratioDe(photos[cur]));
         visionneuse.maj(etatVisionneuse());
       }
       return true;
@@ -560,7 +563,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
           const avant = cur;
           calculerOrdre();
           placer();
-          if (cur !== avant && visionneuse && ordre.length) visionneuse.changerPhoto(photos[cur].id);
+          if (cur !== avant && visionneuse && ordre.length) visionneuse.changerPhoto(photos[cur].id, ratioDe(photos[cur]));
         }
       },
       clavier(e) {
@@ -683,7 +686,8 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       if (fin) fermerFin(); else nav.accueil();
       return;
     }
-    if (fin || e.target.closest?.('input, textarea')) return;
+    // Dans une zone de texte, les touches servent à écrire (une case à cocher ne bloque rien).
+    if (fin || e.target.closest?.('textarea, input:not([type="checkbox"])')) return;
     // Entrée ou espace sur un bouton : laisser le bouton agir.
     if ((e.key === 'Enter' || e.key === ' ') && e.target.closest?.('button')) return;
     const touche = e.key.toLowerCase();

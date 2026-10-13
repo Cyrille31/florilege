@@ -6,7 +6,7 @@
 // L'écran appelant fournit les actions et met la visionneuse à jour avec changerPhoto() et maj().
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el } from './ludique.js?v=0.6.0';
+import { el } from './ludique.js?v=0.6.1';
 
 const ZOOM_INITIAL = 2.5;
 const ZOOM_MAX = 6;
@@ -16,8 +16,10 @@ function pleinEcranPossible() {
 }
 
 // actions : { defiler(sens, distance), garder(), passer(), etoile() }
-export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {} } = {}) {
+export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {}, ratio } = {}) {
   const img = el('img', { alt: 'Photo agrandie', draggable: 'false' });
+  // Cadre aux proportions de la photo : il porte le pourtour de couleur du choix.
+  const cadre = el('div', { class: 'zoom-cadre' }, img);
   const choix = el('span', { class: 'visionneuse-choix', 'aria-live': 'polite' });
   const compteur = el('span', { class: 'visionneuse-compteur' });
   const fermer = el('button', { class: 'btn-icone visionneuse-fermer', 'aria-label': 'Fermer (Échap)', title: 'Fermer (Échap)' }, '✕');
@@ -30,7 +32,7 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {} 
     bouton('›', 'Photo suivante (→)', () => actions.defiler?.(1, 0), 'fleche'),
     bouton('❤️', 'Je garde (↑)', actions.garder));
   const couche = el('div', { class: 'zoom', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Photo agrandie' },
-    img, el('div', { class: 'visionneuse-haut' }, choix, compteur), fermer, barre);
+    cadre, el('div', { class: 'visionneuse-haut' }, choix, compteur), fermer, barre);
   for (const b of [fermer, ...barre.children]) b.addEventListener('pointerdown', e => e.stopPropagation());
   const precedent = document.activeElement;
   let pleinEcranDemande = false;
@@ -52,7 +54,7 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {} 
 
   function appliquer() {
     borner();
-    img.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+    cadre.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
     couche.classList.toggle('zoome', s > 1.01);
   }
 
@@ -79,16 +81,18 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {} 
     appliquer();
   }
 
-  function changerPhoto(id) {
+  function changerPhoto(id, ratio) {
     photoId = id;
+    if (ratio) cadre.style.setProperty('--ratio', ratio);
     reinitialiser();
     const grande = images.urlSiDisponible(id, 'grande');
     img.src = grande || images.urlSiDisponible(id, 'mini') || '';
     if (!grande) images.grande(id, 0).then(url => { if (photoId === id) img.src = url; }).catch(() => {});
   }
 
-  // etat : { choix: texte, coeur: booléen, compteur: texte }
-  function maj({ choix: texte, coeur, compteur: tc } = {}) {
+  // etat : { choix: texte, valeur: 0|1|2|null, coeur: booléen, compteur: texte }
+  function maj({ choix: texte, valeur, coeur, compteur: tc } = {}) {
+    if (valeur !== undefined) cadre.dataset.valeur = valeur ?? '';
     if (texte !== undefined) { choix.textContent = texte || ''; choix.hidden = !texte; }
     if (coeur !== undefined) etoile.classList.toggle('doree', !!coeur);
     if (tc !== undefined) compteur.textContent = tc;
@@ -159,7 +163,7 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {} 
     } else if (glisse && e.pointerType !== 'mouse') {
       if (s <= 1.01) {
         // Sans zoom : la photo suit un peu le doigt, pour montrer le geste (défiler ou choisir).
-        img.style.transform = `translate(${(e.clientX - glisse.x) * 0.6}px, ${(e.clientY - glisse.y) * 0.6}px)`;
+        cadre.style.transform = `translate(${(e.clientX - glisse.x) * 0.6}px, ${(e.clientY - glisse.y) * 0.6}px)`;
         return;
       }
       tx = glisse.tx + e.clientX - glisse.x;
@@ -206,7 +210,7 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {} 
   }, { passive: false });
 
   document.body.append(couche);
-  changerPhoto(photoId);
+  changerPhoto(photoId, ratio);
   maj({ choix: '' });
   fermer.focus();
   if (pleinEcranPossible()) {

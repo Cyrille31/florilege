@@ -4,7 +4,7 @@
 // la reprise après fermeture de l'onglet.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.6.0';
+import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.6.1';
 
 const parametres = new URLSearchParams(location.search);
 // Latence simulée d'une requête (ms), pour juger l'effet du préchargement : ?latence=800
