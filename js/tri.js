@@ -22,6 +22,7 @@ const VOISINS = 3;
 const ECHELLES = [1, 0.55, 0.4, 0.3]; // taille des photos selon leur distance à la photo centrale
 const CLE_MODE = 'florilege-mode';
 const CLE_AVANCE = 'florilege-avance-auto';
+const CM = 38; // un centimètre à l'écran, en pixels CSS (96 px par pouce)
 const MODES = [
   { id: 'photo', icone: '▢', libelle: 'Une à une', titre: 'Toutes les photos, une à une' },
   { id: 'retenues', icone: '❤️', libelle: 'Retenues', titre: 'Seulement les photos gardées (❤️ et ⭐)' },
@@ -483,15 +484,18 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         const b = g.traces[g.traces.length - 1];
         const v = (b.x - a.x) / Math.max(b.t - a.t, 1);
         const sens = g.dx < 0 ? 1 : -1;
-        if (Math.abs(v) > 0.5 && Math.sign(v) === Math.sign(g.dx)) {
-          const nombre = Math.max(1, Math.min(40, Math.round((Math.abs(v) - 0.4) * 6)));
-          if (nombre > 1) { lancerInertie(sens, nombre); return; }
-          allerPos(pos + sens);
+        const distance = Math.abs(g.dx);
+        const lance = Math.abs(v) > 0.3 && Math.sign(v) === Math.sign(g.dx);
+        // Geste court (moins d'environ 2 cm) : une seule photo, quelle que soit la vitesse.
+        if (distance < CM * 2) {
+          if (distance > CM * 0.8 || (lance && distance > 15)) allerPos(pos + sens);
+          else placer();
           return;
         }
-        const s = Math.min(90, scene.clientWidth * 0.18);
-        if (Math.abs(g.dx) > s) allerPos(pos + sens);
-        else placer();
+        // Geste long et vif : plusieurs photos, avec ralentissement.
+        const nombre = lance ? Math.min(25, 1 + Math.round(Math.max(0, Math.abs(v) - 0.8) * 3)) : 1;
+        if (nombre > 1) lancerInertie(sens, nombre);
+        else allerPos(pos + sens);
         return;
       }
       const s = Math.min(110, scene.clientHeight * 0.2);

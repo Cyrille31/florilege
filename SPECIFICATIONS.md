@@ -228,7 +228,7 @@ L'admin ouvre et ferme chaque phase. Quand une phase est fermée, l'interface de
 ### 7.2 Manche 1 — Tri éclair
 
 - Trois modes d'affichage, au choix à tout moment (que l'ensemble ait été examiné en entier ou non) : **une à une**, **retenues** (comme « une à une », mais seules les photos gardées ❤️ ou ⭐ restent affichées) et **imagettes**.
-- **Une à une** : la photo courante en grand ; les 3 photos précédentes et les 3 suivantes sont visibles de part et d'autre, de plus en plus petites et à moitié cachées. On peut **défiler en avant et en arrière sans rien valider**. Un geste rapide fait défiler plusieurs photos d'un coup, avec un ralentissement progressif, d'autant plus loin que le geste est vif.
+- **Une à une** : la photo courante en grand ; les 3 photos précédentes et les 3 suivantes sont visibles de part et d'autre, de plus en plus petites et à moitié cachées. On peut **défiler en avant et en arrière sans rien valider**. Un geste court (moins de 2 cm environ) passe une seule photo ; un geste long et vif en fait défiler plusieurs, avec un ralentissement progressif.
 - Un **pourtour de couleur** indique le choix (rouge : gardée, doré : coup de cœur, gris : écartée), en mode photo comme en imagettes.
 - Gestes et commandes :
 

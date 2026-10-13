@@ -66,7 +66,7 @@ Sur **téléphone** (Android et iPhone si possible) :
 
 - [ ] L'accueil dit « Bonjour Marie ! » ; les ronds 🌱 🌿 🌸 sont les badges (les toucher affiche leur signification).
 - [ ] « Commencer » ouvre le premier ensemble en mode « Une à une » ; les photos voisines sont visibles de part et d'autre.
-- [ ] Glisser à **gauche / droite** fait défiler sans rien valider (ou boutons ‹ ›) ; un geste **rapide** fait
+- [ ] Glisser à **gauche / droite** fait défiler sans rien valider (ou boutons ‹ ›) ; un geste court (1 à 2 cm) passe une seule photo ; un geste **long et vif** fait
       défiler plusieurs photos avec un ralentissement, d'autant plus loin que le geste est vif.
 - [ ] Glisser vers le **haut** = ❤️ je garde, vers le **bas** = ✖️ je passe (un tampon apparaît pendant le geste) ;
       la photo reste affichée, sauf si la case « Passer à la photo suivante… » est cochée.
