@@ -128,8 +128,10 @@ Photos famille/                       (exemple de nom)
   chemin relatif (par exemple `2001/Vacances`), « Choix » vaut `cœur`, `étoile`, `x` ou `non classé`.
   Quand un testeur change d'avis, sa ligne est mise à jour (pas de doublon).
 
-> Sans lien personnel, toute personne qui connaît l'adresse de l'application peut voir les photos (les pages ne sont
-> pas référencées par les moteurs de recherche). Un mot de passe commun pourra être ajouté si besoin.
+> **Mot de passe commun** : à définir dans le Google Sheet par **Florilège → Définir le mot de passe commun…**
+> (il est gardé dans les propriétés privées du script, jamais dans le dépôt GitHub, qui est public). Les testeurs le
+> saisissent une fois avec leur prénom ; il est ensuite mémorisé sur leur appareil. Majuscules et espaces en trop ne
+> comptent pas. Sans mot de passe défini, toute personne qui connaît l'adresse de l'application peut voir les photos.
 
 ### 1. Créer les photos allégées (sur le PC)
 
@@ -177,8 +179,9 @@ de `Code.gs` (`REGLAGES`).
 
 ### 4. Inviter les testeurs
 
-Envoyer simplement l'adresse de l'application (`https://cyrille31.github.io/florilege/`). Chacun donne son prénom
-et commence ; « Ce n'est pas moi », à côté du « Bonjour … ! », permet de changer de nom sur un appareil partagé.
+1. **Florilège → Définir le mot de passe commun…** (recommandé).
+2. Envoyer l'adresse de l'application (`https://cyrille31.github.io/florilege/`) et le mot de passe. Chacun donne son
+   prénom (et le mot de passe la première fois) et commence ; « Ce n'est pas moi », à côté du « Bonjour … ! », permet de changer de nom sur un appareil partagé.
 
 ### Essais à faire
 
@@ -189,6 +192,7 @@ et commence ; « Ce n'est pas moi », à côté du « Bonjour … ! », permet d
 - [ ] Ouvrir l'application sur le PC, donner son prénom, trier quelques photos : les lignes apparaissent dans la
       feuille Choix (envoi toutes les 10 actions, toutes les 15 secondes, ou en quittant la page).
 - [ ] Ouvrir l'application sur le téléphone avec le même prénom : on retrouve ses choix.
+- [ ] Après avoir défini le mot de passe : un mauvais mot de passe est refusé, le bon est mémorisé sur l'appareil.
 - [ ] Changer d'avis sur une photo : sa ligne est mise à jour, pas dupliquée ; ⌫ la passe à « non classé ».
 - [ ] **Fluidité en 4G** : ajouter `?diag=1` à l'adresse, trier une vingtaine de photos et me transmettre les chiffres
       du panneau vert (moyenne, médiane, maximum pour `etat`, `miniatures`, `image`).
@@ -211,6 +215,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.9.1 | Mot de passe commun, défini depuis le menu du Google Sheet et demandé une fois aux testeurs. |
 | 0.9.0 | Fonctionnement simplifié : identification par le prénom, une seule feuille « Choix » (une ligne par photo et par testeur), ensembles = dossiers d'année, liste des photos tirée des dossiers `-allégé` ; script `prep/reduire_photos.py` de création des photos allégées, relançable. |
 | 0.8.1 | Création des photos de test relançable (les images déjà créées sont réutilisées) ; rappel d'ouvrir la manche 1. |
 | 0.8.0 | Jalon 2 : script Apps Script (API, images servies depuis Drive, menu Florilège), connexion de l'application au serveur, reprise multi-appareils, journal des erreurs, diagnostic `?diag=1`, nouvel essai automatique en cas d'échec réseau. |

@@ -126,6 +126,7 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
   font-size: 1.2rem;
 }
 .identification input:focus { outline: none; border-color: var(--vert); }
+.identification input + input { margin-top: 10px; }
 .phrase { margin: 0; color: var(--texte-doux); font-size: 1.05rem; }
 .tout-fini { padding: 16px; border-radius: var(--rayon); background: var(--surface); box-shadow: var(--ombre); text-align: center; margin: 18px 0; }
 
@@ -200,6 +201,7 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
   font-size: .85rem; color: var(--texte-doux);
 }
 .version { color: var(--texte-doux); opacity: .8; }
+.synchro:not(:empty)::after { content: ' · '; color: var(--texte-doux); }
 .synchro[data-statut="attente"] { color: #b7791f; }
 .synchro[data-statut="horsligne"] { color: var(--rouge); }
 

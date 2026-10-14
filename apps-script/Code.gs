@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.9.0';
+const VERSION = '0.9.1';
 
 // Réglages (modifiables ici).
 const REGLAGES = {
@@ -219,6 +219,33 @@ function contenuDriveApp(idDossier) {
   return res;
 }
 
+// ============================================================================ mot de passe commun
+// Gardé dans les propriétés privées du script (jamais dans le dépôt GitHub, qui est public).
+// Majuscules et espaces en trop ne comptent pas.
+
+function normaliserMotDePasse(mdp) {
+  return String(mdp || '').normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function definirMotDePasse() {
+  const ui = SpreadsheetApp.getUi();
+  const proprietes = PropertiesService.getScriptProperties();
+  const actuel = proprietes.getProperty('mot_de_passe');
+  const rep = ui.prompt('Mot de passe commun',
+    `${actuel ? 'Un mot de passe est déjà défini.' : 'Aucun mot de passe pour l\'instant : l\'application est ouverte à tous.'}\n\n`
+    + 'Nouveau mot de passe à communiquer aux testeurs (laisser vide pour supprimer le mot de passe) :',
+    ui.ButtonSet.OK_CANCEL);
+  if (rep.getSelectedButton() !== ui.Button.OK) return;
+  const mdp = normaliserMotDePasse(rep.getResponseText());
+  if (mdp) {
+    proprietes.setProperty('mot_de_passe', mdp);
+    ui.alert('Florilège', `Mot de passe enregistré : « ${mdp} ».\nLes testeurs le saisiront une fois, avec leur prénom.`, ui.ButtonSet.OK);
+  } else {
+    proprietes.deleteProperty('mot_de_passe');
+    ui.alert('Florilège', 'Mot de passe supprimé : l\'application est ouverte à toute personne qui en connaît l\'adresse.', ui.ButtonSet.OK);
+  }
+}
+
 // ============================================================================ API web
 
 function repondre(objet) {
@@ -237,6 +264,10 @@ function doPost(e) {
     return repondre({ erreur: 'Requête illisible.' });
   }
   try {
+    const attendu = PropertiesService.getScriptProperties().getProperty('mot_de_passe');
+    if (attendu && normaliserMotDePasse(requete.mdp) !== attendu) {
+      return repondre({ erreur: requete.mdp ? 'Mot de passe incorrect.' : 'Indiquez le mot de passe commun.', code: 'mdp' });
+    }
     const testeur = String(requete.testeur || '').normalize('NFC').trim().replace(/\s+/g, ' ');
     if (!testeur || testeur.length > 60) return repondre({ erreur: 'Indiquez votre nom pour commencer.', code: 'nom' });
     switch (requete.action) {
@@ -399,6 +430,8 @@ function onOpen() {
     .addItem('Mettre à jour la liste des photos', 'mettreAJourListe')
     .addItem('Recommencer la mise à jour depuis le début', 'recommencerListe')
     .addSeparator()
+    .addItem('Définir le mot de passe commun…', 'definirMotDePasse')
+    .addSeparator()
     .addItem('À propos', 'aPropos')
     .addToUi();
 }
@@ -414,7 +447,8 @@ function aPropos() {
   const liste = listePhotos();
   ui.alert('Florilège',
     `Florilège ${VERSION} — sélection collective de photos.\n`
-    + `Liste des photos : ${liste.photos.length} photos${liste.date ? ` (mise à jour le ${liste.date})` : ''}.\n\n`
+    + `Liste des photos : ${liste.photos.length} photos${liste.date ? ` (mise à jour le ${liste.date})` : ''}.\n`
+    + `Mot de passe commun : ${PropertiesService.getScriptProperties().getProperty('mot_de_passe') ? 'défini' : 'aucun (accès libre)'}.\n\n`
     + 'Un logiciel CGExcel (cgexcel.wordpress.com) — © 2026 Cyrille Gindre.\n'
     + 'Licence MIT + BAL 1.0 (Bonne Action License). En échange, une seule chose vous est demandée, sur l\'honneur : '
     + 'faire une bonne action chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.',

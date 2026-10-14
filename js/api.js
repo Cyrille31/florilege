@@ -4,10 +4,10 @@
 // arrière-plan et à la fermeture. En cas d'échec, nouvel essai avec délai croissant.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.9.0';
-import { backendSimule } from './simulation.js?v=0.9.0';
-import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.9.0';
-import { appliquer } from './etat.js?v=0.9.0';
+import { CONFIG, modeDemo } from './config.js?v=0.9.1';
+import { backendSimule } from './simulation.js?v=0.9.1';
+import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.9.1';
+import { appliquer } from './etat.js?v=0.9.1';
 
 // ---------------------------------------------------------------- back-end Apps Script
 // Les requêtes POST sont en text/plain (corps JSON) pour éviter la requête CORS préalable.
@@ -47,7 +47,7 @@ async function appelUnique(action, donnees) {
   const rep = await fetch(CONFIG.urlApi, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action, ...donnees }),
+    body: JSON.stringify({ action, ...donnees, mdp: lireMotDePasse() }),
   });
   if (!rep.ok) throw new Error(`HTTP ${rep.status}`);
   const texte = await rep.text();
@@ -62,7 +62,7 @@ const backendHttp = {
   envoyer: (nom, evenements) => appel('evenements', { testeur: nom, evenements }),
   // Envoi « au mieux » lors de la fermeture de la page (aucune réponse attendue).
   envoyerSansAttendre(nom, evenements) {
-    const corps = new Blob([JSON.stringify({ action: 'evenements', testeur: nom, evenements })], { type: 'text/plain' });
+    const corps = new Blob([JSON.stringify({ action: 'evenements', testeur: nom, evenements, mdp: lireMotDePasse() })], { type: 'text/plain' });
     return navigator.sendBeacon?.(CONFIG.urlApi, corps);
   },
   async miniatures(nom, ids) {
@@ -103,6 +103,19 @@ export function memoriserNom(nom) {
 
 export function oublierNom() {
   supprimerStockage('florilege-nom');
+}
+
+// Mot de passe commun, mémorisé sur l'appareil et joint à chaque requête.
+export function lireMotDePasse() {
+  return lireStockage('florilege-mdp') || '';
+}
+
+export function memoriserMotDePasse(mdp) {
+  ecrireStockage('florilege-mdp', String(mdp || '').trim());
+}
+
+export function oublierMotDePasse() {
+  supprimerStockage('florilege-mdp');
 }
 
 function nouvelId() {

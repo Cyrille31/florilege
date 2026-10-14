@@ -1,16 +1,17 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.9.0';
+import { CONFIG, modeDemo } from './config.js?v=0.9.1';
 import {
   backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
+  memoriserMotDePasse, oublierMotDePasse,
   nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.9.0';
-import { ChargeurImages } from './images.js?v=0.9.0';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.9.0';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.9.0';
-import { ecranEnsemble } from './tri.js?v=0.9.0';
-import { supprimerStockage } from './stockage.js?v=0.9.0';
+} from './api.js?v=0.9.1';
+import { ChargeurImages } from './images.js?v=0.9.1';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.9.1';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.9.1';
+import { ecranEnsemble } from './tri.js?v=0.9.1';
+import { supprimerStockage } from './stockage.js?v=0.9.1';
 
 const PHRASE_BAL = 'En échange, une seule chose vous est demandée, sur l\'honneur : faire une bonne action '
   + 'chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -96,7 +97,7 @@ function entete() {
 
 function pied() {
   return el('footer', { class: 'pied' },
-    el('span', {}, indicateur, el('span', { class: 'version', title: 'Numéro de version de Florilège' }, ` · v${CONFIG.version}`)),
+    el('span', {}, indicateur, el('span', { class: 'version', title: 'Numéro de version de Florilège' }, `v${CONFIG.version}`)),
     el('span', {},
       modeDemo() ? el('button', { class: 'btn-lien', onclick: razDemo }, 'Remettre la démo à zéro') : null,
       el('button', { class: 'btn-lien', onclick: ouvrirAPropos }, 'À propos')));
@@ -168,19 +169,26 @@ function montrerMessage(titre, texte) {
 
 // ---------------------------------------------------------------- identification par le nom
 
-function montrerIdentification(message) {
+// demanderMotDePasse : le serveur exige le mot de passe commun (absent ou incorrect sur cet appareil).
+function montrerIdentification(message, demanderMotDePasse = false) {
   const champ = el('input', {
     type: 'text', id: 'nom', name: 'nom', required: true, maxlength: 60, autocomplete: 'given-name',
-    placeholder: 'Votre prénom', 'aria-label': 'Votre prénom ou votre nom',
+    placeholder: 'Votre prénom', 'aria-label': 'Votre prénom ou votre nom', value: lireNom() || '',
   });
+  const champMdp = demanderMotDePasse ? el('input', {
+    type: 'password', id: 'mdp', name: 'mdp', required: true, maxlength: 60, autocomplete: 'current-password',
+    placeholder: 'Mot de passe commun', 'aria-label': 'Mot de passe commun',
+  }) : null;
   const formulaire = el('form', { class: 'identification' },
     champ,
+    champMdp,
     el('button', { class: 'btn-principal grand', type: 'submit' }, 'C\'est parti'));
   formulaire.addEventListener('submit', e => {
     e.preventDefault();
     const nom = nettoyerNom(champ.value);
     if (!nom) return;
     memoriserNom(nom);
+    if (champMdp) memoriserMotDePasse(champMdp.value);
     demarrer();
   });
   montrer({
@@ -192,7 +200,7 @@ function montrerIdentification(message) {
       formulaire,
       pied()),
   });
-  champ.focus();
+  (champ.value && champMdp ? champMdp : champ).focus();
 }
 
 // « Ce n'est pas moi » : on envoie ce qui reste en attente, puis on redemande le nom.
@@ -221,6 +229,7 @@ async function demarrer() {
     if (horsLigne) notifier('Hors ligne : vous pouvez continuer, tout sera envoyé plus tard.');
   } catch (e) {
     if (e instanceof ErreurServeur && e.code === 'nom') { oublierNom(); montrerIdentification(e.message); }
+    else if (e instanceof ErreurServeur && e.code === 'mdp') { oublierMotDePasse(); montrerIdentification(e.message, true); }
     else if (e instanceof ErreurServeur) montrerMessage('Problème sur le serveur', e.message);
     else montrerMessage('Connexion impossible', 'Vérifiez votre connexion Internet puis rechargez la page.');
     return;

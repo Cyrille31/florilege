@@ -8,7 +8,7 @@ export const CONFIG = {
   urlApi: 'https://script.google.com/macros/s/AKfycbwRS1ayI37n9RyO-XkIEo3J8ICYmMfEbTTiyoy6ObefqcQZe1A3aBGFR4ZznDzria2h2Q/exec',
 
   // Version affichée dans l'écran « À propos ».
-  version: '0.9.0',
+  version: '0.9.1',
 
   // Envoi groupé des événements (section 7.4 des spécifications).
   envoiToutesLesNActions: 10,

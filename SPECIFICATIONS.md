@@ -12,6 +12,7 @@ L'outil est pensé pour être **réutilisable dans d'autres contextes** (famille
 Décidé pour une première utilisation ; la suite du document décrit la cible complète.
 
 - **Pas de lien personnel** : le testeur donne son prénom ; en le redonnant (majuscules et espaces ignorés), il retrouve son avancement sur n'importe quel appareil.
+- **Mot de passe commun** (facultatif), défini depuis le menu du classeur et gardé dans les propriétés privées du script ; demandé une fois aux testeurs, puis mémorisé sur l'appareil. Sans lui, le serveur refuse toute requête, images comprises.
 - **Pas d'étiquetage des visages** ni d'équilibrage des personnes pour l'instant.
 - **Google Sheet à une seule feuille « Choix »** : `Photo | Dossier | Choix | Testeur | Horodatage`, une ligne par photo et par testeur, mise à jour quand le choix change (`cœur`, `étoile`, `x`, `non classé`). « Photo » est le nom du fichier original, « Dossier » son chemin relatif.
 - **Photos** : dans le dossier Google Drive du classeur, un dossier par année (sous-dossiers possibles) ; le script `prep/reduire_photos.py`, relançable, crée à côté le jumeau `<année>-allégé` (même arborescence, photos réduites à 1 080 px, sans métadonnées). Un ensemble = un dossier d'année.
