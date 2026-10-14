@@ -139,10 +139,27 @@ Le script [`prep/reduire_photos.py`](prep/reduire_photos.py) crée, à côté de
 `-allégé` : même arborescence, photos réduites à 1 080 pixels (JPEG qualité 78), orientation corrigée, **données GPS
 et autres métadonnées supprimées**. Les originaux ne sont jamais modifiés.
 
-1. Installer Python 3 (python.org, cocher « Add to PATH ») si ce n'est pas déjà fait.
-2. Copier le dossier `prep` du dépôt sur le PC (par exemple dans `Documents`).
-3. Double-cliquer sur `lancer_reduction.bat` (installe Pillow et pillow-heif au premier lancement), puis coller le
-   chemin du dossier Google Drive, par exemple `G:\Mon Drive\Photos famille`.
+**Installation (une seule fois)**
+
+1. **Python** : sur [python.org/downloads](https://www.python.org/downloads/), télécharger la dernière version pour
+   Windows et l'installer en **cochant « Add python.exe to PATH »** en bas de la première fenêtre.
+2. **L'outil** : sur la page GitHub du dépôt, bouton vert **Code → Download ZIP**. Ouvrir le ZIP et copier le dossier
+   **`prep`** sur le PC, par exemple dans `Documents\Florilège` (pas dans le dossier Google Drive, inutile de le
+   synchroniser). Les deux fichiers utiles sont `reduire_photos.py` et `lancer_reduction.bat`.
+
+**Lancement**
+
+- **Le plus simple** : faire glisser le dossier Google Drive de la sélection (celui qui contient le Google Sheet et
+  les dossiers d'année) **sur le fichier `lancer_reduction.bat`**.
+- Ou double-cliquer sur `lancer_reduction.bat`, puis coller le chemin du dossier (dans l'Explorateur, cliquer dans la
+  barre d'adresse du dossier, copier, puis clic droit dans la fenêtre noire pour coller) et appuyer sur Entrée.
+
+Au premier lancement, l'outil installe Pillow et pillow-heif (connexion Internet nécessaire). Si Windows affiche
+« Windows a protégé votre ordinateur », cliquer sur **Informations complémentaires → Exécuter quand même**.
+La fenêtre indique l'avancement (environ 10 à 20 minutes pour 3 000 photos la première fois, quelques secondes ensuite)
+et se termine par un résumé ; le détail est dans `rapport_reduction.txt`, dans le dossier Google Drive.
+Si Google Drive pour ordinateur est en mode « streaming », les originaux sont téléchargés au fur et à mesure : c'est
+plus lent mais cela fonctionne.
 
 **À relancer chaque fois que des photos ou des dossiers sont ajoutés** : seules les photos nouvelles ou modifiées sont
 traitées. Les photos HEIC (iPhone) et PNG reçoivent « .jpg » en plus de leur nom (`IMG_1.HEIC.jpg`) ; le nom
