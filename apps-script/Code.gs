@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.9.3';
+const VERSION = '0.10.0';
 
 // Réglages (modifiables ici).
 const REGLAGES = {
@@ -30,6 +30,7 @@ const REGLAGES = {
   suffixe: '-allégé',             // suffixe des dossiers de photos réduites
   fichierListe: 'florilege-photos.json',
   feuille: 'Choix',
+  application: 'https://cyrille31.github.io/florilege/', // adresse de l'application (GitHub Pages)
 };
 
 const COLONNES = ['Photo', 'Dossier', 'Choix', 'Testeur', 'Horodatage'];
@@ -87,6 +88,19 @@ function estDossierAllege(nom) {
 function nomOriginal(nom) {
   const m = /^(.*\.(heic|heif|png|tif|tiff|bmp|webp|gif))\.jpe?g$/i.exec(nom);
   return m ? m[1] : nom;
+}
+
+// Une image : reconnue comme telle par Google Drive, ou à défaut d'après son extension
+// (Drive classe parfois un JPEG envoyé par le navigateur en « application/octet-stream »).
+const EXTENSIONS_IMAGES = /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i;
+function estImage(e) {
+  return /^image\//.test(e.type || '') || EXTENSIONS_IMAGES.test(e.nom || '');
+}
+
+function typeImage(blob, nom) {
+  const type = blob.getContentType() || '';
+  if (/^image\//.test(type)) return type;
+  return /\.png$/i.test(nom) ? 'image/png' : 'image/jpeg';
 }
 
 function generation() {
@@ -153,7 +167,7 @@ function mettreAJourListe() {
       ui.alert('Florilège', `Aucun dossier « …${REGLAGES.suffixe} » à côté du classeur. Lancez d'abord le script de réduction des photos sur votre PC.`, ui.ButtonSet.OK);
       return;
     }
-    encours = { file, photos: [] };
+    encours = { file, photos: [], ignores: [] };
   }
   const avance = typeof Drive !== 'undefined' && Drive.Files && Drive.Files.list;
   while (encours.file.length) {
@@ -166,9 +180,12 @@ function mettreAJourListe() {
     const d = encours.file.shift();
     for (const e of avance ? contenuAvance(d.id) : contenuDriveApp(d.id)) {
       if (e.dossier) encours.file.push({ id: e.id, annee: d.annee, rel: `${d.rel}/${e.nom}` });
-      else if (/^image\//.test(e.type)) {
+      else if (estImage(e)) {
         const nom = nomOriginal(e.nom);
         encours.photos.push({ id: `${d.rel}/${nom}`, e: d.annee, dossier: d.rel, nom, d: e.id, l: e.l || 0, h: e.h || 0 });
+      } else {
+        // Fichier que Google Drive ne reconnaît pas comme une image : signalé à la fin.
+        (encours.ignores = encours.ignores || []).push(`${d.rel}/${e.nom} (${e.type || 'type inconnu'})`);
       }
     }
   }
@@ -180,6 +197,7 @@ function mettreAJourListe() {
   const nbAvant = encours.photos.length;
   encours.photos = encours.photos.filter(p => (vues[p.id] ? false : (vues[p.id] = true)));
   const doublons = nbAvant - encours.photos.length;
+  const ignores = encours.ignores || [];
   encours.photos.sort((a, b) => tri(a.e, b.e) || tri(a.dossier, b.dossier) || tri(a.nom, b.nom));
   const contenu = JSON.stringify({ date: maintenantLisible(), photos: encours.photos });
   const it = racine.getFilesByName(REGLAGES.fichierListe);
@@ -192,7 +210,9 @@ function mettreAJourListe() {
   encours.photos.forEach(p => { parAnnee[p.e] = (parAnnee[p.e] || 0) + 1; });
   const detail = Object.keys(parAnnee).sort(tri).map(a => `${a} : ${parAnnee[a]}`).join('\n');
   ui.alert('Liste des photos à jour', `${encours.photos.length} photos.\n\n${detail}`
-    + (doublons ? `\n\n${doublons} photo(s) en double ignorée(s) (dossier envoyé deux fois dans Google Drive).` : ''), ui.ButtonSet.OK);
+    + (doublons ? `\n\n${doublons} photo(s) en double ignorée(s) (dossier envoyé deux fois dans Google Drive).` : '')
+    + (ignores.length ? `\n\n${ignores.length} fichier(s) non reconnu(s) comme image et ignoré(s)`
+      + ` :\n${ignores.slice(0, 15).join('\n')}${ignores.length > 15 ? '\n…' : ''}` : ''), ui.ButtonSet.OK);
 }
 
 // Contenu d'un dossier via l'API Drive (service avancé) : 1 000 éléments par appel, dimensions comprises.
@@ -232,6 +252,33 @@ function contenuDriveApp(idDossier) {
 
 function normaliserMotDePasse(mdp) {
   return String(mdp || '').normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+// Lien à envoyer aux testeurs : l'adresse de l'application suivie de l'identifiant de ce serveur (?s=…).
+// Ainsi, le même site sert à toutes les sélections, et l'adresse du serveur n'est pas inscrite dans GitHub.
+function lienInvitation() {
+  const ui = SpreadsheetApp.getUi();
+  let url = '';
+  try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { /* pas encore déployé */ }
+  const m = /\/s\/([\w-]+)\/exec/.exec(url);
+  if (!m) {
+    ui.alert('Florilège', 'Le script n\'est pas encore publié en application web : dans l\'éditeur Apps Script, '
+      + 'Déployer → Nouveau déploiement → Application Web (Exécuter en tant que : moi ; accès : tout le monde).', ui.ButtonSet.OK);
+    return;
+  }
+  const lien = `${REGLAGES.application}?s=${m[1]}`;
+  const mdp = PropertiesService.getScriptProperties().getProperty('mot_de_passe');
+  const message = `Bonjour ! Pour participer à la sélection de photos, ouvre ce lien sur ton téléphone ou ton ordinateur :\n${lien}\n`
+    + (mdp ? `Mot de passe : ${mdp}\n` : '')
+    + 'Indique ton prénom : tu pourras t\'arrêter et reprendre quand tu veux, sur n\'importe quel appareil, avec le même prénom.';
+  const echapper = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const html = HtmlService.createHtmlOutput(`
+    <style>body{font-family:sans-serif;font-size:14px}textarea{width:100%;font-size:13px}</style>
+    <p><b>Lien d'invitation</b> (cliquer dedans pour le sélectionner, puis Ctrl+C) :</p>
+    <textarea rows="2" onclick="this.select()">${echapper(lien)}</textarea>
+    <p><b>Message prêt à envoyer</b> (mail, WhatsApp…) :</p>
+    <textarea rows="7" onclick="this.select()">${echapper(message)}</textarea>`).setWidth(520).setHeight(380);
+  ui.showModalDialog(html, 'Inviter les testeurs');
 }
 
 function definirMotDePasse() {
@@ -410,10 +457,12 @@ function apiMiniatures(ids) {
     try {
       // Vignette générée par Drive à partir de la copie réduite ; à défaut, la copie elle-même.
       const fichier = DriveApp.getFileById(index[id].d);
-      const blob = fichier.getThumbnail() || fichier.getBlob();
+      let blob = null;
+      try { blob = fichier.getThumbnail(); } catch (e) { /* pas de vignette pour ce fichier */ }
+      blob = blob || fichier.getBlob();
       const b64 = Utilities.base64Encode(blob.getBytes());
       images[id] = b64;
-      types[id] = blob.getContentType() || 'image/jpeg';
+      types[id] = typeImage(blob, fichier.getName());
       if (b64.length < 95000) aMettreEnCache[prefixe + index[id].d] = `${types[id]}|${b64}`;
     } catch (err) {
       console.error(`Miniature introuvable ${id} : ${err.message}`);
@@ -426,8 +475,9 @@ function apiMiniatures(ids) {
 function apiImage(id) {
   const photo = indexParId()[String(id || '')];
   if (!photo) return { erreur: 'Photo inconnue (la liste des photos a peut-être changé : rechargez la page).' };
-  const blob = DriveApp.getFileById(photo.d).getBlob();
-  return { donnees: Utilities.base64Encode(blob.getBytes()), type: blob.getContentType() || 'image/jpeg' };
+  const fichier = DriveApp.getFileById(photo.d);
+  const blob = fichier.getBlob();
+  return { donnees: Utilities.base64Encode(blob.getBytes()), type: typeImage(blob, fichier.getName()) };
 }
 
 // ============================================================================ menu du classeur
@@ -438,6 +488,7 @@ function onOpen() {
     .addItem('Recommencer la mise à jour depuis le début', 'recommencerListe')
     .addSeparator()
     .addItem('Définir le mot de passe commun…', 'definirMotDePasse')
+    .addItem('Lien d\'invitation pour les testeurs', 'lienInvitation')
     .addSeparator()
     .addItem('À propos', 'aPropos')
     .addToUi();

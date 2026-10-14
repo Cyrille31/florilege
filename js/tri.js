@@ -10,11 +10,11 @@
 import {
   PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.9.3';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.9.3';
-import { ouvrirVisionneuse } from './zoom.js?v=0.9.3';
-import { CONFIG } from './config.js?v=0.9.3';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.9.3';
+} from './etat.js?v=0.10.0';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.10.0';
+import { ouvrirVisionneuse } from './zoom.js?v=0.10.0';
+import { CONFIG } from './config.js?v=0.10.0';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.10.0';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };
@@ -75,7 +75,9 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     const c = comptesEnsemble(etat, ensembleId);
     const triees = photos.length - c.nonTries;
     compteur.textContent = `${vue?.compteur?.() ?? ''}${triees} / ${photos.length} triée${triees > 1 ? 's' : ''}`;
+    const position = vue?.position?.() || { n: cur + 1, total: photos.length };
     stats.replaceChildren(...[
+      position.total ? el('span', { class: 'pilule', title: 'Photo affichée / nombre de photos' }, `📷 ${position.n}/${position.total}`) : null,
       el('span', { class: `pilule${c.coeurs >= max ? ' plein' : ''}`, title: 'Coups de cœur utilisés' }, `⭐ ${c.coeurs}/${max}`),
       el('span', { class: 'pilule', title: 'Photos gardées (❤️ et ⭐)' }, `❤️+⭐ ${c.gardes + c.coeurs}`),
       el('span', { class: 'pilule', title: 'Photos écartées' }, `✖️ ${c.passes}`),
@@ -127,11 +129,14 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   function etatVisionneuse() {
     const v = etat.votes[photos[cur].id];
     const c = comptesEnsemble(etat, ensembleId);
+    const position = vue?.position?.() || { n: cur + 1, total: photos.length };
     return {
       choix: TEXTES[v] || 'À trier',
       valeur: estTrie(v) ? v : null,
       coeur: v === COEUR,
-      compteur: `⭐ ${c.coeurs}/${max} · ❤️+⭐ ${c.gardes + c.coeurs}`,
+      compteur: `📷 ${position.n}/${position.total} · ⭐ ${c.coeurs}/${max} · ❤️+⭐ ${c.gardes + c.coeurs}`,
+      position: position.n,
+      total: position.total,
     };
   }
 
@@ -147,6 +152,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         haut: () => vue?.choisir?.(GARDE, true),
         bas: () => vue?.choisir?.(PASSE, true),
         etoile: () => basculerEtoile(),
+        allerA: (n, leger) => vue?.allerA?.(n, leger),
       },
     });
     visionneuse.maj(etatVisionneuse());
@@ -182,11 +188,19 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       ecrireStockage(CLE_AVANCE, avanceAuto);
     });
 
+    // Ascenseur horizontal : position dans l'ensemble ; le faire glisser fait défiler les photos.
+    const curseur = el('input', { type: 'range', class: 'curseur-photos', min: 1, max: 1, value: 1, step: 1, 'aria-label': 'Position dans l\'ensemble' });
+    curseur.addEventListener('input', () => allerPos(Number(curseur.value) - 1, { leger: true, silencieux: true }));
+    curseur.addEventListener('change', () => allerPos(Number(curseur.value) - 1));
+    // Les touches du clavier gardent leur rôle habituel (défiler, choisir) même si l'ascenseur a le focus.
+    curseur.addEventListener('keydown', e => { e.preventDefault(); curseur.blur(); });
+
     const racineVue = el('div', { class: 'vue-photo' },
       el('div', { class: 'scene-cadre' },
         scene, vide,
         el('button', { class: 'nav-photo gauche', 'aria-label': 'Photo précédente', title: 'Photo précédente (←)', onclick: () => allerPos(pos - 1) }, '‹'),
         el('button', { class: 'nav-photo droite', 'aria-label': 'Photo suivante', title: 'Photo suivante (→)', onclick: () => allerPos(pos + 1) }, '›')),
+      curseur,
       el('div', { class: 'tri-actions' },
         el('button', { class: 'btn-rond petit', 'aria-label': 'Effacer le choix de cette photo', title: 'Effacer le choix (Suppr)', onclick: () => ordre.length && effacer() }, '⌫'),
         el('button', { class: 'btn-rond passe', 'aria-label': 'Je passe', title: 'Je passe (↓)', onclick: () => choisir(PASSE) }, SYMBOLES[PASSE]),
@@ -238,7 +252,9 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       carte.img = img;
       carte.etoile = etoile;
       carte.choix = choix;
-      images.mini(p.id, 1).then(url => { if (!carte.grande) img.src = url; }).catch(() => {});
+      // Tant qu'aucune image n'est affichée, la carte indique « Chargement… » ; « Image indisponible » en cas d'échec.
+      img.addEventListener('load', () => { carte.classList.add('chargee'); carte.classList.remove('echec'); });
+      images.mini(p.id, 1).then(url => { if (!carte.grande) img.src = url; }).catch(() => { carte.echecMini = true; signalerEchec(carte); });
       // Dimensions inconnues du serveur : on les déduit de la première image chargée.
       if (!(p.largeur > 0 && p.hauteur > 0)) {
         img.addEventListener('load', () => {
@@ -270,7 +286,11 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         try { await tampon.decode(); } catch { /* on affiche quand même */ }
         carte.grande = true;
         carte.img.src = url;
-      }).catch(() => {});
+      }).catch(() => { carte.echecGrande = true; signalerEchec(carte); });
+    }
+
+    function signalerEchec(carte) {
+      if (!carte.classList.contains('chargee') && (carte.echecMini || carte.echecGrande)) carte.classList.add('echec');
     }
 
     // Place les photos : la courante en grand, les voisines de plus en plus petites, à moitié cachées.
@@ -363,12 +383,19 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       cur = ordre[pos];
       placer(0, leger);
       if (!leger) precharger();
+      majCurseur();
       actualiserEntete();
       if (visionneuse) {
         visionneuse.changerPhoto(photos[cur].id, ratioDe(photos[cur]));
         visionneuse.maj(etatVisionneuse());
       }
       return true;
+    }
+
+    function majCurseur() {
+      curseur.max = String(Math.max(1, ordre.length));
+      curseur.value = String(pos + 1);
+      curseur.hidden = ordre.length < 2;
     }
 
     function allerPhoto(i) {
@@ -472,7 +499,6 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     // ---- gestes : horizontal = défiler, vertical = choisir
     const pointeurs = new Map();
     let geste = null;
-    let dernierTap = 0;
 
     function remettreCentre() {
       const c = cartes.get(cur);
@@ -538,9 +564,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         // Simple toucher ou clic.
         if (!g.cible) return;
         if (g.cible.indice !== cur) { allerPhoto(g.cible.indice); return; }
-        if (e.pointerType === 'mouse') { ouvrirGrand(); return; }
-        const maintenant = performance.now();
-        if (maintenant - dernierTap < 320) { dernierTap = 0; ouvrirGrand(); } else dernierTap = maintenant;
+        ouvrirGrand(); // un seul toucher ou clic sur la photo : affichage agrandi
         return;
       }
       if (g.axe === 'h') {
@@ -574,8 +598,10 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
 
     return {
       racine: racineVue,
-      afficher() { placer(); precharger(); },
+      afficher() { placer(); precharger(); majCurseur(); },
       detruire() { observateurTaille.disconnect(); clearTimeout(inertie); },
+      position: () => ({ n: ordre.length ? pos + 1 : 0, total: ordre.length }),
+      allerA: (n, leger) => allerPos(n, { leger, silencieux: true }),
       defiler: (sens, distance) => { arreterInertie(); defilerSelonGeste(sens, distance); },
       choisir,
       compteur() {
@@ -591,6 +617,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
           const avant = cur;
           calculerOrdre();
           placer();
+          majCurseur();
           if (cur !== avant && visionneuse && ordre.length) visionneuse.changerPhoto(photos[cur].id, ratioDe(photos[cur]));
         }
       },

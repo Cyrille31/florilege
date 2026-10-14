@@ -6,7 +6,7 @@
 // L'écran appelant fournit les actions et met la visionneuse à jour avec changerPhoto() et maj().
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el } from './ludique.js?v=0.9.3';
+import { el } from './ludique.js?v=0.10.0';
 
 const ZOOM_INITIAL = 2.5;
 const ZOOM_MAX = 6;
@@ -32,9 +32,16 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
     etoile,
     bouton('›', 'Photo suivante (→)', () => actions.defiler?.(1, 0), 'fleche'),
     bouton('❤️', 'Je garde (↑)', actions.garder));
-  const couche = el('div', { class: 'zoom', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Photo agrandie' },
-    cadre, el('div', { class: 'visionneuse-haut' }, choix, compteur), fermer, barre);
-  for (const b of [fermer, ...barre.children]) b.addEventListener('pointerdown', e => e.stopPropagation());
+  // Ascenseur : position dans l'ensemble.
+  const curseur = el('input', { type: 'range', class: 'curseur-photos visionneuse-curseur', min: 1, max: 1, value: 1, step: 1, 'aria-label': 'Position dans l\'ensemble' });
+  curseur.addEventListener('input', () => actions.allerA?.(Number(curseur.value) - 1, true));
+  curseur.addEventListener('change', () => actions.allerA?.(Number(curseur.value) - 1, false));
+  curseur.addEventListener('keydown', e => { e.preventDefault(); curseur.blur(); });
+  const bas = el('div', { class: 'visionneuse-bas' }, curseur, barre);
+  const couche = el('div', { class: 'zoom chargement', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Photo agrandie' },
+    cadre, el('div', { class: 'visionneuse-haut' }, choix, compteur), fermer, bas);
+  for (const b of [fermer, curseur, ...barre.children]) b.addEventListener('pointerdown', e => e.stopPropagation());
+  img.addEventListener('load', () => couche.classList.remove('chargement'));
   const precedent = document.activeElement;
   let pleinEcranDemande = false;
   let ferme = false;
@@ -87,12 +94,19 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
     if (ratio) cadre.style.setProperty('--ratio', ratio);
     reinitialiser();
     const grande = images.urlSiDisponible(id, 'grande');
-    img.src = grande || images.urlSiDisponible(id, 'mini') || '';
+    const source = grande || images.urlSiDisponible(id, 'mini') || '';
+    couche.classList.toggle('chargement', !source);
+    img.src = source;
     if (!grande) images.grande(id, 0).then(url => { if (photoId === id) img.src = url; }).catch(() => {});
   }
 
   // etat : { choix: texte, valeur: 0|1|2|null, coeur: booléen, compteur: texte }
-  function maj({ choix: texte, valeur, coeur, compteur: tc } = {}) {
+  function maj({ choix: texte, valeur, coeur, compteur: tc, position, total } = {}) {
+    if (total !== undefined) {
+      curseur.max = String(Math.max(1, total));
+      curseur.value = String(position || 1);
+      curseur.hidden = total < 2;
+    }
     if (valeur !== undefined) cadre.dataset.valeur = valeur ?? '';
     if (texte !== undefined) { choix.textContent = texte || ''; choix.hidden = !texte; }
     if (coeur !== undefined) etoile.classList.toggle('doree', !!coeur);

@@ -2,8 +2,9 @@
 // messages d'encouragement, confettis, petites notifications.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { progressionEnsemble, progressionGlobale, ensemblesTries, photosDe } from './etat.js?v=0.9.3';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.9.3';
+import { progressionEnsemble, progressionGlobale, ensemblesTries, photosDe } from './etat.js?v=0.10.0';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.10.0';
+import { cleLocale } from './config.js?v=0.10.0';
 
 // Les huit teintes des pétales de l'icône.
 export const TEINTES = ['#ff6f61', '#ff9a3d', '#f4a623', '#5cbf4a', '#22a8c4', '#3d8bfd', '#8e5cf7', '#e85aa7'];
@@ -99,7 +100,7 @@ export function badgesObtenus(etat) {
 
 // Renvoie les badges obtenus depuis la dernière fois (mémorisé sur l'appareil).
 export function nouveauxBadges(etat, jeton) {
-  const cle = `florilege-badges-${jeton}`;
+  const cle = cleLocale(`badges-${String(jeton).toLowerCase()}`);
   const vus = new Set(lireStockage(cle, []));
   const obtenus = badgesObtenus(etat);
   const nouveaux = obtenus.filter(b => !vus.has(b.id));

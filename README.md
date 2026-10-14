@@ -192,7 +192,7 @@ signalée ; l'option `--nettoyer` la supprime (`lancer_reduction.bat --nettoyer`
 5. **Déployer → Nouveau déploiement → Application Web** ; **Exécuter en tant que : Moi** ; **Qui a accès : Tout le
    monde** → **Déployer**. Lors de l'autorisation : **Paramètres avancés → Accéder à … (non sécurisé)**, puis cocher
    **« Tout sélectionner »** et **Continuer**.
-6. Copier l'URL (`…/exec`) et la coller dans [`js/config.js`](js/config.js), ligne `urlApi`, sur la branche `main`.
+6. Rien à modifier dans GitHub : l'adresse du serveur est transmise par le **lien d'invitation** (étape 4).
 
 > **Plus tard, quand une nouvelle version de `Code.gs` sera livrée** : coller le nouveau code, enregistrer, puis
 > **Déployer → Gérer les déploiements → crayon (Modifier) → Version : Nouvelle version → Déployer**. L'URL ne change
@@ -211,16 +211,39 @@ de `Code.gs` (`REGLAGES`).
 ### 4. Inviter les testeurs
 
 1. **Florilège → Définir le mot de passe commun…** (recommandé).
-2. Envoyer l'adresse de l'application (`https://cyrille31.github.io/florilege/`) et le mot de passe. Chacun donne son
-   prénom (et le mot de passe la première fois) et commence ; « Ce n'est pas moi », à côté du « Bonjour … ! », permet de changer de nom sur un appareil partagé.
+2. **Florilège → Lien d'invitation pour les testeurs** : la fenêtre donne le lien (de la forme
+   `https://cyrille31.github.io/florilege/?s=AKfycb…`) et un message prêt à envoyer, mot de passe compris.
+3. Chacun ouvre le lien, donne son prénom (et le mot de passe la première fois) et commence ; le lien est mémorisé
+   sur l'appareil, les visites suivantes peuvent se faire depuis l'adresse simple ; « Ce n'est pas moi », à côté du « Bonjour … ! », permet de changer de nom sur un appareil partagé.
+
+### Utiliser Florilège pour une autre sélection, ou sur un autre compte Google
+
+Le site (GitHub Pages) est commun à tous : **chaque organisateur a seulement besoin de son propre Google Sheet et de
+son script**, dans son propre Google Drive. Il refait les étapes 1 à 4 ci-dessus dans un nouveau dossier (photos
+d'année + Google Sheet + `Code.gs` et `appsscript.json` collés + déploiement) et envoie **son** lien d'invitation,
+qui contient l'identifiant de **son** serveur. Rien n'est à modifier dans GitHub, et l'adresse du serveur de chacun
+n'y figure pas. Sur un même appareil, les données de deux sélections restent séparées.
+
+Pour une installation entièrement indépendante (son propre site), il suffit de copier le dépôt (« Fork » sur GitHub),
+d'activer GitHub Pages et de changer `application` dans les `REGLAGES` de `Code.gs`.
+
+### Onglets et dossiers inutiles
+
+Seule la feuille **Choix** sert. Les onglets d'une ancienne installation (Config, Selectionneurs, Personnes,
+Ensembles, Photos, VisagesPicasa, Attributions, Votes, Etiquettes, ShortList, EtiquettesFinales, Resultat, Journal)
+et les dossiers `images`, `prep`, `exports`, `config`, `secret` qu'elle avait créés peuvent être supprimés.
 
 ### Essais à faire
 
 - [ ] Lancer `lancer_reduction.bat` sur le dossier Google Drive ; vérifier les dossiers `-allégé` et le rapport ;
       le relancer : « déjà à jour » pour toutes les photos.
 - [ ] Ajouter une photo et un sous-dossier dans une année, relancer : seules les nouvelles photos sont traitées.
-- [ ] Florilège → Mettre à jour la liste des photos : le nombre de photos par année est juste.
-- [ ] Ouvrir l'application sur le PC, donner son prénom, trier quelques photos : les lignes apparaissent dans la
+- [ ] Florilège → Mettre à jour la liste des photos : le nombre de photos par année est juste ; les fichiers non
+      reconnus comme images sont listés dans le message.
+- [ ] En mode photo : le compteur 📷 n/N et l'ascenseur horizontal indiquent la position ; un seul toucher ou clic
+      sur la photo l'affiche en grand (ascenseur et compteurs aussi en plein écran) ; « Chargement… » s'affiche
+      tant que la photo n'est pas arrivée.
+- [ ] Ouvrir le lien d'invitation sur le PC, donner son prénom, trier quelques photos : les lignes apparaissent dans la
       feuille Choix (envoi toutes les 10 actions, toutes les 15 secondes, ou en quittant la page).
 - [ ] Ouvrir l'application sur le téléphone avec le même prénom : on retrouve ses choix.
 - [ ] Après avoir défini le mot de passe : un mauvais mot de passe est refusé, le bon est mémorisé sur l'appareil.
@@ -246,6 +269,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.10.0 | Lien d'invitation (l'adresse du serveur n'est plus dans GitHub ; le même site sert à plusieurs sélections et comptes Google) ; ascenseur horizontal et compteur 📷 n/N, aussi en plein écran ; un seul toucher pour agrandir ; « Chargement… » / « Image indisponible » ; images reconnues aussi d'après leur extension ; fichiers ignorés signalés par la mise à jour de la liste. |
 | 0.9.3 | Message explicite si le script Apps Script publié est une ancienne version (redéploiement oublié). |
 | 0.9.2 | Mise à jour de la liste : les dossiers envoyés deux fois dans Google Drive sont réunis et les photos en double ignorées ; README : préparation des photos sur le PC puis envoi par le navigateur. |
 | 0.9.1 | Mot de passe commun, défini depuis le menu du Google Sheet et demandé une fois aux testeurs. |

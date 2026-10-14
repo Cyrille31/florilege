@@ -112,6 +112,7 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
 .sous-titre { font-size: .85rem; color: var(--texte-doux); }
 @media (prefers-color-scheme: dark) { .marque { color: var(--vert); } }
 
+.lien-demo { display: grid; place-items: center; text-decoration: none; margin-top: 18px; }
 .pas-moi { font-size: .85rem; font-weight: 400; margin-left: 6px; padding: 4px 6px; min-height: 32px; vertical-align: middle; }
 .identification { margin-top: 18px; }
 .identification input {
@@ -605,10 +606,15 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
-.visionneuse-barre {
+.visionneuse-bas {
   position: absolute;
   left: 50%; bottom: max(14px, env(safe-area-inset-bottom));
   transform: translateX(-50%);
+  width: min(560px, calc(100% - 24px));
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.visionneuse-curseur { width: 100%; }
+.visionneuse-barre {
   display: flex; gap: 10px;
   padding: 6px;
   border-radius: 999px;
@@ -681,6 +687,34 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
   font: 11px/1.4 ui-monospace, monospace;
   pointer-events: none;
 }
+
+/* Ascenseur horizontal (position dans l'ensemble) */
+.curseur-photos {
+  width: 100%;
+  margin: 10px 0 0;
+  accent-color: var(--vert);
+  height: 28px;
+  cursor: pointer;
+  flex: none;
+}
+.curseur-photos[hidden] { display: none; }
+
+/* Photo en cours de chargement ou indisponible */
+.defil:not(.chargee) .cadre::after, .zoom.chargement::after {
+  content: 'Chargement…';
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .55); color: #fff;
+  font-size: .9rem;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: clignote 1.4s ease-in-out infinite;
+}
+.defil:not(.centre):not(.chargee) .cadre::after { content: '…'; }
+.defil.echec .cadre::after { content: 'Image indisponible'; animation: none; }
+@keyframes clignote { 50% { opacity: .5; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }

@@ -1,17 +1,17 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.9.3';
+import { CONFIG, modeDemo, urlApi } from './config.js?v=0.10.0';
 import {
   backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
   memoriserMotDePasse, oublierMotDePasse,
   nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.9.3';
-import { ChargeurImages } from './images.js?v=0.9.3';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.9.3';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.9.3';
-import { ecranEnsemble } from './tri.js?v=0.9.3';
-import { supprimerStockage } from './stockage.js?v=0.9.3';
+} from './api.js?v=0.10.0';
+import { ChargeurImages } from './images.js?v=0.10.0';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.10.0';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.10.0';
+import { ecranEnsemble } from './tri.js?v=0.10.0';
+import { supprimerStockage } from './stockage.js?v=0.10.0';
 
 const PHRASE_BAL = 'En échange, une seule chose vous est demandée, sur l\'honneur : faire une bonne action '
   + 'chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -111,13 +111,11 @@ function razDemo() {
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const cle = localStorage.key(i);
-      if (cle.startsWith('florilege-') && cle !== 'florilege-mode') cles.push(cle);
+      if (cle.startsWith('florilege-demo')) cles.push(cle);
     }
   } catch { /* stockage indisponible */ }
   cles.forEach(supprimerStockage);
-  const cle = cleNom(ctx.jeton);
-  [`florilege-file-${cle}`, `florilege-etat-${cle}`, `florilege-demo-serveur-${cle}`, `florilege-badges-${ctx.jeton}`]
-    .forEach(supprimerStockage);
+  supprimerStockage(`florilege-demo-serveur-${cleNom(ctx.jeton)}`);
   ctx.file.file = [];
   const p = new URLSearchParams(location.search);
   p.delete('reinit');
@@ -213,6 +211,17 @@ function changerDeNom() {
 // ---------------------------------------------------------------- démarrage
 
 async function demarrer() {
+  if (!modeDemo() && !urlApi()) {
+    montrer({
+      racine: el('main', { class: 'ecran ecran-accueil' },
+        entete(),
+        el('h1', {}, 'Lien d\'invitation nécessaire'),
+        el('p', { class: 'phrase' }, 'Pour participer à une sélection, ouvrez le lien que son organisateur vous a envoyé.'),
+        el('a', { class: 'btn-secondaire lien-demo', href: '?demo=1' }, 'Essayer la démonstration'),
+        pied()),
+    });
+    return;
+  }
   const jeton = lireNom();
   if (!jeton) {
     montrerIdentification();
