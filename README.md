@@ -20,8 +20,8 @@ En échange, une seule chose vous est demandée, sur l'honneur : faire une bonne
 | Jalon | Contenu | État |
 |---|---|---|
 | 1 | Prototype de la manche 1 (photos factices, back-end simulé) | livré |
-| 2 | Apps Script, Google Sheet, images sur Drive | **livré, à tester** |
-| 3 | Script de préparation des photos | à venir |
+| 2 | Apps Script, Google Sheet, images sur Drive | livré, puis simplifié (v0.9.0) |
+| 3 | Script de préparation des photos | **réduction des photos livrée (v0.9.0)** ; rapprochement Picasa plus tard |
 | 4 | Administration, partie 1 | à venir |
 | 5 | Manche 2 (duels) | à venir |
 | 6 | Étiquetage des personnes | à venir |
@@ -30,7 +30,8 @@ En échange, une seule chose vous est demandée, sur l'honneur : faire une bonne
 
 ## Essayer le prototype (jalon 1)
 
-Tant que `js/config.js` ne contient pas d'URL d'Apps Script, l'application fonctionne en **mode démonstration** :
+Tant que `js/config.js` ne contient pas d'URL d'Apps Script, ou si l'on ajoute `?demo=1` à l'adresse
+(`https://cyrille31.github.io/florilege/?demo=1`), l'application fonctionne en **mode démonstration** :
 4 ensembles de photos factices, dessinées dans le navigateur ; rien n'est envoyé sur Internet, les choix sont
 gardés dans le navigateur.
 
@@ -47,7 +48,6 @@ gardés dans le navigateur.
 | Paramètre | Effet |
 |---|---|
 | `?reinit=1` | Remet la démonstration à zéro (comme le bouton « Remettre la démo à zéro » de l'accueil). |
-| `?nom=Paul` | Change le prénom affiché. |
 | `?latence=1500` | Simule un réseau lent (en millisecondes par requête ; 400 par défaut). |
 | `?horsligne=1` | Simule l'absence de réseau : les choix restent en attente sur l'appareil. |
 | `?phase=preparation` | Affiche l'écran d'attente d'une phase fermée. |
@@ -64,7 +64,7 @@ serveur, par exemple avec Python : `python -m http.server 8000` dans le dossier,
 
 Sur **téléphone** (Android et iPhone si possible) :
 
-- [ ] L'accueil dit « Bonjour Marie ! » ; les ronds 🌱 🌿 🌸 sont les badges (les toucher affiche leur signification).
+- [ ] Après avoir donné son prénom, l'accueil dit « Bonjour … ! » ; les ronds 🌱 🌿 🌸 sont les badges (les toucher affiche leur signification).
 - [ ] « Commencer » ouvre le premier ensemble en mode « Une à une » ; les photos voisines sont visibles de part et d'autre.
 - [ ] Glisser à **gauche / droite** fait défiler sans rien valider (ou boutons ‹ ›) : jusqu'à 4 cm (rapide ou lent),
       une seule photo ; au-delà, 2 photos ; plusieurs grands gestes de suite, 5 photos.
@@ -102,102 +102,103 @@ Sur **PC** :
 
 Avec `?latence=1500` : la photo suivante doit tout de même apparaître immédiatement (préchargement).
 
-## Mise en service avec Google (jalon 2)
+## Mise en service (fonctionnement simplifié)
 
-Tout se passe dans **un seul dossier Google Drive privé** par sélection, qui contient le Google Sheet, son script et
-les images. Rien n'est partagé : le script, qui s'exécute avec votre compte, sert les images uniquement aux personnes
-qui ont un lien personnel valide.
+Version actuelle, volontairement simple : pas de lien personnel ni d'étiquetage des visages. Chaque testeur
+**donne son prénom** en ouvrant l'application ; ses choix sont enregistrés dans **une seule feuille** du Google Sheet.
+En redonnant le même prénom (majuscules et espaces en trop ignorés), sur n'importe quel appareil, il retrouve
+son avancement.
 
-### 1. Créer le classeur et coller le script
+### Organisation du dossier Google Drive
 
-1. Sur [drive.google.com](https://drive.google.com), créer un dossier, par exemple `Florilège/Essai`.
-2. Dans ce dossier : **Nouveau → Google Sheets**. Le nommer, par exemple `Florilège — Essai`.
-3. Dans le classeur : menu **Extensions → Apps Script**. Un éditeur s'ouvre dans un nouvel onglet.
-4. (Facultatif) Cliquer sur « Projet sans titre » en haut de l'éditeur et le renommer « Florilège ».
-5. Dans le fichier `Code.gs` de l'éditeur, tout effacer puis coller le contenu de
-   [`apps-script/Code.gs`](apps-script/Code.gs) (sur GitHub, bouton « Copy raw file »).
-6. Toujours dans l'éditeur : roue dentée **Paramètres du projet** (à gauche) → cocher **« Afficher le fichier manifeste
-   "appsscript.json" dans l'éditeur »**. Revenir à l'éditeur (icône `< >`), ouvrir `appsscript.json`, tout remplacer
-   par le contenu de [`apps-script/appsscript.json`](apps-script/appsscript.json).
-7. Enregistrer (icône disquette ou Ctrl+S).
+Tout se trouve dans un même dossier Google Drive (synchronisé sur le PC par Google Drive pour ordinateur) :
 
-### 2. Installer le classeur
+```
+Photos famille/                       (exemple de nom)
+├── Florilège — choix                 le Google Sheet, une seule feuille « Choix »
+├── 2001/  2002/  …                   photos originales, un dossier par année (sous-dossiers possibles)
+├── 2001-allégé/  2002-allégé/  …     copies réduites, même arborescence (créées par le script ci-dessous)
+├── florilege-photos.json             liste des photos (créée par le menu du Google Sheet)
+└── rapport_reduction.txt             compte rendu du dernier passage du script de réduction
+```
 
-1. Revenir à l'onglet du classeur et **recharger la page** : un menu **Florilège** apparaît (après quelques secondes).
-2. **Florilège → 1. Installer / vérifier le classeur**.
-3. Google demande une autorisation : choisir votre compte, puis **Paramètres avancés → Accéder à … (non sécurisé)**.
-   Sur l'écran suivant, **cocher « Tout sélectionner »** (Drive : dossiers et images ; Sheets : le classeur ;
-   contenu Web : les fenêtres du menu, comme celle des liens), puis **Continuer**. (L'avertissement apparaît parce que le script est le vôtre et n'a pas été « vérifié » par Google ;
-   il n'accède qu'à ce classeur et à votre Drive, sous votre contrôle.) Si l'installation s'est arrêtée pendant
-   l'autorisation, la relancer.
-4. Le message final affiche un **jeton administrateur** : le noter (il servira à l'interface d'administration, jalon 4).
-   Les onglets sont créés, ainsi que les dossiers `images`, `prep`, `exports`, `config`, `secret` à côté du classeur.
+- Un **ensemble** = un dossier d'année (nom commençant par un chiffre) ; ses sous-dossiers sont regroupés.
+- La feuille **Choix** contient une ligne par photo et par testeur :
+  `Photo | Dossier | Choix | Testeur | Horodatage`. « Photo » est le nom du fichier **original**, « Dossier » son
+  chemin relatif (par exemple `2001/Vacances`), « Choix » vaut `cœur`, `étoile`, `x` ou `non classé`.
+  Quand un testeur change d'avis, sa ligne est mise à jour (pas de doublon).
 
-### 3. Publier l'application web
+> Sans lien personnel, toute personne qui connaît l'adresse de l'application peut voir les photos (les pages ne sont
+> pas référencées par les moteurs de recherche). Un mot de passe commun pourra être ajouté si besoin.
 
-1. Dans l'éditeur Apps Script : **Déployer → Nouveau déploiement**.
-2. Roue dentée « Sélectionner le type » → **Application Web**.
-3. **Exécuter en tant que : Moi** ; **Qui a accès : Tout le monde**. → **Déployer** (autoriser si demandé).
-4. Copier l'**URL de l'application Web** (elle se termine par `/exec`).
-5. Sur GitHub, ouvrir [`js/config.js`](js/config.js), cliquer sur le crayon (modifier) et coller l'URL :
-   `urlApi: 'https://script.google.com/macros/s/…/exec',` puis **Commit changes**.
-   Tant que `urlApi` est vide, l'application reste en mode démonstration.
+### 1. Créer les photos allégées (sur le PC)
 
-> **Plus tard, quand une nouvelle version de `Code.gs` sera livrée** (rien à faire lors de la première installation) :
-> coller le nouveau code dans l'éditeur et enregistrer, puis **Déployer → Gérer les déploiements → crayon (Modifier) →
-> Version : Nouvelle version → Déployer**. L'URL `…/exec` ne change pas (ne pas faire « Nouveau déploiement », qui en
-> créerait une autre). Sans cette étape, l'application web continue d'utiliser l'ancien code ; le menu du classeur,
-> lui, utilise le nouveau dès l'enregistrement.
+Le script [`prep/reduire_photos.py`](prep/reduire_photos.py) crée, à côté de chaque dossier d'année, son jumeau
+`-allégé` : même arborescence, photos réduites à 1 080 pixels (JPEG qualité 78), orientation corrigée, **données GPS
+et autres métadonnées supprimées**. Les originaux ne sont jamais modifiés.
 
-### 4. Des photos pour essayer
+1. Installer Python 3 (python.org, cocher « Add to PATH ») si ce n'est pas déjà fait.
+2. Copier le dossier `prep` du dépôt sur le PC (par exemple dans `Documents`).
+3. Double-cliquer sur `lancer_reduction.bat` (installe Pillow et pillow-heif au premier lancement), puis coller le
+   chemin du dossier Google Drive, par exemple `G:\Mon Drive\Photos famille`.
 
-Au choix, depuis le menu **Florilège** :
+**À relancer chaque fois que des photos ou des dossiers sont ajoutés** : seules les photos nouvelles ou modifiées sont
+traitées. Les photos HEIC (iPhone) et PNG reçoivent « .jpg » en plus de leur nom (`IMG_1.HEIC.jpg`) ; le nom
+d'origine est restitué dans la feuille. Les vidéos et documents sont ignorés (listés dans le rapport), ainsi que les
+dossiers `_Originaux_Picasa` et `_Catalogue_Picasa` de picasa-export. Une copie dont l'original a disparu est
+signalée ; l'option `--nettoyer` la supprime (`lancer_reduction.bat --nettoyer`).
 
-- **Créer des photos de test** : 72 dessins (3 ensembles) dans `images/_test`, pour vérifier que tout fonctionne.
-  La première fois, cela peut dépasser la durée autorisée par Google (6 minutes) : relancer simplement, les images
-  déjà créées sont réutilisées ;
-- **Utiliser mes photos (sous-dossiers de images/)** : créer dans le dossier `images` un sous-dossier par ensemble et
-  y déposer quelques photos (de préférence pas trop lourdes : le script de préparation du jalon 3 produira des images
-  allégées ; ici, les photos sont servies telles quelles).
+### 2. Le Google Sheet et son script (une seule fois)
 
-### 5. Sélectionneurs, liens et ouverture
+1. Dans le dossier Google Drive : **Nouveau → Google Sheets**, par exemple `Florilège — choix`.
+2. **Extensions → Apps Script**. (Facultatif : renommer « Projet sans titre » en « Florilège ».)
+3. Dans `Code.gs`, tout effacer et coller [`apps-script/Code.gs`](apps-script/Code.gs).
+4. Roue dentée **Paramètres du projet** → cocher **« Afficher le fichier manifeste "appsscript.json" »** ; ouvrir
+   `appsscript.json` et le remplacer par [`apps-script/appsscript.json`](apps-script/appsscript.json) (il active le
+   service avancé « Drive », qui accélère le recensement des photos et donne leurs dimensions). Enregistrer.
+5. **Déployer → Nouveau déploiement → Application Web** ; **Exécuter en tant que : Moi** ; **Qui a accès : Tout le
+   monde** → **Déployer**. Lors de l'autorisation : **Paramètres avancés → Accéder à … (non sécurisé)**, puis cocher
+   **« Tout sélectionner »** et **Continuer**.
+6. Copier l'URL (`…/exec`) et la coller dans [`js/config.js`](js/config.js), ligne `urlApi`, sur la branche `main`.
 
-1. **Florilège → Ajouter des sélectionneurs…** : saisir des prénoms séparés par des virgules. Une fenêtre affiche
-   pour chacun un message prêt à copier (mail, WhatsApp) avec son lien personnel. **Afficher les liens personnels**
-   la rouvre à tout moment.
-2. **Florilège → Ouvrir la manche 1**.
-3. L'onglet **Config** permet d'ajuster les paramètres (titre de la sélection, nombre de coups de cœur…) ; les
-   changements sont pris en compte en une minute environ.
+> **Plus tard, quand une nouvelle version de `Code.gs` sera livrée** : coller le nouveau code, enregistrer, puis
+> **Déployer → Gérer les déploiements → crayon (Modifier) → Version : Nouvelle version → Déployer**. L'URL ne change
+> pas (ne pas faire « Nouveau déploiement »).
 
-Pour désactiver un lien : mettre `non` dans la colonne `actif` de l'onglet `Selectionneurs` (effet sous 10 minutes).
+### 3. Mettre à jour la liste des photos
 
-### 6. Essais à faire (jalon 2)
+Après chaque passage du script de réduction, **une fois la synchronisation de Google Drive terminée** : dans le
+Google Sheet, recharger la page puis **Florilège → Mettre à jour la liste des photos**. Le script recense les dossiers
+`-allégé` et affiche le nombre de photos par année. Pour un très grand nombre de photos, si Google interrompt le
+recensement (limite de 6 minutes), relancer : il reprend là où il s'était arrêté.
 
-- [ ] Ouvrir son lien sur le PC, trier quelques photos ; vérifier que des lignes apparaissent dans l'onglet `Votes`
-      (l'envoi se fait toutes les 10 actions, toutes les 15 secondes, ou en quittant la page).
-- [ ] Ouvrir **le même lien sur le téléphone** : « Continuer » reprend au même endroit, avec les mêmes choix.
-- [ ] Mode avion sur le téléphone, trier, revenir au réseau : le pied de page de l'accueil repasse à
-      « Tout est enregistré » et les choix arrivent dans `Votes`.
-- [ ] Un lien modifié (une lettre changée) affiche « Lien non reconnu ».
-- [ ] **Mesurer la fluidité en 4G** : ouvrir son lien en ajoutant `&diag=1` à la fin, trier une vingtaine de photos,
-      puis me communiquer les chiffres du panneau vert (moyenne, médiane, maximum pour `etat`, `miniatures`, `image`).
-      Si le passage d'une photo à l'autre n'est pas fluide, je proposerai une solution de repli (section 3.3 des
-      spécifications), sans la mettre en œuvre sans votre accord.
-- [ ] Les erreurs éventuelles de l'application apparaissent dans l'onglet `Journal`, avec les connexions.
+La feuille **Choix** est créée automatiquement. Les réglages (titre, nombre de coups de cœur par année) sont en tête
+de `Code.gs` (`REGLAGES`).
+
+### 4. Inviter les testeurs
+
+Envoyer simplement l'adresse de l'application (`https://cyrille31.github.io/florilege/`). Chacun donne son prénom
+et commence ; « Ce n'est pas moi », à côté du « Bonjour … ! », permet de changer de nom sur un appareil partagé.
+
+### Essais à faire
+
+- [ ] Lancer `lancer_reduction.bat` sur le dossier Google Drive ; vérifier les dossiers `-allégé` et le rapport ;
+      le relancer : « déjà à jour » pour toutes les photos.
+- [ ] Ajouter une photo et un sous-dossier dans une année, relancer : seules les nouvelles photos sont traitées.
+- [ ] Florilège → Mettre à jour la liste des photos : le nombre de photos par année est juste.
+- [ ] Ouvrir l'application sur le PC, donner son prénom, trier quelques photos : les lignes apparaissent dans la
+      feuille Choix (envoi toutes les 10 actions, toutes les 15 secondes, ou en quittant la page).
+- [ ] Ouvrir l'application sur le téléphone avec le même prénom : on retrouve ses choix.
+- [ ] Changer d'avis sur une photo : sa ligne est mise à jour, pas dupliquée ; ⌫ la passe à « non classé ».
+- [ ] **Fluidité en 4G** : ajouter `?diag=1` à l'adresse, trier une vingtaine de photos et me transmettre les chiffres
+      du panneau vert (moyenne, médiane, maximum pour `etat`, `miniatures`, `image`).
 
 ### Quotas d'Apps Script (compte Google gratuit)
 
-Les limites officielles sont sur la page
-[Quotas des services Google](https://developers.google.com/apps-script/guides/services/quotas) ; celles qui
-concernent Florilège :
-
-- **Durée d'une exécution : 6 minutes** au plus. Chaque requête de Florilège dure de l'ordre d'une seconde.
-- **Exécutions simultanées : environ 30** pour un même script. Chaque appareil limite à 3 ses requêtes parallèles
-  et refait une fois une requête échouée ; même avec une dizaine de personnes triant au même instant, on reste en deçà.
-- **Cache (CacheService) : 100 Ko par valeur** ; les miniatures (≈ 15 à 25 Ko) y sont gardées 6 heures.
-- **Estimation** : un sélectionneur qui examine environ 900 photos (3 000 photos vues chacune par 3 personnes sur 10)
-  déclenche à peu près 900 requêtes d'images, 60 de miniatures et une centaine d'envois de choix, soit environ
-  1 100 requêtes ; pour 10 sélectionneurs, environ 11 000 requêtes réparties sur plusieurs jours, ce qui reste modeste.
+Voir la page officielle [Quotas des services Google](https://developers.google.com/apps-script/guides/services/quotas).
+Chaque requête dure de l'ordre d'une seconde (limite : 6 minutes) ; chaque appareil limite à 3 ses requêtes
+simultanées (limite du script : une trentaine) ; les miniatures sont gardées 6 heures dans le cache. Pour une
+dizaine de testeurs et quelques milliers de photos, on reste très en deçà des limites.
 
 ## Versions
 
@@ -210,6 +211,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.9.0 | Fonctionnement simplifié : identification par le prénom, une seule feuille « Choix » (une ligne par photo et par testeur), ensembles = dossiers d'année, liste des photos tirée des dossiers `-allégé` ; script `prep/reduire_photos.py` de création des photos allégées, relançable. |
 | 0.8.1 | Création des photos de test relançable (les images déjà créées sont réutilisées) ; rappel d'ouvrir la manche 1. |
 | 0.8.0 | Jalon 2 : script Apps Script (API, images servies depuis Drive, menu Florilège), connexion de l'application au serveur, reprise multi-appareils, journal des erreurs, diagnostic `?diag=1`, nouvel essai automatique en cas d'échec réseau. |
 | 0.7.0 | Imagettes : sélection multiple (appui long pour commencer, appui court pour ajouter ou retirer, appui long pour toute une plage ; Ctrl+clic et Maj+clic sur PC), puis ❤️ ⭐ ✖️ ou · pour toute la sélection. |
@@ -245,7 +247,12 @@ js/
   tests/              tests (navigateur et Node)
 apps-script/
   Code.gs             script du Google Sheet : API web, images, menu Florilège
-  appsscript.json     manifeste du script
+  appsscript.json     manifeste du script (active le service avancé Drive)
+prep/
+  reduire_photos.py   crée les dossiers de photos allégées (2001-allégé…)
+  lancer_reduction.bat  lanceur Windows
+  requirements.txt
+  tests/              tests pytest
 outils/version.py     change le numéro de version
 ```
 
@@ -253,6 +260,7 @@ outils/version.py     change le numéro de version
 
 - Dans le navigateur : ouvrir `tests.html`.
 - Avec Node (version 22 ou plus) : `node js/tests/lancer.js`.
+- Script de réduction : `python -m pytest prep/tests`.
 
 ## Confidentialité
 

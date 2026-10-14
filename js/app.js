@@ -1,15 +1,16 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.8.1';
+import { CONFIG, modeDemo } from './config.js?v=0.9.0';
 import {
-  backend, lireJeton, FileEvenements, chargerEtat, memoriserEtat, nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.8.1';
-import { ChargeurImages } from './images.js?v=0.8.1';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.8.1';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.8.1';
-import { ecranEnsemble } from './tri.js?v=0.8.1';
-import { supprimerStockage } from './stockage.js?v=0.8.1';
+  backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
+  nouvelEvenement, ErreurServeur, signalerErreur, mesures,
+} from './api.js?v=0.9.0';
+import { ChargeurImages } from './images.js?v=0.9.0';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.9.0';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.9.0';
+import { ecranEnsemble } from './tri.js?v=0.9.0';
+import { supprimerStockage } from './stockage.js?v=0.9.0';
 
 const PHRASE_BAL = 'En échange, une seule chose vous est demandée, sur l\'honneur : faire une bonne action '
   + 'chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -113,8 +114,9 @@ function razDemo() {
     }
   } catch { /* stockage indisponible */ }
   cles.forEach(supprimerStockage);
-  [`florilege-file-${ctx.jeton}`, `florilege-etat-${ctx.jeton}`, `florilege-demo-serveur-${ctx.jeton}`,
-    `florilege-badges-${ctx.jeton}`].forEach(supprimerStockage);
+  const cle = cleNom(ctx.jeton);
+  [`florilege-file-${cle}`, `florilege-etat-${cle}`, `florilege-demo-serveur-${cle}`, `florilege-badges-${ctx.jeton}`]
+    .forEach(supprimerStockage);
   ctx.file.file = [];
   const p = new URLSearchParams(location.search);
   p.delete('reinit');
@@ -124,7 +126,9 @@ function razDemo() {
 function montrerAccueil() {
   const etat = ctx.etat;
   const phase = etat.config.phase;
-  const contenu = [entete(), el('h1', {}, `Bonjour ${etat.selectionneur.nom} !`)];
+  const contenu = [entete(),
+    el('h1', {}, `Bonjour ${etat.selectionneur.nom} !`,
+      el('button', { class: 'btn-lien pas-moi', onclick: changerDeNom }, 'Ce n\'est pas moi'))];
   contenu.push(el('p', { class: 'phrase' }, PHRASES_PHASE[phase] || 'Merci de votre participation ! La suite arrive bientôt.'));
 
   if (phase === 'manche1') {
@@ -162,12 +166,48 @@ function montrerMessage(titre, texte) {
   montrer({ racine: el('main', { class: 'ecran ecran-accueil' }, entete(), el('h1', {}, titre), el('p', { class: 'phrase' }, texte), pied()) });
 }
 
+// ---------------------------------------------------------------- identification par le nom
+
+function montrerIdentification(message) {
+  const champ = el('input', {
+    type: 'text', id: 'nom', name: 'nom', required: true, maxlength: 60, autocomplete: 'given-name',
+    placeholder: 'Votre prénom', 'aria-label': 'Votre prénom ou votre nom',
+  });
+  const formulaire = el('form', { class: 'identification' },
+    champ,
+    el('button', { class: 'btn-principal grand', type: 'submit' }, 'C\'est parti'));
+  formulaire.addEventListener('submit', e => {
+    e.preventDefault();
+    const nom = nettoyerNom(champ.value);
+    if (!nom) return;
+    memoriserNom(nom);
+    demarrer();
+  });
+  montrer({
+    racine: el('main', { class: 'ecran ecran-accueil' },
+      entete(),
+      el('h1', {}, 'Bienvenue !'),
+      el('p', { class: 'phrase' }, message || 'Quel est votre prénom ? En le redonnant plus tard, sur n\'importe quel '
+        + 'appareil, vous retrouverez où vous en êtes.'),
+      formulaire,
+      pied()),
+  });
+  champ.focus();
+}
+
+// « Ce n'est pas moi » : on envoie ce qui reste en attente, puis on redemande le nom.
+function changerDeNom() {
+  ctx.file?.envoyerEnPartant();
+  oublierNom();
+  location.reload();
+}
+
 // ---------------------------------------------------------------- démarrage
 
 async function demarrer() {
-  const jeton = lireJeton();
+  const jeton = lireNom();
   if (!jeton) {
-    montrerMessage('Lien incomplet', 'Ouvrez le lien personnel que vous avez reçu par message.');
+    montrerIdentification();
     return;
   }
   ctx.jeton = jeton;
@@ -180,7 +220,8 @@ async function demarrer() {
     majIndicateur(horsLigne ? 'horsligne' : ctx.file.statut(), ctx.file.enAttente());
     if (horsLigne) notifier('Hors ligne : vous pouvez continuer, tout sera envoyé plus tard.');
   } catch (e) {
-    if (e instanceof ErreurServeur) montrerMessage('Lien non reconnu', e.message);
+    if (e instanceof ErreurServeur && e.code === 'nom') { oublierNom(); montrerIdentification(e.message); }
+    else if (e instanceof ErreurServeur) montrerMessage('Problème sur le serveur', e.message);
     else montrerMessage('Connexion impossible', 'Vérifiez votre connexion Internet puis rechargez la page.');
     return;
   }
@@ -190,7 +231,7 @@ async function demarrer() {
   ctx.file.envoyer();
 }
 
-// Erreurs JavaScript : remontées dans l'onglet Journal du classeur.
+// Erreurs JavaScript : remontées au serveur (journal d'exécution d'Apps Script).
 window.addEventListener('error', e => signalerErreur(ctx.jeton, `${e.message} (${e.filename}:${e.lineno})`));
 window.addEventListener('unhandledrejection', e => signalerErreur(ctx.jeton, `Promesse rejetée : ${e.reason?.message || e.reason}`));
 

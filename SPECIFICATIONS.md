@@ -7,6 +7,18 @@ L'outil est pensé pour être **réutilisable dans d'autres contextes** (famille
 
 ---
 
+## Fonctionnement simplifié (version actuelle, depuis la v0.9.0)
+
+Décidé pour une première utilisation ; la suite du document décrit la cible complète.
+
+- **Pas de lien personnel** : le testeur donne son prénom ; en le redonnant (majuscules et espaces ignorés), il retrouve son avancement sur n'importe quel appareil.
+- **Pas d'étiquetage des visages** ni d'équilibrage des personnes pour l'instant.
+- **Google Sheet à une seule feuille « Choix »** : `Photo | Dossier | Choix | Testeur | Horodatage`, une ligne par photo et par testeur, mise à jour quand le choix change (`cœur`, `étoile`, `x`, `non classé`). « Photo » est le nom du fichier original, « Dossier » son chemin relatif.
+- **Photos** : dans le dossier Google Drive du classeur, un dossier par année (sous-dossiers possibles) ; le script `prep/reduire_photos.py`, relançable, crée à côté le jumeau `<année>-allégé` (même arborescence, photos réduites à 1 080 px, sans métadonnées). Un ensemble = un dossier d'année.
+- **Liste des photos** : menu du classeur « Mettre à jour la liste des photos », qui recense les dossiers `-allégé` dans un fichier `florilege-photos.json`.
+
+---
+
 ## 0. Consignes pour Claude Code
 
 - Langue : interface, commentaires du code, README et messages en **français**.

@@ -4,10 +4,10 @@
 // arrière-plan et à la fermeture. En cas d'échec, nouvel essai avec délai croissant.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.8.1';
-import { backendSimule } from './simulation.js?v=0.8.1';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.8.1';
-import { appliquer } from './etat.js?v=0.8.1';
+import { CONFIG, modeDemo } from './config.js?v=0.9.0';
+import { backendSimule } from './simulation.js?v=0.9.0';
+import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.9.0';
+import { appliquer } from './etat.js?v=0.9.0';
 
 // ---------------------------------------------------------------- back-end Apps Script
 // Les requêtes POST sont en text/plain (corps JSON) pour éviter la requête CORS préalable.
@@ -58,40 +58,51 @@ async function appelUnique(action, donnees) {
 }
 
 const backendHttp = {
-  etat: jeton => appel('etat', { jeton }),
-  envoyer: (jeton, evenements) => appel('evenements', { jeton, evenements }),
+  etat: nom => appel('etat', { testeur: nom }),
+  envoyer: (nom, evenements) => appel('evenements', { testeur: nom, evenements }),
   // Envoi « au mieux » lors de la fermeture de la page (aucune réponse attendue).
-  envoyerSansAttendre(jeton, evenements) {
-    const corps = new Blob([JSON.stringify({ action: 'evenements', jeton, evenements })], { type: 'text/plain' });
+  envoyerSansAttendre(nom, evenements) {
+    const corps = new Blob([JSON.stringify({ action: 'evenements', testeur: nom, evenements })], { type: 'text/plain' });
     return navigator.sendBeacon?.(CONFIG.urlApi, corps);
   },
-  async miniatures(jeton, ids) {
-    const json = await appel('miniatures', { jeton, ids });
+  async miniatures(nom, ids) {
+    const json = await appel('miniatures', { testeur: nom, ids });
     const res = {};
     for (const [id, b64] of Object.entries(json.images || {})) res[id] = base64VersBlob(b64, json.types?.[id]);
     return res;
   },
-  async image(jeton, id) {
-    const json = await appel('image', { jeton, id });
+  async image(nom, id) {
+    const json = await appel('image', { testeur: nom, id });
     return base64VersBlob(json.donnees, json.type);
   },
-  erreur: (jeton, message) => appel('erreur', { jeton, message }),
+  erreur: (nom, message) => appel('erreur', { testeur: nom, message }),
 };
 
 export const backend = modeDemo() ? backendSimule : backendHttp;
 
 // ---------------------------------------------------------------- identité
+// Le testeur s'identifie par son nom, mémorisé sur l'appareil. En redonnant le même nom (sans tenir compte
+// des majuscules ni des espaces en trop), il retrouve son avancement, sur n'importe quel appareil.
 
-// Jeton personnel : paramètre ?v= de l'adresse, sinon celui mémorisé sur cet appareil.
-export function lireJeton() {
-  const p = new URLSearchParams(location.search);
-  let jeton = p.get('v');
-  if (jeton) {
-    ecrireStockage('florilege-jeton', jeton);
-  } else {
-    jeton = lireStockage('florilege-jeton') || (modeDemo() ? 'demo' : null);
-  }
-  return jeton;
+export function nettoyerNom(nom) {
+  return String(nom || '').normalize('NFC').trim().replace(/\s+/g, ' ');
+}
+
+// Clé utilisée pour les données gardées sur l'appareil.
+export function cleNom(nom) {
+  return nettoyerNom(nom).toLowerCase();
+}
+
+export function lireNom() {
+  return lireStockage('florilege-nom');
+}
+
+export function memoriserNom(nom) {
+  ecrireStockage('florilege-nom', nettoyerNom(nom));
+}
+
+export function oublierNom() {
+  supprimerStockage('florilege-nom');
 }
 
 function nouvelId() {
@@ -109,7 +120,7 @@ export function nouvelEvenement(champs) {
 export class FileEvenements {
   constructor(jeton) {
     this.jeton = jeton;
-    this.cle = `florilege-file-${jeton}`;
+    this.cle = `florilege-file-${cleNom(jeton)}`;
     this.file = lireStockage(this.cle, []);
     this.enCours = false;
     this.echecs = 0;
@@ -203,7 +214,7 @@ export class FileEvenements {
 // Récupère l'état complet auprès du serveur, puis rejoue les événements locaux non confirmés.
 // Hors ligne, on repart du dernier état connu sur cet appareil.
 export async function chargerEtat(jeton, file) {
-  const cle = `florilege-etat-${jeton}`;
+  const cle = `florilege-etat-${cleNom(jeton)}`;
   let etat;
   let horsLigne = false;
   try {
@@ -222,7 +233,7 @@ export async function chargerEtat(jeton, file) {
 
 // Mémorise l'état courant sur l'appareil (pour une réouverture hors ligne).
 export function memoriserEtat(jeton, etat) {
-  ecrireStockage(`florilege-etat-${jeton}`, etat);
+  ecrireStockage(`florilege-etat-${cleNom(jeton)}`, etat);
 }
 
 // ---------------------------------------------------------------- erreurs du client

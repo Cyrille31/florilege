@@ -4,7 +4,7 @@
 // la reprise après fermeture de l'onglet.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.8.1';
+import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.9.0';
 
 const parametres = new URLSearchParams(location.search);
 // Latence simulée d'une requête (ms), pour juger l'effet du préchargement : ?latence=800
@@ -53,7 +53,7 @@ const PHOTOS = construirePhotos();
 const PHOTOS_PAR_ID = new Map(PHOTOS.map(p => [p.id, p]));
 
 function cleServeur(jeton) {
-  return `florilege-demo-serveur-${jeton}`;
+  return `florilege-demo-serveur-${String(jeton).trim().toLowerCase()}`;
 }
 
 function lireServeur(jeton) {
@@ -158,7 +158,7 @@ export const backendSimule = {
     const faitsParLesAutres = Math.round(PHOTOS.length * 3 * 0.35);
     const faitsParMoi = Object.values(votes).filter(v => v !== null).length;
     return {
-      selectionneur: { id: 's1', nom: parametres.get('nom') || 'Marie' },
+      selectionneur: { id: jeton.toLowerCase(), nom: jeton },
       config: {
         phase: parametres.get('phase') || 'manche1',
         titre_selection: 'Démonstration',

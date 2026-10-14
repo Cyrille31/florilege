@@ -112,6 +112,20 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
 .sous-titre { font-size: .85rem; color: var(--texte-doux); }
 @media (prefers-color-scheme: dark) { .marque { color: var(--vert); } }
 
+.pas-moi { font-size: .85rem; font-weight: 400; margin-left: 6px; padding: 4px 6px; min-height: 32px; vertical-align: middle; }
+.identification { margin-top: 18px; }
+.identification input {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 18px;
+  border: 2px solid var(--bord);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--texte);
+  font: inherit;
+  font-size: 1.2rem;
+}
+.identification input:focus { outline: none; border-color: var(--vert); }
 .phrase { margin: 0; color: var(--texte-doux); font-size: 1.05rem; }
 .tout-fini { padding: 16px; border-radius: var(--rayon); background: var(--surface); box-shadow: var(--ombre); text-align: center; margin: 18px 0; }
 
