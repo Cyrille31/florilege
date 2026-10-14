@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.9.1';
+const VERSION = '0.9.2';
 
 // Réglages (modifiables ici).
 const REGLAGES = {
@@ -174,6 +174,12 @@ function mettreAJourListe() {
   }
   if (temp) temp.setTrashed(true);
   const tri = (a, b) => a.localeCompare(b, 'fr', { numeric: true, sensitivity: 'base' });
+  // Dossiers envoyés deux fois par le navigateur (« 2001-allégé » en double) : ils sont réunis,
+  // et une même photo (même dossier relatif, même nom) n'est gardée qu'une fois.
+  const vues = {};
+  const nbAvant = encours.photos.length;
+  encours.photos = encours.photos.filter(p => (vues[p.id] ? false : (vues[p.id] = true)));
+  const doublons = nbAvant - encours.photos.length;
   encours.photos.sort((a, b) => tri(a.e, b.e) || tri(a.dossier, b.dossier) || tri(a.nom, b.nom));
   const contenu = JSON.stringify({ date: maintenantLisible(), photos: encours.photos });
   const it = racine.getFilesByName(REGLAGES.fichierListe);
@@ -185,7 +191,8 @@ function mettreAJourListe() {
   const parAnnee = {};
   encours.photos.forEach(p => { parAnnee[p.e] = (parAnnee[p.e] || 0) + 1; });
   const detail = Object.keys(parAnnee).sort(tri).map(a => `${a} : ${parAnnee[a]}`).join('\n');
-  ui.alert('Liste des photos à jour', `${encours.photos.length} photos.\n\n${detail}`, ui.ButtonSet.OK);
+  ui.alert('Liste des photos à jour', `${encours.photos.length} photos.\n\n${detail}`
+    + (doublons ? `\n\n${doublons} photo(s) en double ignorée(s) (dossier envoyé deux fois dans Google Drive).` : ''), ui.ButtonSet.OK);
 }
 
 // Contenu d'un dossier via l'API Drive (service avancé) : 1 000 éléments par appel, dimensions comprises.

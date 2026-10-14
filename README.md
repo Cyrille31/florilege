@@ -161,6 +161,20 @@ et se termine par un résumé ; le détail est dans `rapport_reduction.txt`, dan
 Si Google Drive pour ordinateur est en mode « streaming », les originaux sont téléchargés au fur et à mesure : c'est
 plus lent mais cela fonctionne.
 
+**Sans Google Drive pour ordinateur** (photos préparées sur le PC puis envoyées par le navigateur) :
+
+1. Sur le PC, un dossier de travail (par exemple `D:\Photos famille`) contenant les dossiers d'année `2001`, `2002`…
+2. Faire glisser ce dossier sur `lancer_reduction.bat` : les dossiers `2001-allégé`… sont créés à côté.
+3. Dans Chrome, ouvrir le dossier Google Drive du Google Sheet et y **faire glisser les dossiers d'année et les
+   dossiers `-allégé`** (le fichier `rapport_reduction.txt` n'est pas utile à Google Drive).
+4. Dans le Google Sheet : **Florilège → Mettre à jour la liste des photos**.
+
+Pour **ajouter des photos plus tard**, le plus simple est de ne garder sur le PC que les nouveautés : par exemple
+`D:\Photos famille\2001\Noël` ; l'outil crée `2001-allégé\Noël`, qu'il suffit de faire glisser **dans** le dossier
+`2001-allégé` déjà présent sur Google Drive (et `Noël` dans `2001`). Si un dossier est renvoyé en entier, Google Drive
+crée un second dossier du même nom : ce n'est pas gênant, la mise à jour de la liste réunit les dossiers de même nom
+et ignore les photos en double.
+
 **À relancer chaque fois que des photos ou des dossiers sont ajoutés** : seules les photos nouvelles ou modifiées sont
 traitées. Les photos HEIC (iPhone) et PNG reçoivent « .jpg » en plus de leur nom (`IMG_1.HEIC.jpg`) ; le nom
 d'origine est restitué dans la feuille. Les vidéos et documents sont ignorés (listés dans le rapport), ainsi que les
@@ -232,6 +246,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.9.2 | Mise à jour de la liste : les dossiers envoyés deux fois dans Google Drive sont réunis et les photos en double ignorées ; README : préparation des photos sur le PC puis envoi par le navigateur. |
 | 0.9.1 | Mot de passe commun, défini depuis le menu du Google Sheet et demandé une fois aux testeurs. |
 | 0.9.0 | Fonctionnement simplifié : identification par le prénom, une seule feuille « Choix » (une ligne par photo et par testeur), ensembles = dossiers d'année, liste des photos tirée des dossiers `-allégé` ; script `prep/reduire_photos.py` de création des photos allégées, relançable. |
 | 0.8.1 | Création des photos de test relançable (les images déjà créées sont réutilisées) ; rappel d'ouvrir la manche 1. |
