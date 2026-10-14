@@ -8,10 +8,10 @@ export const CONFIG = {
 
   // Identifiant du Google Sheet modèle (partagé en lecture), proposé aux nouveaux organisateurs
   // via la page Google « Faire une copie ». Vide tant que le modèle n'est pas prêt.
-  modele: '',
+  modele: '14uz4wTE8GG05nZ4Md2MKrY0HnP4Y257NRgvaN_HcGCs',
 
   // Version affichée dans l'écran « À propos ».
-  version: '0.11.0',
+  version: '0.11.1',
 
   // Envoi groupé des événements (section 7.4 des spécifications).
   envoiToutesLesNActions: 10,

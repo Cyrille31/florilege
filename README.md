@@ -299,6 +299,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.11.1 | Classeur modèle configuré : la page « Organiser une sélection » propose « Copier le modèle Florilège ». |
 | 0.11.0 | Création des photos allégées directement dans Google Drive (en tâche de fond, relançable, liste mise à jour à la fin) ; menu « Installer / configurer… » (dossier des photos, mot de passe, publication guidée) ; page « Organiser une sélection » sur le site, prête pour le classeur modèle. |
 | 0.10.0 | Lien d'invitation (l'adresse du serveur n'est plus dans GitHub ; le même site sert à plusieurs sélections et comptes Google) ; ascenseur horizontal et compteur 📷 n/N, aussi en plein écran ; un seul toucher pour agrandir ; « Chargement… » / « Image indisponible » ; images reconnues aussi d'après leur extension ; fichiers ignorés signalés par la mise à jour de la liste. |
 | 0.9.3 | Message explicite si le script Apps Script publié est une ancienne version (redéploiement oublié). |
