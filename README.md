@@ -246,6 +246,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.9.3 | Message explicite si le script Apps Script publié est une ancienne version (redéploiement oublié). |
 | 0.9.2 | Mise à jour de la liste : les dossiers envoyés deux fois dans Google Drive sont réunis et les photos en double ignorées ; README : préparation des photos sur le PC puis envoi par le navigateur. |
 | 0.9.1 | Mot de passe commun, défini depuis le menu du Google Sheet et demandé une fois aux testeurs. |
 | 0.9.0 | Fonctionnement simplifié : identification par le prénom, une seule feuille « Choix » (une ligne par photo et par testeur), ensembles = dossiers d'année, liste des photos tirée des dossiers `-allégé` ; script `prep/reduire_photos.py` de création des photos allégées, relançable. |

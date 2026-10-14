@@ -1,17 +1,17 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.9.2';
+import { CONFIG, modeDemo } from './config.js?v=0.9.3';
 import {
   backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
   memoriserMotDePasse, oublierMotDePasse,
   nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.9.2';
-import { ChargeurImages } from './images.js?v=0.9.2';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.9.2';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.9.2';
-import { ecranEnsemble } from './tri.js?v=0.9.2';
-import { supprimerStockage } from './stockage.js?v=0.9.2';
+} from './api.js?v=0.9.3';
+import { ChargeurImages } from './images.js?v=0.9.3';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.9.3';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.9.3';
+import { ecranEnsemble } from './tri.js?v=0.9.3';
+import { supprimerStockage } from './stockage.js?v=0.9.3';
 
 const PHRASE_BAL = 'En échange, une seule chose vous est demandée, sur l\'honneur : faire une bonne action '
   + 'chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -230,6 +230,11 @@ async function demarrer() {
   } catch (e) {
     if (e instanceof ErreurServeur && e.code === 'nom') { oublierNom(); montrerIdentification(e.message); }
     else if (e instanceof ErreurServeur && e.code === 'mdp') { oublierMotDePasse(); montrerIdentification(e.message, true); }
+    else if (e instanceof ErreurServeur && e.code === 'jeton') {
+      // Réponse d'un ancien script (version à liens personnels) : le nouveau n'a pas été redéployé.
+      montrerMessage('Script du serveur à mettre à jour', 'Le script Apps Script publié est une ancienne version. '
+        + 'Dans l\'éditeur Apps Script : Déployer → Gérer les déploiements → crayon → Version : Nouvelle version → Déployer.');
+    }
     else if (e instanceof ErreurServeur) montrerMessage('Problème sur le serveur', e.message);
     else montrerMessage('Connexion impossible', 'Vérifiez votre connexion Internet puis rechargez la page.');
     return;
