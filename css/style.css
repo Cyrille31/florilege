@@ -112,6 +112,10 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
 .sous-titre { font-size: .85rem; color: var(--texte-doux); }
 @media (prefers-color-scheme: dark) { .marque { color: var(--vert); } }
 
+.organiser { display: block; margin: 14px auto 0; }
+.etapes { padding-left: 1.3em; margin: 16px 0; }
+.etapes li { margin: 10px 0; }
+.etapes a { color: var(--vert); font-weight: 600; }
 .lien-demo { display: grid; place-items: center; text-decoration: none; margin-top: 18px; }
 .pas-moi { font-size: .85rem; font-weight: 400; margin-left: 6px; padding: 4px 6px; min-height: 32px; vertical-align: middle; }
 .identification { margin-top: 18px; }

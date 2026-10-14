@@ -133,7 +133,21 @@ Photos famille/                       (exemple de nom)
 > saisissent une fois avec leur prénom ; il est ensuite mémorisé sur leur appareil. Majuscules et espaces en trop ne
 > comptent pas. Sans mot de passe défini, toute personne qui connaît l'adresse de l'application peut voir les photos.
 
-### 1. Créer les photos allégées (sur le PC)
+### 1. Créer les photos allégées
+
+Deux possibilités, au choix (on peut aussi les mélanger : chacune laisse intactes les copies de l'autre) :
+
+- **Directement dans Google Drive (rien à installer)** : dans le Google Sheet, **Florilège → Créer les photos
+  allégées**. Pour chaque dossier d'année, le dossier `-allégé` est créé avec la même arborescence ; chaque photo y est
+  remplacée par la version réduite (1 080 px) que Google Drive fabrique pour ses aperçus (sans métadonnées, orientation
+  corrigée, photos HEIC comprises). Le travail se fait **en tâche de fond**, par tranches de quelques minutes (environ
+  une heure pour 3 000 photos) ; on peut fermer le classeur. **Florilège → État de la création des photos allégées**
+  indique l'avancement. À la fin, la liste des photos est mise à jour automatiquement. Relance sans risque : seules les
+  photos nouvelles ou modifiées sont traitées. Une photo tout juste envoyée dont Google n'a pas encore préparé
+  l'aperçu est signalée : relancer un peu plus tard.
+- **Sur le PC, avec l'outil ci-dessous** : meilleure qualité, mais il faut Python.
+
+#### Outil PC
 
 Le script [`prep/reduire_photos.py`](prep/reduire_photos.py) crée, à côté de chaque dossier d'année, son jumeau
 `-allégé` : même arborescence, photos réduites à 1 080 pixels (JPEG qualité 78), orientation corrigée, **données GPS
@@ -183,6 +197,12 @@ signalée ; l'option `--nettoyer` la supprime (`lancer_reduction.bat --nettoyer`
 
 ### 2. Le Google Sheet et son script (une seule fois)
 
+> **Avec le classeur modèle** (quand il est disponible) : la page d'accueil du site, sans lien d'invitation, propose
+> « Vous organisez une sélection ? Créer la vôtre » ; le bouton « Copier le modèle Florilège » crée dans votre Google
+> Drive un classeur qui contient déjà le script. Il suffit ensuite de lancer **Florilège → Installer / configurer…**
+> (dossier des photos, mot de passe), qui guide aussi pour la publication. Les étapes ci-dessous sont celles de
+> l'installation manuelle.
+
 1. Dans le dossier Google Drive : **Nouveau → Google Sheets**, par exemple `Florilège — choix`.
 2. **Extensions → Apps Script**. (Facultatif : renommer « Projet sans titre » en « Florilège ».)
 3. Dans `Code.gs`, tout effacer et coller [`apps-script/Code.gs`](apps-script/Code.gs).
@@ -227,6 +247,16 @@ n'y figure pas. Sur un même appareil, les données de deux sélections restent 
 Pour une installation entièrement indépendante (son propre site), il suffit de copier le dépôt (« Fork » sur GitHub),
 d'activer GitHub Pages et de changer `application` dans les `REGLAGES` de `Code.gs`.
 
+### Préparer le classeur modèle (pour Cyrille, une fois)
+
+1. Dans votre Google Drive (ou celui d'un compte dédié), créer un Google Sheet nommé « Florilège — modèle ».
+2. Y coller `Code.gs` et `appsscript.json` comme à l'étape 2 (inutile de le déployer ou de définir un mot de passe :
+   le modèle ne contient aucune donnée).
+3. **Partager → Accès général : « Tous les utilisateurs disposant du lien » – Lecteur**.
+4. Copier l'identifiant du classeur (la partie entre `/d/` et `/edit` de son adresse) dans `modele` de
+   [`js/config.js`](js/config.js), ou me le transmettre.
+5. À chaque nouvelle version de `Code.gs`, la recoller aussi dans le modèle.
+
 ### Onglets et dossiers inutiles
 
 Seule la feuille **Choix** sert. Les onglets d'une ancienne installation (Config, Selectionneurs, Personnes,
@@ -269,6 +299,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.11.0 | Création des photos allégées directement dans Google Drive (en tâche de fond, relançable, liste mise à jour à la fin) ; menu « Installer / configurer… » (dossier des photos, mot de passe, publication guidée) ; page « Organiser une sélection » sur le site, prête pour le classeur modèle. |
 | 0.10.0 | Lien d'invitation (l'adresse du serveur n'est plus dans GitHub ; le même site sert à plusieurs sélections et comptes Google) ; ascenseur horizontal et compteur 📷 n/N, aussi en plein écran ; un seul toucher pour agrandir ; « Chargement… » / « Image indisponible » ; images reconnues aussi d'après leur extension ; fichiers ignorés signalés par la mise à jour de la liste. |
 | 0.9.3 | Message explicite si le script Apps Script publié est une ancienne version (redéploiement oublié). |
 | 0.9.2 | Mise à jour de la liste : les dossiers envoyés deux fois dans Google Drive sont réunis et les photos en double ignorées ; README : préparation des photos sur le PC puis envoi par le navigateur. |

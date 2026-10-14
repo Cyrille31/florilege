@@ -6,8 +6,12 @@ export const CONFIG = {
   // Laissée vide : l'adresse du serveur vient du lien d'invitation (?s=…), fourni par le menu du Google Sheet.
   urlApi: '',
 
+  // Identifiant du Google Sheet modèle (partagé en lecture), proposé aux nouveaux organisateurs
+  // via la page Google « Faire une copie ». Vide tant que le modèle n'est pas prêt.
+  modele: '',
+
   // Version affichée dans l'écran « À propos ».
-  version: '0.10.0',
+  version: '0.11.0',
 
   // Envoi groupé des événements (section 7.4 des spécifications).
   envoiToutesLesNActions: 10,

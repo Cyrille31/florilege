@@ -17,6 +17,8 @@ Décidé pour une première utilisation ; la suite du document décrit la cible 
 - **Google Sheet à une seule feuille « Choix »** : `Photo | Dossier | Choix | Testeur | Horodatage`, une ligne par photo et par testeur, mise à jour quand le choix change (`cœur`, `étoile`, `x`, `non classé`). « Photo » est le nom du fichier original, « Dossier » son chemin relatif.
 - **Photos** : dans le dossier Google Drive du classeur, un dossier par année (sous-dossiers possibles) ; le script `prep/reduire_photos.py`, relançable, crée à côté le jumeau `<année>-allégé` (même arborescence, photos réduites à 1 080 px, sans métadonnées). Un ensemble = un dossier d'année.
 - **Liste des photos** : menu du classeur « Mettre à jour la liste des photos », qui recense les dossiers `-allégé` dans un fichier `florilege-photos.json`.
+- **Photos allégées dans Google Drive** (sans PC) : menu « Créer les photos allégées », qui utilise les aperçus réduits fabriqués par Google Drive ; traitement en tâche de fond par tranches (déclencheurs), relançable, liste mise à jour à la fin.
+- **Nouvel organisateur** : copie d'un classeur modèle (page Google « Faire une copie »), puis menu « Installer / configurer… » (dossier des photos, mot de passe, publication guidée) et « Lien d'invitation » (`?s=<identifiant du serveur>`). Le site est commun à toutes les sélections.
 
 ---
 

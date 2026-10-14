@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.10.0';
+const VERSION = '0.11.0';
 
 // Réglages (modifiables ici).
 const REGLAGES = {
@@ -146,7 +146,21 @@ function indexParId() {
 // Si le temps manque (limite de 6 minutes), l'état est mémorisé et la relance reprend où elle s'était arrêtée.
 function mettreAJourListe() {
   const ui = SpreadsheetApp.getUi();
+  const r = calculerListe();
+  if (r.statut === 'aucun') {
+    ui.alert('Florilège', `Aucun dossier « …${REGLAGES.suffixe} » à côté du classeur. Lancez d'abord « Créer les photos allégées » (ou l'outil de réduction sur votre PC).`, ui.ButtonSet.OK);
+  } else if (r.statut === 'interrompu') {
+    ui.alert('Florilège', `${r.nb} photos recensées pour l'instant. Le temps autorisé par Google est presque écoulé : relancez « Mettre à jour la liste des photos » pour terminer.`, ui.ButtonSet.OK);
+  } else {
+    ui.alert('Liste des photos à jour', r.message, ui.ButtonSet.OK);
+  }
+}
+
+// Recense les photos des dossiers « -allégé » et écrit florilege-photos.json.
+// Renvoie { statut: 'aucun' | 'interrompu' | 'fini', nb, message } ; sans fenêtre (utilisable par un déclencheur).
+function calculerListe(dureeMax) {
   const debut = Date.now();
+  const limite = dureeMax || 4.5 * 60 * 1000;
   const racine = dossierSelection();
   const proprietes = PropertiesService.getScriptProperties();
   // Mise à jour interrompue (temps écoulé) : son état est gardé dans un fichier temporaire du dossier.
@@ -163,22 +177,17 @@ function mettreAJourListe() {
         file.push({ id: d.getId(), annee, rel: annee });
       }
     }
-    if (!file.length) {
-      ui.alert('Florilège', `Aucun dossier « …${REGLAGES.suffixe} » à côté du classeur. Lancez d'abord le script de réduction des photos sur votre PC.`, ui.ButtonSet.OK);
-      return;
-    }
+    if (!file.length) return { statut: 'aucun', nb: 0, message: '' };
     encours = { file, photos: [], ignores: [] };
   }
-  const avance = typeof Drive !== 'undefined' && Drive.Files && Drive.Files.list;
   while (encours.file.length) {
-    if (Date.now() - debut > 4.5 * 60 * 1000) {
+    if (Date.now() - debut > limite) {
       if (temp) temp.setContent(JSON.stringify(encours));
       else racine.createFile(FICHIER_ENCOURS, JSON.stringify(encours), 'application/json');
-      ui.alert('Florilège', `${encours.photos.length} photos recensées pour l'instant. Le temps autorisé par Google est presque écoulé : relancez « Mettre à jour la liste des photos » pour terminer.`, ui.ButtonSet.OK);
-      return;
+      return { statut: 'interrompu', nb: encours.photos.length, message: '' };
     }
     const d = encours.file.shift();
-    for (const e of avance ? contenuAvance(d.id) : contenuDriveApp(d.id)) {
+    for (const e of contenuDossier(d.id)) {
       if (e.dossier) encours.file.push({ id: e.id, annee: d.annee, rel: `${d.rel}/${e.nom}` });
       else if (estImage(e)) {
         const nom = nomOriginal(e.nom);
@@ -190,7 +199,6 @@ function mettreAJourListe() {
     }
   }
   if (temp) temp.setTrashed(true);
-  const tri = (a, b) => a.localeCompare(b, 'fr', { numeric: true, sensitivity: 'base' });
   // Dossiers envoyés deux fois par le navigateur (« 2001-allégé » en double) : ils sont réunis,
   // et une même photo (même dossier relatif, même nom) n'est gardée qu'une fois.
   const vues = {};
@@ -198,7 +206,7 @@ function mettreAJourListe() {
   encours.photos = encours.photos.filter(p => (vues[p.id] ? false : (vues[p.id] = true)));
   const doublons = nbAvant - encours.photos.length;
   const ignores = encours.ignores || [];
-  encours.photos.sort((a, b) => tri(a.e, b.e) || tri(a.dossier, b.dossier) || tri(a.nom, b.nom));
+  encours.photos.sort((a, b) => trierNoms(a.e, b.e) || trierNoms(a.dossier, b.dossier) || trierNoms(a.nom, b.nom));
   const contenu = JSON.stringify({ date: maintenantLisible(), photos: encours.photos });
   const it = racine.getFilesByName(REGLAGES.fichierListe);
   if (it.hasNext()) it.next().setContent(contenu);
@@ -208,11 +216,21 @@ function mettreAJourListe() {
 
   const parAnnee = {};
   encours.photos.forEach(p => { parAnnee[p.e] = (parAnnee[p.e] || 0) + 1; });
-  const detail = Object.keys(parAnnee).sort(tri).map(a => `${a} : ${parAnnee[a]}`).join('\n');
-  ui.alert('Liste des photos à jour', `${encours.photos.length} photos.\n\n${detail}`
+  const detail = Object.keys(parAnnee).sort(trierNoms).map(a => `${a} : ${parAnnee[a]}`).join('\n');
+  const message = `${encours.photos.length} photos.\n\n${detail}`
     + (doublons ? `\n\n${doublons} photo(s) en double ignorée(s) (dossier envoyé deux fois dans Google Drive).` : '')
     + (ignores.length ? `\n\n${ignores.length} fichier(s) non reconnu(s) comme image et ignoré(s)`
-      + ` :\n${ignores.slice(0, 15).join('\n')}${ignores.length > 15 ? '\n…' : ''}` : ''), ui.ButtonSet.OK);
+      + ` :\n${ignores.slice(0, 15).join('\n')}${ignores.length > 15 ? '\n…' : ''}` : '');
+  return { statut: 'fini', nb: encours.photos.length, message };
+}
+
+function trierNoms(a, b) {
+  return String(a).localeCompare(String(b), 'fr', { numeric: true, sensitivity: 'base' });
+}
+
+// Contenu d'un dossier : service avancé Drive s'il est activé (plus rapide, dimensions comprises), sinon DriveApp.
+function contenuDossier(idDossier) {
+  return typeof Drive !== 'undefined' && Drive.Files && Drive.Files.list ? contenuAvance(idDossier) : contenuDriveApp(idDossier);
 }
 
 // Contenu d'un dossier via l'API Drive (service avancé) : 1 000 éléments par appel, dimensions comprises.
@@ -222,13 +240,16 @@ function contenuAvance(idDossier) {
   do {
     const r = Drive.Files.list({
       q: `'${idDossier}' in parents and trashed = false`,
-      fields: 'nextPageToken, files(id, name, mimeType, imageMediaMetadata(width, height))',
+      fields: 'nextPageToken, files(id, name, mimeType, description, modifiedTime, imageMediaMetadata(width, height))',
       pageSize: 1000,
       pageToken: page,
     });
     for (const f of r.files || []) {
       const meta = f.imageMediaMetadata || {};
-      res.push({ id: f.id, nom: f.name, type: f.mimeType, dossier: f.mimeType === 'application/vnd.google-apps.folder', l: meta.width, h: meta.height });
+      res.push({
+        id: f.id, nom: f.name, type: f.mimeType, dossier: f.mimeType === 'application/vnd.google-apps.folder',
+        l: meta.width, h: meta.height, description: f.description || '', modifie: f.modifiedTime || '',
+      });
     }
     page = r.nextPageToken;
   } while (page);
@@ -242,8 +263,252 @@ function contenuDriveApp(idDossier) {
   const sous = d.getFolders();
   while (sous.hasNext()) { const s = sous.next(); res.push({ id: s.getId(), nom: s.getName(), dossier: true }); }
   const fichiers = d.getFiles();
-  while (fichiers.hasNext()) { const f = fichiers.next(); res.push({ id: f.getId(), nom: f.getName(), type: f.getMimeType() }); }
+  while (fichiers.hasNext()) {
+    const f = fichiers.next();
+    res.push({ id: f.getId(), nom: f.getName(), type: f.getMimeType(), description: f.getDescription() || '', modifie: f.getLastUpdated().toISOString() });
+  }
   return res;
+}
+
+// ============================================================================ photos allégées dans Google Drive
+// Pour chaque dossier d'année (nom commençant par un chiffre), crée « <année>-allégé » avec la même
+// arborescence : chaque photo y est remplacée par la version réduite (1 080 px) que Google Drive fabrique
+// pour ses aperçus (sans métadonnées, orientation appliquée). Rien à installer sur un PC.
+// Google limitant une exécution à 6 minutes, le travail se poursuit seul, par tranches, en tâche de fond.
+// Relance sans risque : une copie déjà faite (et dont l'original n'a pas changé) n'est pas refaite ;
+// les copies faites par l'outil PC (prep/reduire_photos.py) sont laissées telles quelles.
+
+const FICHIER_REDUCTION = 'florilege-reduction-encours.json';
+const TAILLE_REDUITE = 1080;
+const DOSSIERS_IGNORES = /^(_?originaux_picasa|_catalogue_picasa|\.picasaoriginals)$/i;
+
+function estDossierAnnee(nom) {
+  return /^\d/.test(String(nom)) && !estDossierAllege(nom);
+}
+
+// Même règle que l'outil PC : JPEG → même nom ; autres formats → « .jpg » ajouté (IMG_1.HEIC → IMG_1.HEIC.jpg).
+function nomReduit(nom) {
+  return /\.jpe?g$/i.test(nom) ? nom : `${nom}.jpg`;
+}
+
+function creerPhotosAllegees() {
+  const ui = SpreadsheetApp.getUi();
+  if (typeof Drive === 'undefined' || !Drive.Files) {
+    ui.alert('Florilège', 'Le service avancé « Drive » n\'est pas activé : remplacez appsscript.json par la version du dépôt GitHub, puis réessayez.', ui.ButtonSet.OK);
+    return;
+  }
+  const annees = [];
+  const it = dossierSelection().getFolders();
+  while (it.hasNext()) { const d = it.next(); if (estDossierAnnee(d.getName())) annees.push(d.getName()); }
+  if (!annees.length) {
+    ui.alert('Florilège', 'Aucun dossier d\'année (nom commençant par un chiffre, par exemple « 2001 ») à côté du classeur.', ui.ButtonSet.OK);
+    return;
+  }
+  const encours = lireFichierJson(FICHIER_REDUCTION);
+  const ok = ui.alert('Créer les photos allégées',
+    (encours ? 'Une création est déjà en cours : elle va reprendre.\n\n' : '')
+    + `Dossiers d'année trouvés : ${annees.sort(trierNoms).join(', ')}.\n\n`
+    + 'Le travail se fait en tâche de fond, par tranches de quelques minutes (compter environ une heure pour 3 000 photos). '
+    + 'Vous pouvez fermer le classeur ; suivez l\'avancement avec « État de la création des photos allégées ». '
+    + 'À la fin, la liste des photos est mise à jour automatiquement.', ui.ButtonSet.OK_CANCEL);
+  if (ok !== ui.Button.OK) return;
+  PropertiesService.getScriptProperties().setProperty('reduction_bilan', 'En cours : la première tranche démarre dans une minute environ.');
+  planifierSuiteReduction(5);
+  ss().toast('La création des photos allégées démarre dans une minute environ.', 'Florilège', 8);
+}
+
+function ss() {
+  return SpreadsheetApp.getActiveSpreadsheet();
+}
+
+function etatReduction() {
+  const ui = SpreadsheetApp.getUi();
+  const encours = lireFichierJson(FICHIER_REDUCTION);
+  const bilan = PropertiesService.getScriptProperties().getProperty('reduction_bilan') || 'Aucune création de photos allégées lancée pour l\'instant.';
+  const planifiee = ScriptApp.getProjectTriggers().some(t => t.getHandlerFunction() === 'poursuivreReduction');
+  ui.alert('Photos allégées',
+    (encours ? `En cours : ${encours.faites} photo(s) réduite(s), ${encours.file.length} dossier(s) restant(s) à parcourir.`
+      + (planifiee ? '\nLa prochaine tranche est programmée.' : '\nAucune tranche programmée : relancez « Créer les photos allégées ».') + '\n\n' : '')
+    + bilan, ui.ButtonSet.OK);
+}
+
+function lireFichierJson(nom) {
+  const it = dossierSelection().getFilesByName(nom);
+  return it.hasNext() ? JSON.parse(it.next().getBlob().getDataAsString('UTF-8')) : null;
+}
+
+function ecrireFichierJson(nom, objet) {
+  const racine = dossierSelection();
+  const it = racine.getFilesByName(nom);
+  if (it.hasNext()) it.next().setContent(JSON.stringify(objet));
+  else racine.createFile(nom, JSON.stringify(objet), 'application/json');
+}
+
+function supprimerFichier(nom) {
+  const it = dossierSelection().getFilesByName(nom);
+  while (it.hasNext()) it.next().setTrashed(true);
+}
+
+function planifierSuiteReduction(secondes) {
+  supprimerSuiteReduction();
+  ScriptApp.newTrigger('poursuivreReduction').timeBased().after((secondes || 60) * 1000).create();
+}
+
+function supprimerSuiteReduction() {
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'poursuivreReduction').forEach(t => ScriptApp.deleteTrigger(t));
+}
+
+// Appelée par le déclencheur : traite une tranche, puis programme la suivante s'il reste du travail.
+function poursuivreReduction() {
+  // Verrou propre à la réduction (l'enregistrement des choix utilise le verrou du script : il n'est pas bloqué).
+  const verrou = LockService.getDocumentLock();
+  if (!verrou.tryLock(5000)) return;
+  try {
+    reduireUneTranche(4.5 * 60 * 1000);
+  } catch (err) {
+    PropertiesService.getScriptProperties().setProperty('reduction_bilan', `Erreur : ${err.message || err}. Relancez « Créer les photos allégées ».`);
+    throw err;
+  } finally {
+    verrou.releaseLock();
+  }
+}
+
+function reduireUneTranche(dureeMax) {
+  const debut = Date.now();
+  const proprietes = PropertiesService.getScriptProperties();
+  const racine = dossierSelection();
+  let etat = lireFichierJson(FICHIER_REDUCTION);
+  if (!etat) {
+    const dossiers = {};
+    const it = racine.getFolders();
+    while (it.hasNext()) { const d = it.next(); dossiers[d.getName().normalize('NFC')] = dossiers[d.getName().normalize('NFC')] || d; }
+    const file = [];
+    for (const nom of Object.keys(dossiers).filter(estDossierAnnee).sort(trierNoms)) {
+      const cible = dossiers[`${nom}${REGLAGES.suffixe}`.normalize('NFC')] || racine.createFolder(`${nom}${REGLAGES.suffixe}`);
+      file.push({ src: dossiers[nom].getId(), dst: cible.getId(), rel: nom });
+    }
+    etat = { file, faites: 0, erreurs: [], attente: [], debut: maintenantLisible() };
+  }
+
+  const tempsEcoule = () => Date.now() - debut > dureeMax;
+  while (etat.file.length) {
+    const d = etat.file[0];
+    const sousTaches = [];
+    const existants = {};
+    const sousDossiers = {};
+    for (const e of contenuDossier(d.dst)) (e.dossier ? sousDossiers : existants)[e.nom] = e;
+    let dossierCible = null;
+    let interrompu = false;
+    for (const e of contenuDossier(d.src)) {
+      if (e.dossier) {
+        if (DOSSIERS_IGNORES.test(e.nom) || e.nom.startsWith('.')) continue;
+        if (!sousDossiers[e.nom]) {
+          dossierCible = dossierCible || DriveApp.getFolderById(d.dst);
+          sousDossiers[e.nom] = { id: dossierCible.createFolder(e.nom).getId(), dossier: true };
+        }
+        sousTaches.push({ src: e.id, dst: sousDossiers[e.nom].id, rel: `${d.rel}/${e.nom}` });
+        continue;
+      }
+      if (!estImage(e)) continue;
+      const nom = nomReduit(e.nom);
+      const marque = `florilege:${e.id}:${e.modifie}`;
+      const deja = existants[nom];
+      if (deja && (deja.description === marque || !String(deja.description).startsWith('florilege:'))) continue; // à jour
+      if (tempsEcoule()) { interrompu = true; break; }
+      try {
+        const blob = versionReduite(e.id);
+        if (!blob) { etat.attente.push(`${d.rel}/${e.nom}`); continue; }
+        if (deja) DriveApp.getFileById(deja.id).setTrashed(true); // l'original a changé : copie refaite
+        dossierCible = dossierCible || DriveApp.getFolderById(d.dst);
+        dossierCible.createFile(blob.setName(nom)).setDescription(marque);
+        etat.faites++;
+      } catch (err) {
+        etat.erreurs.push(`${d.rel}/${e.nom} : ${err.message || err}`);
+      }
+    }
+    if (interrompu) break;
+    etat.file.shift();
+    etat.file.push(...sousTaches);
+    if (tempsEcoule()) break;
+  }
+
+  if (etat.file.length) {
+    ecrireFichierJson(FICHIER_REDUCTION, etat);
+    proprietes.setProperty('reduction_bilan', `En cours depuis le ${etat.debut} : ${etat.faites} photo(s) réduite(s) pour l'instant.`);
+    planifierSuiteReduction(60);
+    return { statut: 'en cours', etat };
+  }
+
+  // Terminé : bilan, puis mise à jour de la liste des photos.
+  supprimerFichier(FICHIER_REDUCTION);
+  supprimerSuiteReduction();
+  const attente = Array.from(new Set(etat.attente));
+  let bilan = `Terminé le ${maintenantLisible()} : ${etat.faites} photo(s) réduite(s).`
+    + (attente.length ? `\n${attente.length} photo(s) dont Google Drive n'a pas encore préparé l'aperçu (photos très récentes) : relancez plus tard.` : '')
+    + (etat.erreurs.length ? `\n${etat.erreurs.length} erreur(s), par exemple :\n${etat.erreurs.slice(0, 5).join('\n')}` : '');
+  const liste = calculerListe(Math.max(30000, dureeMax - (Date.now() - debut)));
+  bilan += liste.statut === 'fini' ? `\n\nListe des photos mise à jour : ${liste.nb} photos.`
+    : '\n\nLa liste des photos n\'a pas pu être terminée : lancez « Mettre à jour la liste des photos ».';
+  proprietes.setProperty('reduction_bilan', bilan.slice(0, 8000));
+  return { statut: 'fini', etat };
+}
+
+// Version réduite d'une image, fabriquée par Google Drive (celle de ses aperçus), à la taille voulue.
+function versionReduite(idFichier) {
+  const f = Drive.Files.get(idFichier, { fields: 'thumbnailLink' });
+  if (!f.thumbnailLink) return null; // aperçu pas encore prêt
+  const url = /=s\d+[^/]*$/.test(f.thumbnailLink)
+    ? f.thumbnailLink.replace(/=s\d+[^/]*$/, `=s${TAILLE_REDUITE}`)
+    : `${f.thumbnailLink}=s${TAILLE_REDUITE}`;
+  const rep = UrlFetchApp.fetch(url, { headers: { Authorization: `Bearer ${ScriptApp.getOAuthToken()}` }, muteHttpExceptions: true });
+  if (rep.getResponseCode() !== 200) throw new Error(`aperçu refusé par Google Drive (code ${rep.getResponseCode()})`);
+  return rep.getBlob();
+}
+
+// ============================================================================ installation (nouvel organisateur)
+
+function installer() {
+  const ui = SpreadsheetApp.getUi();
+  const actuel = dossierSelection();
+  const rep = ui.prompt('Installer Florilège',
+    'Lien (adresse) du dossier Google Drive qui contient vos dossiers de photos, un par année (« 2001 », « 2002 »…).\n'
+    + `Laisser vide pour garder le dossier actuel du classeur : « ${actuel.getName()} ».`, ui.ButtonSet.OK_CANCEL);
+  if (rep.getSelectedButton() !== ui.Button.OK) return;
+  const texte = rep.getResponseText().trim();
+  let dossier = actuel;
+  if (texte) {
+    const m = /folders\/([\w-]+)/.exec(texte) || /^([\w-]{20,})$/.exec(texte) || /[?&]id=([\w-]+)/.exec(texte);
+    try {
+      dossier = DriveApp.getFolderById(m ? m[1] : texte);
+    } catch (err) {
+      ui.alert('Florilège', 'Dossier introuvable. Dans Google Drive, ouvrez le dossier et copiez l\'adresse affichée par le navigateur.', ui.ButtonSet.OK);
+      return;
+    }
+    if (dossier.getId() !== actuel.getId()) DriveApp.getFileById(ss().getId()).moveTo(dossier);
+  }
+  const annees = [];
+  const it = dossier.getFolders();
+  while (it.hasNext()) { const d = it.next(); if (estDossierAnnee(d.getName())) annees.push(d.getName()); }
+  feuilleChoix();
+  definirMotDePasse();
+  PropertiesService.getScriptProperties().setProperty('installe', 'oui');
+
+  let url = '';
+  try { url = ScriptApp.getService().getUrl() || ''; } catch (err) { /* pas encore déployé */ }
+  const deploye = /\/s\/[\w-]+\/exec/.test(url);
+  const html = HtmlService.createHtmlOutput(`
+    <style>body{font-family:sans-serif;font-size:14px;line-height:1.45}li{margin:4px 0}</style>
+    <p>Le classeur est rangé dans <b>${String(dossier.getName()).replace(/</g, '&lt;')}</b>
+      (${annees.length ? `dossiers d'année : ${annees.sort(trierNoms).join(', ')}` : 'aucun dossier d\'année pour l\'instant'}).</p>
+    <p><b>Étapes suivantes :</b></p>
+    <ol>
+      ${deploye ? '<li>L\'application web est déjà publiée.</li>' : `<li><b>Publier l'application web</b> (une seule fois) : menu <i>Extensions → Apps Script</i>,
+        puis <i>Déployer → Nouveau déploiement</i>, roue dentée → <i>Application Web</i>, « Exécuter en tant que : <b>Moi</b> »,
+        « Qui a accès : <b>Tout le monde</b> », <i>Déployer</i>, puis autoriser (Paramètres avancés → Accéder à…, tout cocher).</li>`}
+      <li><b>Florilège → Créer les photos allégées</b> (en tâche de fond ; la liste des photos est mise à jour à la fin).</li>
+      <li><b>Florilège → Lien d'invitation pour les testeurs</b>, à envoyer avec le mot de passe.</li>
+    </ol>`).setWidth(520).setHeight(360);
+  ui.showModalDialog(html, 'Florilège est installé');
 }
 
 // ============================================================================ mot de passe commun
@@ -484,6 +749,10 @@ function apiImage(id) {
 
 function onOpen() {
   SpreadsheetApp.getUi().createMenu('Florilège')
+    .addItem('Installer / configurer…', 'installer')
+    .addSeparator()
+    .addItem('Créer les photos allégées (dans Google Drive)', 'creerPhotosAllegees')
+    .addItem('État de la création des photos allégées', 'etatReduction')
     .addItem('Mettre à jour la liste des photos', 'mettreAJourListe')
     .addItem('Recommencer la mise à jour depuis le début', 'recommencerListe')
     .addSeparator()
@@ -492,6 +761,11 @@ function onOpen() {
     .addSeparator()
     .addItem('À propos', 'aPropos')
     .addToUi();
+  try {
+    if (!PropertiesService.getScriptProperties().getProperty('installe') && !ss().getSheetByName(REGLAGES.feuille)) {
+      ss().toast('Bienvenue ! Pour commencer : menu Florilège → Installer / configurer…', 'Florilège', 15);
+    }
+  } catch (err) { /* simple déclencheur : sans gravité */ }
 }
 
 function recommencerListe() {

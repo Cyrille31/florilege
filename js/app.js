@@ -1,17 +1,17 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi } from './config.js?v=0.10.0';
+import { CONFIG, modeDemo, urlApi } from './config.js?v=0.11.0';
 import {
   backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
   memoriserMotDePasse, oublierMotDePasse,
   nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.10.0';
-import { ChargeurImages } from './images.js?v=0.10.0';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.10.0';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.10.0';
-import { ecranEnsemble } from './tri.js?v=0.10.0';
-import { supprimerStockage } from './stockage.js?v=0.10.0';
+} from './api.js?v=0.11.0';
+import { ChargeurImages } from './images.js?v=0.11.0';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.11.0';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.11.0';
+import { ecranEnsemble } from './tri.js?v=0.11.0';
+import { supprimerStockage } from './stockage.js?v=0.11.0';
 
 const PHRASE_BAL = 'En échange, une seule chose vous est demandée, sur l\'honneur : faire une bonne action '
   + 'chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -201,6 +201,29 @@ function montrerIdentification(message, demanderMotDePasse = false) {
   (champ.value && champMdp ? champMdp : champ).focus();
 }
 
+// Page pour un nouvel organisateur : copier le classeur modèle, puis suivre le menu Florilège du classeur.
+function montrerOrganisateur() {
+  const lienModele = CONFIG.modele ? `https://docs.google.com/spreadsheets/d/${CONFIG.modele}/copy` : '';
+  const guide = 'https://github.com/Cyrille31/florilege#mise-en-service-fonctionnement-simplifi%C3%A9';
+  montrer({
+    racine: el('main', { class: 'ecran ecran-accueil organisateur' },
+      entete(),
+      el('h1', {}, 'Organiser une sélection'),
+      el('p', { class: 'phrase' }, 'Tout se passe dans votre Google Drive, avec votre compte Google : vos photos ne sont partagées avec personne.'),
+      el('ol', { class: 'etapes' },
+        el('li', {}, 'Dans Google Drive, rangez vos photos dans un dossier, avec un sous-dossier par année (« 2001 », « 2002 »…).'),
+        el('li', {}, lienModele
+          ? ['Copiez le classeur modèle dans votre Google Drive : ', el('a', { href: lienModele, target: '_blank', rel: 'noopener' }, 'Copier le modèle Florilège'), '.']
+          : ['Créez un Google Sheet dans ce dossier et ajoutez-lui le script de Florilège, comme indiqué dans le ',
+            el('a', { href: guide, target: '_blank', rel: 'noopener' }, 'guide de mise en service'), '.']),
+        el('li', {}, 'Dans le classeur, menu Florilège → Installer / configurer… : indiquez le dossier des photos et choisissez un mot de passe ; une fenêtre vous guide pour publier l\'application (quelques clics).'),
+        el('li', {}, 'Menu Florilège → Créer les photos allégées : les copies réduites sont préparées dans votre Google Drive, en tâche de fond.'),
+        el('li', {}, 'Menu Florilège → Lien d\'invitation pour les testeurs : envoyez-le, avec le mot de passe.')),
+      el('button', { class: 'btn-secondaire', onclick: () => location.reload() }, 'Retour'),
+      pied()),
+  });
+}
+
 // « Ce n'est pas moi » : on envoie ce qui reste en attente, puis on redemande le nom.
 function changerDeNom() {
   ctx.file?.envoyerEnPartant();
@@ -218,6 +241,7 @@ async function demarrer() {
         el('h1', {}, 'Lien d\'invitation nécessaire'),
         el('p', { class: 'phrase' }, 'Pour participer à une sélection, ouvrez le lien que son organisateur vous a envoyé.'),
         el('a', { class: 'btn-secondaire lien-demo', href: '?demo=1' }, 'Essayer la démonstration'),
+        el('button', { class: 'btn-lien organiser', onclick: montrerOrganisateur }, 'Vous organisez une sélection ? Créer la vôtre'),
         pied()),
     });
     return;
