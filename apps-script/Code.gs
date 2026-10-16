@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.12.4';
+const VERSION = '0.12.5';
 
 // Réglages (modifiables ici).
 const REGLAGES = {
@@ -708,6 +708,10 @@ const PAGE_INVITATION = `<!doctype html><html><head><base target="_top"><style>
   <p><b>Message prêt à envoyer</b> (mail, WhatsApp…) :</p>
   <textarea id="t-message" rows="6" readonly onclick="this.select()"></textarea>
 </div>
+<p id="conseil" class="aide" style="display:none">L'adresse trouvée automatiquement par Google est souvent celle du
+  <i>déploiement de test</i>, qui ne marche que pour vous. Collez ci-dessous l'URL du vrai déploiement : elle n'est à donner qu'une fois.
+  S'il n'y a encore aucun déploiement : <i>Déployer → Nouveau déploiement</i> → Application Web,
+  « Exécuter en tant que : Moi », « Qui a accès : Tout le monde ».</p>
 <details id="corriger">
   <summary>Corriger l'adresse du serveur</summary>
   <p class="aide">Dans l'éditeur Apps Script : <i>Déployer → Gérer les déploiements</i>, copier l'« URL » de l'application Web
@@ -722,7 +726,9 @@ const PAGE_INVITATION = `<!doctype html><html><head><base target="_top"><style>
     etat.className = d.ok ? 'ok' : 'ko';
     etat.textContent = (d.ok ? '✅ ' : '⚠️ ') + d.verification
       + (d.ok ? '' : ' Le lien ne fonctionnera pas tant que ce problème n\\'est pas réglé.');
-    document.getElementById('lien').style.display = d.lien ? '' : 'none';
+    // Un lien qui ne fonctionne pas n'est pas montré, pour éviter de l'envoyer par erreur.
+    document.getElementById('lien').style.display = d.lien && d.ok ? '' : 'none';
+    document.getElementById('conseil').style.display = d.ok ? 'none' : '';
     document.getElementById('t-lien').value = d.lien;
     document.getElementById('t-message').value = d.message;
     document.getElementById('corriger').open = !d.ok;

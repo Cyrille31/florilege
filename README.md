@@ -303,6 +303,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.12.5 | « Lien d'invitation » : un lien qui ne fonctionne pas n'est plus affiché ; explication sur l'adresse de test renvoyée par Google. |
 | 0.12.4 | Bouton « Oublier ce serveur » (et adresse `?s=oublier`) pour sortir d'un lien d'invitation périmé mémorisé sur l'appareil. |
 | 0.12.3 | Bouton « Tester le serveur » correctement centré. |
 | 0.12.2 | « Lien d'invitation » : le script vérifie que son adresse répond vraiment (déploiement actif, accès à tous) et permet de coller l'URL exacte de l'application Web si l'adresse détectée est mauvaise. |
