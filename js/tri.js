@@ -2,8 +2,8 @@
 //   « Une à une »  : la photo courante en grand, les 3 voisines de chaque côté en plus petit ;
 //   « Imagettes »  : grille de miniatures.
 // La case « Retenues » limite l'affichage aux photos gardées (❤️ ou ⭐), dans tous les modes.
-// Gestes : glisser à gauche / à droite pour défiler sans rien valider (un geste rapide fait défiler
-// plusieurs photos, avec ralentissement), vers le haut pour ❤️ (je garde), vers le bas pour ✖️ (je passe).
+// Gestes : glisser à gauche / à droite pour passer à la photo suivante ou précédente (une seule à la fois),
+// vers le haut pour ❤️ (je garde), vers le bas pour ✖️ (je passe).
 // La pastille en haut à gauche de la photo montre le choix (· ❤️ ⭐ ✖️) et le change ; le bouton ⭐ du bas
 // marque un coup de cœur.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
@@ -11,12 +11,12 @@
 import {
   PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.15.1';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.15.1';
-import { ouvrirVisionneuse } from './zoom.js?v=0.15.1';
-import { CONFIG } from './config.js?v=0.15.1';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.15.1';
-import { boutonAide } from './aide.js?v=0.15.1';
+} from './etat.js?v=0.15.2';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.15.2';
+import { ouvrirVisionneuse } from './zoom.js?v=0.15.2';
+import { CONFIG } from './config.js?v=0.15.2';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.15.2';
+import { boutonAide } from './aide.js?v=0.15.2';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };
@@ -228,7 +228,6 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     const cartes = new Map(); // indice de photo → élément
     let ordre = [];           // indices des photos affichées, dans l'ordre
     let pos = 0;              // position de la photo courante dans « ordre »
-    let inertie = null;
     const boutonEtoile = el('button', { class: 'btn-rond etoile-bas', 'aria-label': 'Coup de cœur', title: 'Coup de cœur ⭐ (E)',
       onclick: () => { if (ordre.length && !basculerEtoile()) secouer(cartes.get(cur)); } }, '★');
     // Le bouton ⭐ est doré quand la photo affichée est un coup de cœur.
@@ -451,54 +450,10 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       if (p >= 0) allerPos(p);
     }
 
-    // Défilement rapide : plusieurs photos, de plus en plus lentement.
-    function arreterInertie() {
-      if (!inertie) return;
-      clearTimeout(inertie);
-      inertie = null;
-      scene.style.removeProperty('--duree');
-      placer();
-      precharger();
-    }
-
-    function lancerInertie(sens, nombre) {
-      let i = 0;
-      const pas = () => {
-        const duree = Math.round(45 + 330 * (i / nombre) ** 2);
-        scene.style.setProperty('--duree', `${duree}ms`);
-        i++;
-        const dernier = i >= nombre;
-        const ok = allerPos(pos + sens, { leger: !dernier, silencieux: true });
-        if (!ok || dernier) {
-          inertie = null;
-          setTimeout(() => {
-            if (inertie) return;
-            scene.style.removeProperty('--duree');
-            placer();
-            precharger();
-            if (!ok) signalerBout(sens);
-          }, duree);
-          return;
-        }
-        inertie = setTimeout(pas, duree);
-      };
-      pas();
-    }
-
-    // Défilement : un geste lent fait toujours passer une seule photo, quelle que soit sa longueur.
-    // Un geste lancé (doigt encore rapide au moment de le lever) : jusqu'à 4 cm, une photo ; au-delà, 2 photos ;
-    // plusieurs grands gestes lancés de suite, 5 photos. distance = 0 : une photo (boutons, gestes lents).
-    let dernierGrandGeste = { t: 0, sens: 0 };
-    function defilerSelonGeste(sens, distance) {
-      if (distance <= CM * 4) {
-        dernierGrandGeste = { t: 0, sens: 0 };
-        allerPos(pos + sens);
-        return;
-      }
-      const maintenant = performance.now();
-      const enSerie = dernierGrandGeste.sens === sens && maintenant - dernierGrandGeste.t < 2000;
-      dernierGrandGeste = { t: maintenant, sens };
-      lancerInertie(sens, enSerie ? 5 : 2);
+    // Défilement : toujours une seule photo par geste, quelle que soit sa longueur ou sa vitesse
+    // (pour aller plus vite : la réglette horizontale).
+    function defilerSelonGeste(sens) {
+      allerPos(pos + sens);
     }
 
     // ❤️ ou ✖️ : on enregistre ; on passe à la suivante seulement si l'option est cochée.
@@ -559,7 +514,6 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
 
     scene.addEventListener('pointerdown', e => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
-      arreterInertie();
       pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY });
       scene.setPointerCapture(e.pointerId);
       if (pointeurs.size === 2) {
@@ -623,7 +577,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         const v = (b.x - a.x) / Math.max(b.t - a.t, 1);
         const distance = Math.abs(g.dx);
         const lance = Math.abs(v) > 0.3 && Math.sign(v) === Math.sign(g.dx);
-        if (distance > CM * 0.8 || (lance && distance > 15)) defilerSelonGeste(g.dx < 0 ? 1 : -1, lance ? distance : 0);
+        if (distance > CM * 0.8 || (lance && distance > 15)) defilerSelonGeste(g.dx < 0 ? 1 : -1);
         else placer();
         return;
       }
@@ -648,10 +602,10 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     return {
       racine: racineVue,
       afficher() { placer(); precharger(); majCurseur(); majBoutonEtoile(); },
-      detruire() { observateurTaille.disconnect(); clearTimeout(inertie); clearTimeout(minuteurBout); },
+      detruire() { observateurTaille.disconnect(); clearTimeout(minuteurBout); },
       position: () => ({ n: ordre.length ? pos + 1 : 0, total: ordre.length }),
       allerA: (n, leger) => allerPos(n, { leger, silencieux: true }),
-      defiler: (sens, distance) => { arreterInertie(); defilerSelonGeste(sens, distance); },
+      defiler: sens => defilerSelonGeste(sens),
       choisir,
       majPhoto(i) {
         const c = cartes.get(i);
