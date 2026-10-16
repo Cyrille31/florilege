@@ -109,6 +109,19 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 
 .entete { display: flex; align-items: center; gap: 10px; }
 .entete .logo { border-radius: 10px; }
+.entete-texte { flex: 1; min-width: 0; }
+/* Bouton « ? » : aide, en haut à droite de chaque écran. */
+.btn-aide {
+  flex: none;
+  width: 40px; height: 40px;
+  border: 2px solid var(--vert-fonce);
+  border-radius: 50%;
+  background: var(--surface); color: var(--vert-fonce);
+  font-size: 1.25rem; font-weight: 800; line-height: 1;
+  box-shadow: var(--ombre);
+}
+.btn-aide:hover { background: var(--vert-fonce); color: #fff; }
+@media (prefers-color-scheme: dark) { .btn-aide { border-color: var(--vert); color: var(--vert); } }
 .marque { font-weight: 800; font-size: 1.15rem; color: var(--vert-fonce); letter-spacing: .01em; }
 .sous-titre { font-size: .85rem; color: var(--texte-doux); }
 @media (prefers-color-scheme: dark) { .marque { color: var(--vert); } }
@@ -225,6 +238,8 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 /* Téléphone : bouton Accueil réduit à 🏠 pour garder le nom de l'ensemble et les modes sur une seule ligne. */
 @media (max-width: 560px) {
   .libelle-accueil { display: none; }
+  .btn-accueil { padding: 0 6px; }
+  .icone-mode { display: none; }
   .tri-entete .selecteur-mode { flex: 0 1 220px; }
   .tri-entete .selecteur-mode button { font-size: .82rem; padding: 0 4px; }
   .ligne-modes { gap: 0 12px; }
@@ -248,6 +263,8 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
   box-shadow: var(--ombre);
 }
 .btn-accueil:hover { background: #1b725e; }
+.btn-accueil { display: flex; align-items: center; gap: 8px; padding: 0 14px 0 6px; }
+.logo-accueil { border-radius: 8px; flex: none; }
 @media (prefers-color-scheme: dark) { .btn-accueil { background: var(--vert); color: #06261f; } }
 
 /* Sélecteur des trois modes d'affichage */
@@ -481,8 +498,11 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 
 /* ---------------------------------------------------------------- imagettes */
 
-.vue-grille { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 12px; }
-.vue-grille .aide { color: var(--texte-doux); font-size: .9rem; margin: 4px 0 10px; }
+.vue-grille { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.grille-defil { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 6px 12px; }
+.btn-rond:disabled { opacity: .35; cursor: default; }
+.selection-compte[hidden], .btn-selection[hidden] { display: none; }
+.vue-grille .aide-grille { color: var(--texte-doux); font-size: .9rem; margin: 4px 0 10px; }
 .grille-revue {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -540,17 +560,6 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 .vignette.choisie .coche { display: grid; }
 .vignette.choisie img { filter: brightness(.8); }
 .grille-revue.en-selection .vignette:not(.choisie) img { opacity: .8; }
-.barre-selection {
-  position: sticky; bottom: 0; z-index: 5;
-  display: flex; align-items: center; gap: 6px; justify-content: center;
-  width: fit-content; max-width: 100%;
-  margin: 10px auto 0;
-  padding: 6px 8px;
-  border-radius: 999px;
-  background: var(--surface);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, .3);
-}
-.barre-selection[hidden] { display: none; }
 .selection-compte {
   min-width: 34px; height: 34px; padding: 0 8px;
   display: grid; place-items: center;
@@ -747,3 +756,133 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
   .ecran-tri { max-width: 1400px; }
   .btn-principal.grand { max-width: 360px; }
 }
+
+/* ---------------------------------------------------------------- aide « ? » : mode d'emploi, tutoriel, à propos */
+
+.aide {
+  width: min(560px, calc(100% - 24px));
+  max-height: min(720px, calc(100dvh - 24px));
+  padding: 0;
+  border: 0;
+  border-radius: 22px;
+  background: var(--surface);
+  color: var(--texte);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+  overflow: hidden;
+}
+.aide[open] { display: flex; flex-direction: column; }
+.aide::backdrop { background: rgba(10, 20, 18, .55); }
+.aide-haut { display: flex; align-items: center; gap: 8px; padding: 12px 12px 8px; border-bottom: 1px solid var(--bord); }
+.aide-onglets { flex: 1; display: flex; padding: 3px; border-radius: 999px; background: var(--bord); }
+.aide-onglets button {
+  flex: 1; min-height: 38px; padding: 0 6px;
+  border: 0; border-radius: 999px; background: transparent;
+  font-size: .88rem; font-weight: 600; color: var(--texte-doux); white-space: nowrap;
+}
+.aide-onglets button[aria-selected="true"] { background: var(--surface); color: var(--texte); box-shadow: var(--ombre); }
+.aide-haut form { margin: 0; }
+.btn-aide-fermer { width: 38px; height: 38px; border: 0; border-radius: 50%; background: transparent; font-size: 1.2rem; color: var(--texte-doux); }
+.aide-corps { overflow-y: auto; padding: 14px 18px 20px; }
+.aide-texte { font-size: .95rem; line-height: 1.45; }
+.aide-rubrique h3 { margin: 16px 0 4px; font-size: 1rem; color: var(--vert-fonce); }
+@media (prefers-color-scheme: dark) { .aide-rubrique h3 { color: var(--vert); } }
+.aide-rubrique ul { margin: 0; padding-left: 20px; }
+.aide-rubrique li { margin: 3px 0; }
+.aide-apropos { text-align: center; }
+.aide-apropos h3 { margin: .2em 0; font-size: 1.4rem; }
+.aide-apropos a { color: var(--vert); }
+.aide-apropos .licence { font-size: .9rem; color: var(--texte-doux); }
+.aide-apropos .demo { font-size: .85rem; padding: 8px; border-radius: 10px; background: color-mix(in srgb, var(--jaune) 25%, transparent); }
+
+/* Tutoriel : un petit dessin animé par étape. */
+.tuto { text-align: center; }
+.tuto-zone h3 { margin: 12px 0 4px; }
+.tuto-zone p { margin: 0 auto; max-width: 420px; min-height: 3.2em; color: var(--texte-doux); }
+.tuto-dessin {
+  position: relative;
+  height: 190px;
+  border-radius: 16px;
+  background: var(--scene);
+  overflow: hidden;
+  display: grid; place-items: center;
+}
+.tuto-photo { display: block; width: 100%; height: 100%; border-radius: 8px; background: linear-gradient(#8fd3f4 0 45%, #6cbf6a 45% 70%, #3f8f4b 70%); }
+.tuto-photo.p2, .tuto-mini.p2 { background: linear-gradient(#fbc2a4 0 50%, #c86b5a 50% 75%, #8b3f3a 75%); }
+.tuto-photo.p3, .tuto-mini.p3 { background: linear-gradient(#e0c3fc 0 50%, #8e7cc3 50%); }
+.tuto-mini.p4 { background: linear-gradient(#fff1a8 0 40%, #f4a623 40%); }
+.tuto-mini.p5 { background: linear-gradient(#a8e6cf 0 55%, #3d8b6d 55%); }
+.tuto-mini.p6 { background: linear-gradient(#cfd9df 0 50%, #6f86a0 50%); }
+.tuto-mini.p1 { background: linear-gradient(#8fd3f4 0 45%, #6cbf6a 45%); }
+.tuto-scene { position: relative; width: 100%; height: 100%; }
+.tuto-carte {
+  position: absolute; left: 50%; top: 50%;
+  width: 120px; height: 90px; margin: -45px 0 0 -60px;
+  border-radius: 10px; box-shadow: 0 4px 14px rgba(0, 0, 0, .4);
+}
+.tuto-scene > .tuto-photo { position: absolute; left: 50%; top: 50%; width: 80px; height: 60px; margin: -30px 0 0 80px; opacity: .6; }
+.tuto-pastille {
+  position: absolute; top: 5px; left: 5px;
+  width: 26px; height: 26px; display: grid; place-items: center;
+  border-radius: 50%; background: rgba(255, 255, 255, .9); font-size: .85rem; color: #555;
+}
+.tuto-doigt { position: absolute; left: 50%; top: 50%; font-size: 2rem; margin: 10px 0 0 -6px; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .5)); }
+.tuto-symbole { position: absolute; left: 50%; top: 18px; font-size: 1.8rem; margin-left: -.5em; opacity: 0; }
+.tuto-dessin * { animation-duration: 2.4s; animation-iteration-count: infinite; animation-timing-function: ease-in-out; }
+
+.anim-gauche .tuto-carte { animation-name: tuto-gauche-carte; }
+.anim-gauche .tuto-scene > .tuto-photo { animation-name: tuto-gauche-suivante; }
+.anim-gauche .tuto-doigt { animation-name: tuto-gauche-doigt; }
+@keyframes tuto-gauche-carte { 0%, 20% { transform: none; } 60%, 100% { transform: translateX(-140px) scale(.7); opacity: .5; } }
+@keyframes tuto-gauche-suivante { 0%, 20% { transform: none; } 60%, 100% { transform: translateX(-140px) scale(1.5); opacity: 1; } }
+@keyframes tuto-gauche-doigt { 0%, 20% { transform: none; opacity: 1; } 60% { transform: translateX(-110px); opacity: 1; } 80%, 100% { transform: translateX(-110px); opacity: 0; } }
+
+.anim-haut .tuto-carte { animation-name: tuto-haut-carte; }
+.anim-haut .tuto-doigt { animation-name: tuto-haut-doigt; }
+.anim-haut .tuto-symbole, .anim-bas .tuto-symbole, .anim-etoile .tuto-symbole { animation-name: tuto-symbole; }
+@keyframes tuto-haut-carte { 0%, 15% { transform: none; box-shadow: 0 4px 14px rgba(0, 0, 0, .4); } 45% { transform: translateY(-40px); } 70%, 100% { transform: none; box-shadow: 0 0 0 5px #e5484d; } }
+@keyframes tuto-haut-doigt { 0%, 15% { transform: none; opacity: 1; } 45% { transform: translateY(-50px); opacity: 1; } 60%, 100% { transform: translateY(-50px); opacity: 0; } }
+@keyframes tuto-symbole { 0%, 40% { opacity: 0; transform: scale(.5); } 55% { opacity: 1; transform: scale(1.3); } 80% { opacity: 1; transform: scale(1); } 100% { opacity: 0; } }
+
+.anim-bas .tuto-carte { animation-name: tuto-bas-carte; }
+.anim-bas .tuto-doigt { animation-name: tuto-bas-doigt; }
+.anim-bas .tuto-symbole { top: auto; bottom: 14px; }
+@keyframes tuto-bas-carte { 0%, 15% { transform: none; filter: none; } 45% { transform: translateY(40px); } 70%, 100% { transform: none; filter: grayscale(1) opacity(.7); box-shadow: 0 0 0 5px #8a9590; } }
+@keyframes tuto-bas-doigt { 0%, 15% { transform: none; opacity: 1; } 45% { transform: translateY(45px); opacity: 1; } 60%, 100% { transform: translateY(45px); opacity: 0; } }
+
+.anim-etoile .tuto-doigt { animation-name: tuto-tape; }
+.anim-etoile .tuto-carte { animation-name: tuto-etoile-carte; }
+@keyframes tuto-tape { 0%, 25% { transform: none; } 35% { transform: scale(.8); } 45%, 100% { transform: none; } }
+@keyframes tuto-etoile-carte { 0%, 35% { box-shadow: 0 4px 14px rgba(0, 0, 0, .4); } 50%, 100% { box-shadow: 0 0 0 5px #f4c430; } }
+
+.anim-pastille .tuto-doigt { left: 50%; top: 50%; margin: -42px 0 0 -62px; animation-name: tuto-tape; animation-duration: 1.2s; }
+.anim-pastille .tuto-pastille { animation-name: tuto-pastille; animation-duration: 1.2s; }
+@keyframes tuto-pastille { 0%, 30% { transform: none; } 40% { transform: scale(1.35); } 60%, 100% { transform: none; } }
+
+.anim-grand .tuto-carte { animation-name: tuto-grand; }
+.anim-grand .tuto-doigt { animation-name: tuto-tape; }
+@keyframes tuto-grand { 0%, 30% { transform: none; } 50%, 75% { transform: scale(1.9); } 95%, 100% { transform: none; } }
+
+.tuto-grille { position: relative; display: grid; grid-template-columns: repeat(3, 56px); gap: 8px; }
+.tuto-mini { display: block; height: 42px; border-radius: 6px; }
+.anim-imagettes .tuto-mini.p2 { animation-name: tuto-choisie; }
+.anim-imagettes .tuto-mini.p4 { animation-name: tuto-choisie; animation-delay: .6s; }
+.anim-imagettes .tuto-doigt { margin: -14px 0 0 -10px; animation-name: tuto-imagettes-doigt; }
+@keyframes tuto-choisie { 0%, 20% { outline: 0 solid #3d8bfd; } 30%, 90% { outline: 3px solid #3d8bfd; outline-offset: 2px; } 100% { outline: 0 solid #3d8bfd; } }
+@keyframes tuto-imagettes-doigt { 0% { transform: translate(0, -20px); } 25% { transform: translate(0, -20px); } 50%, 100% { transform: translate(-60px, 30px); } }
+
+.tuto-retenues { color: #fff; font-weight: 700; }
+.tuto-case { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; background: #fff; color: var(--vert-fonce); animation-name: tuto-case; }
+@keyframes tuto-case { 0%, 30% { color: transparent; } 40%, 100% { color: var(--vert-fonce); } }
+.tuto-rangee { display: flex; gap: 10px; margin-top: 14px; justify-content: center; }
+.tuto-rangee .tuto-photo { width: 70px; height: 52px; }
+.anim-retenues .tuto-rangee .p2 { animation-name: tuto-disparait; }
+@keyframes tuto-disparait { 0%, 35% { opacity: 1; width: 70px; } 55%, 100% { opacity: 0; width: 0; } }
+
+.tuto-fin { font-size: 4rem; animation-name: eclot; animation-iteration-count: 1; }
+
+.tuto-points { display: flex; justify-content: center; gap: 8px; margin: 12px 0; }
+.tuto-point { width: 12px; height: 12px; padding: 0; border: 0; border-radius: 50%; background: var(--bord); }
+.tuto-point.actif { background: var(--vert-fonce); transform: scale(1.25); }
+.tuto-nav { display: flex; gap: 10px; }
+.tuto-nav .tuto-btn { margin: 0; min-height: 46px; font-size: 1rem; }
+.tuto-btn:disabled { opacity: .4; }

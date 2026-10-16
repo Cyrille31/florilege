@@ -7,7 +7,7 @@
 // L'écran appelant fournit les actions et met la visionneuse à jour avec changerPhoto() et maj().
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el } from './ludique.js?v=0.13.1';
+import { el } from './ludique.js?v=0.14.0';
 
 const ZOOM_MAX = 6;
 
@@ -30,12 +30,14 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
   const fermer = el('button', { class: 'btn-icone visionneuse-fermer', 'aria-label': 'Fermer (Échap)', title: 'Fermer (Échap)' }, '✕');
   const bouton = (libelle, titre, fn, classe = '') => el('button', { class: `btn-visionneuse ${classe}`, 'aria-label': titre, title: titre, onclick: e => { e.stopPropagation(); fn?.(); } }, libelle);
   const etoile = bouton('★', 'Coup de cœur (E)', actions.etoile, 'etoile-visionneuse');
+  // Même ordre qu'ailleurs : ⊙ ✖️ ❤️ ⭐, encadrés par les flèches.
   const barre = el('div', { class: 'visionneuse-barre' },
-    bouton('✖️', 'Je passe (↓)', actions.passer),
     bouton('‹', 'Photo précédente (←)', () => actions.defiler?.(-1, 0), 'fleche'),
+    bouton('⊙', 'Effacer le choix (Suppr)', actions.effacer),
+    bouton('✖️', 'Je passe (↓)', actions.passer),
+    bouton('❤️', 'Je garde (↑)', actions.garder),
     etoile,
-    bouton('›', 'Photo suivante (→)', () => actions.defiler?.(1, 0), 'fleche'),
-    bouton('❤️', 'Je garde (↑)', actions.garder));
+    bouton('›', 'Photo suivante (→)', () => actions.defiler?.(1, 0), 'fleche'));
   // Ascenseur : position dans l'ensemble.
   const curseur = el('input', { type: 'range', class: 'curseur-photos visionneuse-curseur', min: 1, max: 1, value: 1, step: 1, 'aria-label': 'Position dans l\'ensemble' });
   curseur.addEventListener('input', () => actions.allerA?.(Number(curseur.value) - 1, true));

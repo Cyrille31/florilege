@@ -1,20 +1,18 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi } from './config.js?v=0.13.1';
+import { CONFIG, modeDemo, urlApi } from './config.js?v=0.14.0';
 import {
   backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
   memoriserMotDePasse, oublierMotDePasse,
   nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.13.1';
-import { ChargeurImages } from './images.js?v=0.13.1';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.13.1';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.13.1';
-import { ecranEnsemble } from './tri.js?v=0.13.1';
-import { supprimerStockage } from './stockage.js?v=0.13.1';
-
-const PHRASE_BAL = 'En échange, une seule chose vous est demandée, sur l\'honneur : faire une bonne action '
-  + 'chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
+} from './api.js?v=0.14.0';
+import { ChargeurImages } from './images.js?v=0.14.0';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.14.0';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.14.0';
+import { ecranEnsemble } from './tri.js?v=0.14.0';
+import { supprimerStockage } from './stockage.js?v=0.14.0';
+import { boutonAide, ouvrirAide } from './aide.js?v=0.14.0';
 
 const PHRASES_PHASE = {
   manche1: 'Triez les photos : ✖️ je passe, ❤️ je garde, ⭐ coup de cœur.',
@@ -90,9 +88,10 @@ function majIndicateur(statut, n) {
 function entete() {
   return el('header', { class: 'entete' },
     el('img', { src: 'img/florilege-icone.svg', alt: '', class: 'logo', width: 40, height: 40 }),
-    el('div', {},
+    el('div', { class: 'entete-texte' },
       el('div', { class: 'marque' }, 'Florilège'),
-      ctx.etat?.config.titre_selection ? el('div', { class: 'sous-titre' }, ctx.etat.config.titre_selection) : null));
+      ctx.etat?.config.titre_selection ? el('div', { class: 'sous-titre' }, ctx.etat.config.titre_selection) : null),
+    boutonAide());
 }
 
 function pied() {
@@ -100,7 +99,7 @@ function pied() {
     el('span', {}, indicateur, el('span', { class: 'version', title: 'Numéro de version de Florilège' }, `v${CONFIG.version}`)),
     el('span', {},
       modeDemo() ? el('button', { class: 'btn-lien', onclick: razDemo }, 'Remettre la démo à zéro') : null,
-      el('button', { class: 'btn-lien', onclick: ouvrirAPropos }, 'À propos')));
+      el('button', { class: 'btn-lien', onclick: () => ouvrirAide('apropos') }, 'À propos')));
 }
 
 // Démonstration uniquement : efface tous les choix simulés et relance.
@@ -145,20 +144,6 @@ function montrerAccueil() {
   }
   contenu.push(pied());
   montrer({ racine: el('main', { class: 'ecran ecran-accueil' }, contenu) });
-}
-
-function ouvrirAPropos() {
-  const fenetre = el('dialog', { class: 'apropos' },
-    el('img', { src: 'img/florilege-icone.svg', alt: '', width: 96, height: 96 }),
-    el('h2', {}, 'Florilège'),
-    el('p', {}, `Sélection collective de photos — version ${CONFIG.version}`),
-    el('p', {}, 'Un logiciel ', el('a', { href: 'https://cgexcel.wordpress.com', target: '_blank', rel: 'noopener' }, 'CGExcel'), ' — © 2026 Cyrille Gindre.'),
-    el('p', { class: 'licence' }, 'Licence MIT + « BAL 1.0 — Bonne Action License ». ', PHRASE_BAL),
-    modeDemo() ? el('p', { class: 'demo' }, 'Mode démonstration : photos factices, rien n\'est envoyé sur Internet.') : null,
-    el('form', { method: 'dialog' }, el('button', { class: 'btn-principal' }, 'Fermer')));
-  fenetre.addEventListener('close', () => fenetre.remove());
-  document.body.append(fenetre);
-  fenetre.showModal();
 }
 
 function montrerMessage(titre, texte) {
@@ -318,6 +303,37 @@ async function demarrer() {
   if (history.state?.ecran) history.replaceState(null, '');
   montrerAccueil();
   ctx.file.envoyer();
+}
+
+// ---------------------------------------------------------------- plusieurs appareils
+// Quand on revient sur l'onglet après au moins 30 s (téléphone puis ordinateur, par exemple), on recharge
+// l'état du serveur : les choix faits entre-temps sur un autre appareil apparaissent. Les choix pas encore
+// envoyés depuis cet appareil sont réappliqués par-dessus ; pour une même photo, le plus récent l'emporte.
+let cacheDepuis = 0;
+let resynchroEnCours = false;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { cacheDepuis = Date.now(); return; }
+  if (cacheDepuis && Date.now() - cacheDepuis > 30000) resynchroniser();
+});
+
+async function resynchroniser() {
+  if (!ctx.etat || resynchroEnCours || document.querySelector('.zoom, dialog[open]')) return;
+  resynchroEnCours = true;
+  try {
+    await ctx.file.envoyer?.();
+    const { etat, horsLigne } = await chargerEtat(ctx.jeton, ctx.file);
+    if (horsLigne || JSON.stringify(etat.votes) === JSON.stringify(ctx.etat.votes)) return;
+    ctx.etat = etat;
+    const position = ecranCourant?.position?.();
+    if (position) {
+      montrer(ecranEnsemble(ctx, position.ensembleId, nav, { mode: position.mode, index: position.index }));
+    } else if (app.querySelector('.carte')) {
+      montrerAccueil();
+    }
+    notifier('Choix mis à jour depuis vos autres appareils.');
+  } catch { /* on réessaiera au prochain retour sur l'onglet */ } finally {
+    resynchroEnCours = false;
+  }
 }
 
 // Erreurs JavaScript : remontées au serveur (journal d'exécution d'Apps Script).

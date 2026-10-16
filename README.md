@@ -305,6 +305,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.14.0 | Menu « ? » sur tous les écrans (mode d'emploi, tutoriel animé, à propos : licence MIT + BAL, CGExcel) ; logo Florilège en haut à gauche partout ; Imagettes : un clic sélectionne, un double clic ouvre en « une à une », boutons du bas ⊙ ✖️ ❤️ ⭐ pour la sélection ; même ordre ⊙ ✖️ ❤️ ⭐ partout (boutons, compteurs, visionneuse) ; resynchronisation avec les autres appareils au retour sur l'onglet. |
 | 0.13.1 | Modes « Une à une / Imagettes » sur la ligne « Accueil » (sur téléphone, bouton 🏠 seul) ; bouton ⭐ à la place de la loupe ; une seule pastille en haut à gauche de la photo (· ❤️ ⭐ ✖️). |
 | 0.13.0 | Interface : photos plus grandes sur PC ; un clic dans la visionneuse revient à « Une à une » (zoom à la molette ou aux doigts) ; « Retenues » devient une case à cocher valable dans tous les modes, visionneuse comprise ; cases « Retenues » et « Suivante après choix » sur la ligne des modes ; nombre de photos à trier dans la visionneuse ; bandeau de fin d'ensemble visible aussi en grand ; bouton « effacer le choix » ⊙ ; « C'est la dernière photo » au milieu de la photo ; ligne d'aide clavier et compteur en double supprimés. |
 | 0.12.6 | Copie du modèle : l'installation et l'invitation indiquent clairement que le script de la copie doit être publié (Nouveau déploiement) puis son URL collée une fois. |

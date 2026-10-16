@@ -11,11 +11,12 @@
 import {
   PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.13.1';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.13.1';
-import { ouvrirVisionneuse } from './zoom.js?v=0.13.1';
-import { CONFIG } from './config.js?v=0.13.1';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.13.1';
+} from './etat.js?v=0.14.0';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.14.0';
+import { ouvrirVisionneuse } from './zoom.js?v=0.14.0';
+import { CONFIG } from './config.js?v=0.14.0';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.14.0';
+import { boutonAide } from './aide.js?v=0.14.0';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };
@@ -61,7 +62,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   // ---- entête commun
   const selecteur = el('div', { class: 'selecteur-mode', role: 'tablist', 'aria-label': 'Mode d\'affichage' },
     MODES.map(m => el('button', { role: 'tab', 'data-mode': m.id, title: m.titre, onclick: () => changerMode(m.id) },
-      el('span', { 'aria-hidden': 'true' }, m.icone), ` ${m.libelle}`)));
+      el('span', { class: 'icone-mode', 'aria-hidden': 'true' }, `${m.icone} `), m.libelle)));
   const caseRetenues = el('input', { type: 'checkbox', checked: retenues });
   caseRetenues.addEventListener('change', () => basculerRetenues(caseRetenues.checked));
   const caseAvance = el('input', { type: 'checkbox', checked: avanceAuto });
@@ -78,9 +79,12 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   const corps = el('div', { class: 'tri-corps' });
   const racine = el('section', { class: 'ecran ecran-tri' },
     el('header', { class: 'tri-entete' },
-      el('button', { class: 'btn-accueil', title: 'Retour à l\'accueil (Échap)', 'aria-label': 'Accueil', onclick: nav.accueil }, '🏠', el('span', { class: 'libelle-accueil' }, ' Accueil')),
+      el('button', { class: 'btn-accueil', title: 'Retour à l\'accueil (Échap)', 'aria-label': 'Accueil', onclick: nav.accueil },
+        el('img', { src: 'img/florilege-icone.svg', alt: '', class: 'logo-accueil', width: 30, height: 30 }),
+        el('span', { class: 'libelle-accueil' }, 'Accueil')),
       el('div', { class: 'tri-infos' }, el('div', { class: 'tri-titre' }, ens.nom)),
-      selecteur),
+      selecteur,
+      boutonAide()),
     ligneModes,
     stats,
     el('div', { class: 'barre-progression' }, barre),
@@ -93,10 +97,10 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     stats.replaceChildren(...[
       position?.total ? el('span', { class: 'pilule', title: retenues ? 'Photo retenue affichée / nombre de photos retenues' : 'Photo affichée / nombre de photos' },
         `📷 ${position.n}/${position.total}`) : null,
-      el('span', { class: `pilule${c.coeurs >= max ? ' plein' : ''}`, title: 'Coups de cœur utilisés' }, `⭐ ${c.coeurs}/${max}`),
-      el('span', { class: 'pilule', title: 'Photos gardées (❤️ et ⭐)' }, `❤️+⭐ ${c.gardes + c.coeurs}`),
+      el('span', { class: 'pilule', title: 'Photos sans choix' }, `⊙ ${c.nonTries}`),
       el('span', { class: 'pilule', title: 'Photos écartées' }, `✖️ ${c.passes}`),
-      c.nonTries ? el('span', { class: 'pilule discrete', title: 'Photos sans choix' }, `${c.nonTries} à trier`) : null,
+      el('span', { class: 'pilule', title: 'Photos gardées (❤️ et ⭐)' }, `❤️+⭐ ${c.gardes + c.coeurs}`),
+      el('span', { class: `pilule${c.coeurs >= max ? ' plein' : ''}`, title: 'Coups de cœur utilisés' }, `⭐ ${c.coeurs}/${max}`),
     ].filter(Boolean));
     barre.style.width = `${photos.length ? 100 * triees / photos.length : 0}%`;
     for (const b of selecteur.children) b.setAttribute('aria-selected', b.dataset.mode === mode ? 'true' : 'false');
@@ -156,8 +160,9 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       choix: TEXTES[v] || 'À trier',
       valeur: estTrie(v) ? v : null,
       coeur: v === COEUR,
-      compteur: `📷 ${position.n}/${position.total} · ⭐ ${c.coeurs}/${max} · ❤️+⭐ ${c.gardes + c.coeurs}`
-        + (c.nonTries ? ` · ${c.nonTries} à trier` : ' · tout est trié'),
+      compteur: `📷 ${position.n}/${position.total} · `
+        + (c.nonTries ? `⊙ ${c.nonTries} à trier` : 'tout est trié')
+        + ` · ✖️ ${c.passes} · ❤️+⭐ ${c.gardes + c.coeurs} · ⭐ ${c.coeurs}/${max}`,
       position: position.n,
       total: position.total,
       retenues,
@@ -176,6 +181,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         haut: () => vue?.choisir?.(GARDE, true),
         bas: () => vue?.choisir?.(PASSE, true),
         etoile: () => basculerEtoile(),
+        effacer: () => effacer(),
         allerA: (n, leger) => vue?.allerA?.(n, leger),
         retenues: v => basculerRetenues(v),
       },
@@ -680,14 +686,15 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
 
   // ---------------------------------------------------------------- mode imagettes
 
-  // Sélection multiple : appui long sur une imagette pour commencer ; ensuite, un appui court ajoute
-  // (ou retire) une imagette, un appui long sélectionne toute la plage depuis la précédente.
-  // Sur PC : Ctrl+clic et Maj+clic font de même. Une barre permet alors de choisir ❤️ ⭐ ✖️ ou · pour toutes.
+  // Un toucher (ou clic) sélectionne ou désélectionne une imagette ; un appui long (ou Maj+clic) sélectionne
+  // toute la plage depuis la précédente ; un double toucher (ou double clic) ouvre la photo en « une à une ».
+  // Les boutons du bas (⊙ ✖️ ❤️ ⭐, comme en « une à une ») s'appliquent à toute la sélection.
   function vueGrille(seulementRetenues) {
     const APPUI_LONG = 500; // ms
     const selection = new Set();
     let ancre = null;      // dernière imagette touchée en mode sélection
     let appui = null;      // appui en cours : { i, x, y, minuteur, long }
+    let dernierToucher = { i: -1, t: 0 }; // pour reconnaître un double toucher
 
     const observateur = new IntersectionObserver(entrees => {
       for (const en of entrees) {
@@ -734,24 +741,27 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     // ---- barre d'actions de la sélection
     const compteSelection = el('span', { class: 'selection-compte' });
     const appliquerA = valeur => () => appliquerSelection(valeur);
-    const barre = el('div', { class: 'barre-selection', hidden: true },
-      compteSelection,
-      el('button', { class: 'btn-selection', title: 'Je garde', onclick: appliquerA(GARDE) }, SYMBOLES[GARDE]),
-      el('button', { class: 'btn-selection', title: 'Coup de cœur', onclick: appliquerA(COEUR) }, SYMBOLES[COEUR]),
-      el('button', { class: 'btn-selection', title: 'Je passe', onclick: appliquerA(PASSE) }, SYMBOLES[PASSE]),
-      el('button', { class: 'btn-selection', title: 'À trier (effacer le choix)', onclick: appliquerA(null) }, EFFACER),
-      el('button', { class: 'btn-selection annuler', title: 'Annuler la sélection', onclick: viderSelection }, '✕'));
-    const aide = el('p', { class: 'aide' });
+    const boutonsChoix = [
+      el('button', { class: 'btn-rond petit', title: 'Effacer le choix des photos sélectionnées', onclick: appliquerA(null) }, EFFACER),
+      el('button', { class: 'btn-rond passe', title: 'Je passe', onclick: appliquerA(PASSE) }, SYMBOLES[PASSE]),
+      el('button', { class: 'btn-rond garde', title: 'Je garde', onclick: appliquerA(GARDE) }, SYMBOLES[GARDE]),
+      el('button', { class: 'btn-rond etoile-bas', title: 'Coup de cœur', onclick: appliquerA(COEUR) }, '★'),
+    ];
+    const annuler = el('button', { class: 'btn-selection annuler', title: 'Annuler la sélection (Échap)', onclick: viderSelection }, '✕');
+    const barre = el('div', { class: 'tri-actions barre-grille' }, compteSelection, ...boutonsChoix, annuler);
+    const aide = el('p', { class: 'aide-grille' });
 
     function majSelection() {
       const n = selection.size;
-      barre.hidden = n === 0;
       grille.classList.toggle('en-selection', n > 0);
       compteSelection.textContent = String(n);
       compteSelection.title = `${n} photo${n > 1 ? 's' : ''} sélectionnée${n > 1 ? 's' : ''}`;
+      for (const b of boutonsChoix) b.disabled = n === 0;
+      annuler.hidden = n === 0;
+      compteSelection.hidden = n === 0;
       aide.textContent = n
-        ? 'Appui court : ajouter ou retirer une photo. Appui long : sélectionner toute la plage depuis la précédente. Puis choisissez ci-dessous.'
-        : `Touchez une photo pour la voir en grand, sa pastille pour changer le choix (· → ${SYMBOLES[GARDE]} → ${SYMBOLES[COEUR]} → ${SYMBOLES[PASSE]} → ·). Appui long : sélectionner plusieurs photos.`;
+        ? `${n} photo${n > 1 ? 's' : ''} sélectionnée${n > 1 ? 's' : ''} : choisissez ci-dessous (⊙ ✖️ ❤️ ⭐). Appui long : toute la plage depuis la précédente.`
+        : 'Touchez des photos pour les sélectionner, puis un bouton du bas. Double toucher : ouvrir la photo. Pastille : changer le choix d\'une photo.';
       vignettes.forEach((v, i) => v.classList.toggle('choisie', selection.has(i)));
     }
 
@@ -824,25 +834,34 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       const a = appui;
       annulerAppui();
       if (a.long) return; // déjà traité à l'expiration du délai
+      if (a.surPastille && !selection.size) { changerChoix(a.i); return; }
       if (e.shiftKey && selection.size) { selectionnerPlage(a.i); return; }
-      if (e.ctrlKey || e.metaKey || e.shiftKey || selection.size) { basculer(a.i); return; }
-      if (a.surPastille) changerChoix(a.i);
-      else ouvrir(a.i);
+      const maintenant = performance.now();
+      if (dernierToucher.i === a.i && maintenant - dernierToucher.t < 400) {
+        // Double toucher : on annule la sélection faite par le premier, et on ouvre la photo.
+        dernierToucher = { i: -1, t: 0 };
+        if (selection.has(a.i)) selection.delete(a.i);
+        majSelection();
+        ouvrir(a.i);
+        return;
+      }
+      dernierToucher = { i: a.i, t: maintenant };
+      basculer(a.i);
     });
     // Clavier (Entrée ou espace sur une imagette ou une pastille) : detail vaut 0 pour un clic clavier.
     grille.addEventListener('click', e => {
       const vignette = e.target.closest('.vignette');
       if (!vignette || e.detail !== 0) return;
-      if (selection.size) basculer(vignette.indice);
-      else if (e.target.closest('.pastille')) changerChoix(vignette.indice);
-      else ouvrir(vignette.indice);
+      if (e.target.closest('.pastille') && !selection.size) changerChoix(vignette.indice);
+      else basculer(vignette.indice);
     });
+    grille.addEventListener('dblclick', e => e.preventDefault()); // pas de sélection de texte
     // Empêche le menu contextuel du téléphone (appui long sur une image).
     grille.addEventListener('contextmenu', e => e.preventDefault());
 
     majSelection();
     majVide();
-    const racineVue = el('div', { class: 'vue-grille' }, aide, vide, grille, barre);
+    const racineVue = el('div', { class: 'vue-grille' }, aide, vide, el('div', { class: 'grille-defil' }, grille), barre);
 
     return {
       racine: racineVue,
@@ -852,6 +871,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       position: () => ({ n: 0, total: 0 }),
       clavier(e) {
         if (e.key === 'Escape' && selection.size) { viderSelection(); return true; }
+        if (e.key === 'Enter' && selection.size === 1) { ouvrir([...selection][0]); return true; }
         return false;
       },
     };
@@ -876,7 +896,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         el('strong', {}, 'Ensemble terminé !'),
         el('span', {}, prochain ? ` ${encouragement()}` : ' Vous avez tout trié, merci !'),
         el('div', { class: 'fin-resume' },
-          `${SYMBOLES[COEUR]} ${c.coeurs} · ${SYMBOLES[GARDE]}+${SYMBOLES[COEUR]} ${c.gardes + c.coeurs} · ${SYMBOLES[PASSE]} ${c.passes}`)),
+          `${SYMBOLES[PASSE]} ${c.passes} · ${SYMBOLES[GARDE]}+${SYMBOLES[COEUR]} ${c.gardes + c.coeurs} · ${SYMBOLES[COEUR]} ${c.coeurs}`)),
       prochain
         ? el('button', { class: 'btn-principal petit', onclick: () => nav.ensemble(prochain, 'photo') }, 'Suivant ›')
         : null);
@@ -926,6 +946,8 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   changerMode(mode);
   return {
     racine,
+    // Pour réafficher le même endroit après une resynchronisation avec le serveur.
+    position: () => ({ ensembleId, index: cur, mode }),
     detruire() {
       fermerFin();
       document.removeEventListener('keydown', clavier);

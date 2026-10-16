@@ -4,7 +4,7 @@
 // la reprise après fermeture de l'onglet.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.13.1';
+import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.14.0';
 
 const parametres = new URLSearchParams(location.search);
 // Latence simulée d'une requête (ms), pour juger l'effet du préchargement : ?latence=800
@@ -146,9 +146,12 @@ function dessiner(photo, grandCote) {
 
 // ---------------------------------------------------------------- API simulée
 
+let reinitFaite = false;
+
 export const backendSimule = {
   async etat(jeton) {
-    if (parametres.get('reinit') === '1') supprimerStockage(cleServeur(jeton));
+    if (parametres.get('reinit') === '1' && !reinitFaite) supprimerStockage(cleServeur(jeton));
+    reinitFaite = true; // une seule fois par visite (pas à chaque resynchronisation)
     // L'état se charge toujours en démonstration ; ?horsligne=1 ne bloque que les envois.
     await attendre(LATENCE);
     const serveur = lireServeur(jeton);
