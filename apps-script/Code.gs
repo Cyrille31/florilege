@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.12.1';
+const VERSION = '0.12.2';
 
 // Réglages (modifiables ici).
 const REGLAGES = {
@@ -523,9 +523,7 @@ function installerDans(idDossier, motDePasse) {
   const annees = [];
   const it = dossier.getFolders();
   while (it.hasNext()) { const d = it.next(); if (estDossierAnnee(d.getName())) annees.push(d.getName()); }
-  let url = '';
-  try { url = ScriptApp.getService().getUrl() || ''; } catch (err) { /* pas encore déployé */ }
-  const deploye = /\/s\/[\w-]+\/exec/.test(url);
+  const deploye = !!idDeploiement(urlApplicationWeb());
   return `<p>✅ Le classeur est rangé dans <b>${echapperHtml(dossier.getName())}</b>
       (${annees.length ? `dossiers d'année : ${echapperHtml(annees.sort(trierNoms).join(', '))}` : 'aucun dossier d\'année pour l\'instant'}).<br>
       ${mdp ? `Mot de passe commun : <b>${echapperHtml(mdp)}</b>.` : (proprietes.getProperty('mot_de_passe') ? 'Mot de passe commun inchangé.' : 'Pas de mot de passe : l\'application est ouverte à qui en a le lien.')}</p>
@@ -632,30 +630,111 @@ function normaliserMotDePasse(mdp) {
 
 // Lien à envoyer aux testeurs : l'adresse de l'application suivie de l'identifiant de ce serveur (?s=…).
 // Ainsi, le même site sert à toutes les sélections, et l'adresse du serveur n'est pas inscrite dans GitHub.
-function lienInvitation() {
-  const ui = SpreadsheetApp.getUi();
-  let url = '';
-  try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { /* pas encore déployé */ }
-  const m = /\/s\/([\w-]+)\/exec/.exec(url);
-  if (!m) {
-    ui.alert('Florilège', 'Le script n\'est pas encore publié en application web : dans l\'éditeur Apps Script, '
-      + 'Déployer → Nouveau déploiement → Application Web (Exécuter en tant que : moi ; accès : tout le monde).', ui.ButtonSet.OK);
-    return;
-  }
-  const lien = `${REGLAGES.application}?s=${m[1]}`;
-  const mdp = PropertiesService.getScriptProperties().getProperty('mot_de_passe');
-  const message = `Bonjour ! Pour participer à la sélection de photos, ouvre ce lien sur ton téléphone ou ton ordinateur :\n${lien}\n`
-    + (mdp ? `Mot de passe : ${mdp}\n` : '')
-    + 'Indique ton prénom : tu pourras t\'arrêter et reprendre quand tu veux, sur n\'importe quel appareil, avec le même prénom.';
-  const echapper = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const html = HtmlService.createHtmlOutput(`
-    <style>body{font-family:sans-serif;font-size:14px}textarea{width:100%;font-size:13px}</style>
-    <p><b>Lien d'invitation</b> (cliquer dedans pour le sélectionner, puis Ctrl+C) :</p>
-    <textarea rows="2" onclick="this.select()">${echapper(lien)}</textarea>
-    <p><b>Message prêt à envoyer</b> (mail, WhatsApp…) :</p>
-    <textarea rows="7" onclick="this.select()">${echapper(message)}</textarea>`).setWidth(520).setHeight(380);
-  ui.showModalDialog(html, 'Inviter les testeurs');
+// Adresse de l'application web. ScriptApp.getService().getUrl() n'est pas toujours fiable (ancien déploiement,
+// copie d'un classeur modèle) : l'organisateur peut donc coller l'adresse exacte, gardée dans la propriété url_web.
+function urlApplicationWeb() {
+  const memorisee = PropertiesService.getScriptProperties().getProperty('url_web');
+  if (memorisee) return memorisee;
+  try { return ScriptApp.getService().getUrl() || ''; } catch (e) { return ''; /* pas encore déployé */ }
 }
+
+function idDeploiement(url) {
+  const m = /\/macros\/(?:a\/[^/]+\/)?s\/([\w-]{20,})\/(?:exec|dev)/.exec(String(url || '')) || /^\s*(AKfy[\w-]{20,})\s*$/.exec(String(url || ''));
+  return m ? m[1] : '';
+}
+
+// Interroge l'application web comme le ferait un testeur anonyme : renvoie { ok, message }.
+function verifierServeur(id) {
+  if (!id) return { ok: false, message: 'Aucune application web publiée n\'a été trouvée.' };
+  try {
+    const rep = UrlFetchApp.fetch(`https://script.google.com/macros/s/${id}/exec`, { muteHttpExceptions: true, followRedirects: true });
+    const texte = rep.getContentText();
+    try {
+      const json = JSON.parse(texte);
+      if (json.application === 'Florilège') return { ok: true, message: `Le serveur répond (version ${json.version || '?'}).` };
+    } catch (e) { /* page HTML de Google */ }
+    if (/Impossible d.ouvrir le fichier|Sorry, unable to open/i.test(texte)) {
+      return { ok: false, message: 'Cette adresse ne correspond à aucun déploiement actif (déploiement supprimé ou adresse erronée).' };
+    }
+    if (rep.getResponseCode() === 401 || rep.getResponseCode() === 403 || /accounts\.google\.com|ServiceLogin/i.test(texte)) {
+      return { ok: false, message: 'Le serveur exige une connexion Google : dans le déploiement, « Qui a accès » doit être « Tout le monde ».' };
+    }
+    return { ok: false, message: `Réponse inattendue du serveur (code ${rep.getResponseCode()}).` };
+  } catch (e) {
+    return { ok: false, message: `Vérification impossible : ${e.message}` };
+  }
+}
+
+// Données de la fenêtre « Inviter les testeurs ».
+function donneesInvitation() {
+  const url = urlApplicationWeb();
+  const id = idDeploiement(url);
+  const verification = verifierServeur(id);
+  const lien = id ? `${REGLAGES.application}?s=${id}` : '';
+  const mdp = PropertiesService.getScriptProperties().getProperty('mot_de_passe');
+  const message = lien ? `Bonjour ! Pour participer à la sélection de photos, ouvre ce lien sur ton téléphone ou ton ordinateur :\n${lien}\n`
+    + (mdp ? `Mot de passe : ${mdp}\n` : '')
+    + 'Indique ton prénom : tu pourras t\'arrêter et reprendre quand tu veux, sur n\'importe quel appareil, avec le même prénom.' : '';
+  return { url, lien, message, ok: verification.ok, verification: verification.message,
+    memorisee: !!PropertiesService.getScriptProperties().getProperty('url_web') };
+}
+
+// Adresse collée par l'organisateur (URL de l'application Web affichée dans Déployer → Gérer les déploiements).
+function enregistrerUrlWeb(texte) {
+  const proprietes = PropertiesService.getScriptProperties();
+  if (!String(texte || '').trim()) { proprietes.deleteProperty('url_web'); return donneesInvitation(); }
+  const id = idDeploiement(texte);
+  if (!id) throw new Error('Adresse non reconnue : elle doit ressembler à https://script.google.com/macros/s/AKfy…/exec');
+  proprietes.setProperty('url_web', `https://script.google.com/macros/s/${id}/exec`);
+  return donneesInvitation();
+}
+
+function lienInvitation() {
+  const html = HtmlService.createHtmlOutput(PAGE_INVITATION).setWidth(580).setHeight(560);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Inviter les testeurs');
+}
+
+const PAGE_INVITATION = `<!doctype html><html><head><base target="_top"><style>
+  body{font-family:Arial,sans-serif;font-size:14px;color:#222;margin:0 4px}
+  textarea,input{width:100%;box-sizing:border-box;font-size:13px;padding:6px}
+  button{font-size:14px;padding:6px 12px;cursor:pointer}
+  .ok{color:#2e7d32}.ko{color:#c62828}.aide{color:#666;font-size:12.5px}
+  .rangee{display:flex;gap:6px}.rangee input{flex:1}
+</style></head><body>
+<p id="etat">Vérification du serveur…</p>
+<div id="lien" style="display:none">
+  <p><b>Lien d'invitation</b> (cliquer dedans pour le sélectionner, puis Ctrl+C) :</p>
+  <textarea id="t-lien" rows="2" readonly onclick="this.select()"></textarea>
+  <p><b>Message prêt à envoyer</b> (mail, WhatsApp…) :</p>
+  <textarea id="t-message" rows="6" readonly onclick="this.select()"></textarea>
+</div>
+<details id="corriger">
+  <summary>Corriger l'adresse du serveur</summary>
+  <p class="aide">Dans l'éditeur Apps Script : <i>Déployer → Gérer les déploiements</i>, copier l'« URL » de l'application Web
+  (exemple : https://script.google.com/macros/s/AKfycbx…/exec) et la coller ici.</p>
+  <div class="rangee"><input id="url" placeholder="https://script.google.com/macros/s/…/exec"><button onclick="enregistrer()">Utiliser</button></div>
+  <p class="aide" id="actuelle"></p>
+</details>
+<p style="text-align:right"><button onclick="google.script.host.close()">Fermer</button></p>
+<script>
+  function afficher(d) {
+    var etat = document.getElementById('etat');
+    etat.className = d.ok ? 'ok' : 'ko';
+    etat.textContent = (d.ok ? '✅ ' : '⚠️ ') + d.verification
+      + (d.ok ? '' : ' Le lien ne fonctionnera pas tant que ce problème n\\'est pas réglé.');
+    document.getElementById('lien').style.display = d.lien ? '' : 'none';
+    document.getElementById('t-lien').value = d.lien;
+    document.getElementById('t-message').value = d.message;
+    document.getElementById('corriger').open = !d.ok;
+    document.getElementById('actuelle').textContent = d.url ? 'Adresse utilisée' + (d.memorisee ? ' (collée)' : ' (détectée)') + ' : ' + d.url : '';
+  }
+  function erreur(e) { var etat = document.getElementById('etat'); etat.className = 'ko'; etat.textContent = '⚠️ ' + (e && e.message ? e.message : e); }
+  function enregistrer() {
+    document.getElementById('etat').className = ''; document.getElementById('etat').textContent = 'Vérification du serveur…';
+    google.script.run.withSuccessHandler(afficher).withFailureHandler(erreur).enregistrerUrlWeb(document.getElementById('url').value);
+  }
+  google.script.run.withSuccessHandler(afficher).withFailureHandler(erreur).donneesInvitation();
+</script></body></html>`;
 
 function definirMotDePasse() {
   const ui = SpreadsheetApp.getUi();
