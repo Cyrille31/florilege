@@ -135,6 +135,13 @@ Photos famille/                       (exemple de nom)
 > saisissent une fois avec leur prénom ; il est ensuite mémorisé sur leur appareil. Majuscules et espaces en trop ne
 > comptent pas. Sans mot de passe défini, toute personne qui connaît l'adresse de l'application peut voir les photos.
 
+> **Affichage rapide des photos (recommandé)** : **Florilège → Affichage rapide des photos (partage par lien)…**
+> partage les dossiers « -allégé » (copies réduites, pas les originaux) en lecture avec « toute personne disposant du
+> lien ». L'application affiche alors les photos directement depuis Google Drive, aussi vite que dans Drive, au lieu de
+> les faire passer une à une par le script (lent : démarrage, encodage, exécutions simultanées limitées). L'adresse de
+> chaque photo n'est donnée qu'aux testeurs qui ont le mot de passe. Les nouveaux dossiers « -allégé » sont partagés
+> automatiquement ; le même menu permet de désactiver l'option. Si le partage échoue, l'application repasse par le script.
+
 ### 1. Créer les photos allégées
 
 Deux possibilités, au choix (on peut aussi les mélanger : chacune laisse intactes les copies de l'autre) :
@@ -305,6 +312,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.15.0 | Rapidité : affichage direct des photos depuis Google Drive (menu « Affichage rapide des photos »), repli automatique sur le script ; seules les images visibles et les quelques suivantes sont demandées (plus toutes les miniatures de l'année d'un coup) ; une place réservée à la photo affichée ; lots de miniatures plus petits. |
 | 0.14.0 | Menu « ? » sur tous les écrans (mode d'emploi, tutoriel animé, à propos : licence MIT + BAL, CGExcel) ; logo Florilège en haut à gauche partout ; Imagettes : un clic sélectionne, un double clic ouvre en « une à une », boutons du bas ⊙ ✖️ ❤️ ⭐ pour la sélection ; même ordre ⊙ ✖️ ❤️ ⭐ partout (boutons, compteurs, visionneuse) ; resynchronisation avec les autres appareils au retour sur l'onglet. |
 | 0.13.1 | Modes « Une à une / Imagettes » sur la ligne « Accueil » (sur téléphone, bouton 🏠 seul) ; bouton ⭐ à la place de la loupe ; une seule pastille en haut à gauche de la photo (· ❤️ ⭐ ✖️). |
 | 0.13.0 | Interface : photos plus grandes sur PC ; un clic dans la visionneuse revient à « Une à une » (zoom à la molette ou aux doigts) ; « Retenues » devient une case à cocher valable dans tous les modes, visionneuse comprise ; cases « Retenues » et « Suivante après choix » sur la ligne des modes ; nombre de photos à trier dans la visionneuse ; bandeau de fin d'ensemble visible aussi en grand ; bouton « effacer le choix » ⊙ ; « C'est la dernière photo » au milieu de la photo ; ligne d'aide clavier et compteur en double supprimés. |

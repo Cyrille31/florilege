@@ -1,12 +1,36 @@
 // Florilège — chargement des images : miniatures par lots, grandes images une par une,
 // au plus N requêtes simultanées, priorités (photo affichée d'abord, puis préchargement),
 // cache Cache Storage pour ne jamais retélécharger une image déjà vue sur cet appareil.
+// Affichage rapide : si l'organisateur a partagé les photos allégées par lien, le serveur donne l'identifiant
+// Google Drive de chaque photo et les images viennent directement de Google (bien plus vite que par le script) ;
+// en cas d'échec, on repasse par le script.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, cleLocale } from './config.js?v=0.14.0';
+import { CONFIG, cleLocale } from './config.js?v=0.15.0';
 
 const NOM_CACHE = cleLocale('images-v1'); // un cache par sélection
 const GRANDES_EN_MEMOIRE = 40;
+const DELAI_DIRECT = 15000; // ms
+
+// Adresses servies directement par Google Drive (fichier partagé par lien), de la plus rapide à la plus sûre.
+function adressesDirectes(drive, largeur) {
+  return [
+    `https://lh3.googleusercontent.com/d/${drive}=w${largeur}`,
+    `https://drive.google.com/thumbnail?id=${drive}&sz=w${largeur}`,
+  ];
+}
+
+// Charge une image par la balise <img> (pas de fetch : ces adresses n'autorisent pas la lecture croisée).
+function chargerImage(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const minuteur = setTimeout(() => { img.src = ''; reject(new Error('délai dépassé')); }, DELAI_DIRECT);
+    img.onload = () => { clearTimeout(minuteur); resolve(url); };
+    img.onerror = () => { clearTimeout(minuteur); reject(new Error('image refusée')); };
+    img.decoding = 'async';
+    img.src = url;
+  });
+}
 
 async function ouvrirCache() {
   try {
@@ -32,6 +56,31 @@ export class ChargeurImages {
     this.lotPlanifie = false;
     this.ordreGrandes = [];      // pour libérer la mémoire des grandes images anciennes
     this.cache = ouvrirCache();
+    this.liens = new Map();      // id de photo → id Google Drive (affichage rapide)
+    this.direct = { reussites: 0, echecs: 0 };
+  }
+
+  // Identifiants Google Drive donnés par le serveur quand l'affichage rapide est activé.
+  definirLiens(photos) {
+    this.liens.clear();
+    for (const p of photos || []) if (p.drive) this.liens.set(p.id, p.drive);
+  }
+
+  // Après plusieurs échecs sans aucune réussite (partage retiré…), on n'essaie plus l'affichage direct.
+  directPossible(id) {
+    return this.liens.has(id) && !(this.direct.reussites === 0 && this.direct.echecs >= 3);
+  }
+
+  async chargerDirect(id, largeur) {
+    for (const url of adressesDirectes(this.liens.get(id), largeur)) {
+      try {
+        await chargerImage(url);
+        this.direct.reussites++;
+        return url;
+      } catch { /* adresse suivante */ }
+    }
+    this.direct.echecs++;
+    throw new Error('affichage direct impossible');
   }
 
   urlSiDisponible(id, taille) {
@@ -56,8 +105,11 @@ export class ChargeurImages {
   }
 
   lancer() {
-    while (this.actives < CONFIG.requetesSimultanees && this.attente.length) {
+    // Une place de plus est réservée à la photo affichée (priorité 0), pour ne pas attendre le préchargement.
+    while (this.attente.length) {
       this.attente.sort((a, b) => a.priorite - b.priorite);
+      const limite = CONFIG.requetesSimultanees + (this.attente[0].priorite <= 0 ? 1 : 0);
+      if (this.actives >= limite) break;
       const tache = this.attente.shift();
       this.actives++;
       tache.executer().finally(() => {
@@ -110,6 +162,13 @@ export class ChargeurImages {
       return this.promesses.get(cle);
     }
     const promesse = (async () => {
+      if (this.directPossible(id)) {
+        try {
+          const url = await this.chargerDirect(id, 1080);
+          this.urls.set(cle, url);
+          return url;
+        } catch { /* on passe par le script */ }
+      }
       const enCache = await this.depuisCache('grande', id);
       if (enCache) return this.enregistrer('grande', id, enCache);
       const blob = await new Promise((resolve, reject) => {
@@ -130,6 +189,13 @@ export class ChargeurImages {
     if (this.urls.has(cle)) return Promise.resolve(this.urls.get(cle));
     if (this.promesses.has(cle)) return this.promesses.get(cle);
     const promesse = (async () => {
+      if (this.directPossible(id)) {
+        try {
+          const url = await this.chargerDirect(id, 400);
+          this.urls.set(cle, url);
+          return url;
+        } catch { /* on passe par le script */ }
+      }
       const enCache = await this.depuisCache('mini', id);
       if (enCache) return this.enregistrer('mini', id, enCache);
       const blob = await new Promise((resolve, reject) => {

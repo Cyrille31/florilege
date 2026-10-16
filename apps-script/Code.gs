@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.14.0';
+const VERSION = '0.15.0';
 
 // Réglages (modifiables ici).
 const REGLAGES = {
@@ -173,6 +173,7 @@ function calculerListe(dureeMax) {
     while (it.hasNext()) {
       const d = it.next();
       if (estDossierAllege(d.getName())) {
+        if (liensDirects()) partagerParLien(d); // dossiers ajoutés depuis (outil du PC, par exemple)
         const annee = d.getName().normalize('NFC').replace(/-all[eé]g[eé]$/i, '');
         file.push({ id: d.getId(), annee, rel: annee });
       }
@@ -385,6 +386,7 @@ function reduireUneTranche(dureeMax) {
     const file = [];
     for (const nom of Object.keys(dossiers).filter(estDossierAnnee).sort(trierNoms)) {
       const cible = dossiers[`${nom}${REGLAGES.suffixe}`.normalize('NFC')] || racine.createFolder(`${nom}${REGLAGES.suffixe}`);
+      if (liensDirects()) partagerParLien(cible);
       file.push({ src: dossiers[nom].getId(), dst: cible.getId(), rel: nom });
     }
     etat = { file, faites: 0, erreurs: [], attente: [], debut: maintenantLisible() };
@@ -826,9 +828,12 @@ function apiEtat(testeur) {
   const nbParAnnee = {};
   liste.photos.forEach(p => { nbParAnnee[p.e] = (nbParAnnee[p.e] || 0) + 1; });
   const ordreDans = {};
+  const direct = liensDirects();
   const photos = liste.photos.map(p => {
     ordreDans[p.e] = (ordreDans[p.e] || 0) + 1;
-    return { id: p.id, ensemble_id: p.e, largeur: p.l || 0, hauteur: p.h || 0, ordre: ordreDans[p.e] };
+    const photo = { id: p.id, ensemble_id: p.e, largeur: p.l || 0, hauteur: p.h || 0, ordre: ordreDans[p.e] };
+    if (direct) photo.drive = p.d; // affichage direct depuis Google Drive (voir accelererAffichage)
+    return photo;
   });
 
   // Choix déjà faits par ce testeur ; et progression du groupe.
@@ -942,6 +947,70 @@ function apiMiniatures(ids) {
   return { images, types };
 }
 
+// ---------------------------------------------------------------- affichage direct depuis Google Drive
+// Passer chaque image par ce script est lent (démarrage, encodage, exécutions simultanées limitées).
+// Si l'organisateur l'accepte, les dossiers « -allégé » sont partagés « toute personne disposant du lien » :
+// l'application affiche alors les photos directement depuis Google Drive, aussi vite que dans Drive.
+// Les adresses des photos ne sont données qu'aux testeurs qui ont le mot de passe ; les originaux ne sont pas touchés.
+
+function liensDirects() {
+  return PropertiesService.getScriptProperties().getProperty('liens_directs') === 'oui';
+}
+
+function partagerParLien(dossier) {
+  try {
+    if (dossier.getSharingAccess() !== DriveApp.Access.ANYONE_WITH_LINK) {
+      dossier.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    }
+    return true;
+  } catch (e) {
+    console.error(`Partage impossible pour ${dossier.getName()} : ${e.message}`);
+    return false;
+  }
+}
+
+function dossiersAlleges() {
+  const liste = [];
+  const it = dossierSelection().getFolders();
+  while (it.hasNext()) { const d = it.next(); if (estDossierAllege(d.getName())) liste.push(d); }
+  return liste;
+}
+
+function accelererAffichage() {
+  const ui = SpreadsheetApp.getUi();
+  const proprietes = PropertiesService.getScriptProperties();
+  if (liensDirects()) {
+    const rep = ui.alert('Affichage rapide des photos',
+      'L\'affichage rapide est activé : les dossiers « -allégé » sont partagés par lien.\n\n'
+      + 'Le désactiver ? (les photos repasseront par le script, plus lentement)', ui.ButtonSet.YES_NO);
+    if (rep !== ui.Button.YES) return;
+    proprietes.deleteProperty('liens_directs');
+    let n = 0;
+    for (const d of dossiersAlleges()) {
+      try { d.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE); n++; } catch (e) { /* sans gravité */ }
+    }
+    ui.alert('Florilège', `Affichage rapide désactivé (${n} dossier${n > 1 ? 's' : ''} redevenu${n > 1 ? 's' : ''} privé${n > 1 ? 's' : ''}).`, ui.ButtonSet.OK);
+    return;
+  }
+  const rep = ui.alert('Affichage rapide des photos',
+    'Pour que les photos s\'affichent aussi vite que dans Google Drive, les dossiers « -allégé » (copies réduites, '
+    + 'pas les originaux) vont être partagés en lecture avec « toute personne disposant du lien ».\n\n'
+    + 'Personne ne peut les trouver par hasard : l\'adresse de chaque photo n\'est donnée par l\'application '
+    + 'qu\'aux testeurs qui ont le mot de passe.\n\nActiver l\'affichage rapide ?', ui.ButtonSet.YES_NO);
+  if (rep !== ui.Button.YES) return;
+  const dossiers = dossiersAlleges();
+  const refus = dossiers.filter(d => !partagerParLien(d)).map(d => d.getName());
+  if (dossiers.length && refus.length === dossiers.length) {
+    ui.alert('Florilège', 'Google Drive refuse le partage par lien (règle de votre organisation ?). '
+      + 'Les photos continueront de passer par le script.', ui.ButtonSet.OK);
+    return;
+  }
+  proprietes.setProperty('liens_directs', 'oui');
+  ui.alert('Florilège', `Affichage rapide activé : ${dossiers.length - refus.length} dossier(s) « -allégé » partagé(s) par lien.`
+    + (refus.length ? `\nNon partagés : ${refus.join(', ')}.` : '')
+    + '\nLes nouveaux dossiers « -allégé » le seront automatiquement. Les testeurs n\'ont qu\'à recharger la page.', ui.ButtonSet.OK);
+}
+
 function apiImage(id) {
   const photo = indexParId()[String(id || '')];
   if (!photo) return { erreur: 'Photo inconnue (la liste des photos a peut-être changé : rechargez la page).' };
@@ -958,6 +1027,7 @@ function onOpen() {
     .addSeparator()
     .addItem('Créer les photos allégées (dans Google Drive)', 'creerPhotosAllegees')
     .addItem('État de la création des photos allégées', 'etatReduction')
+    .addItem('Affichage rapide des photos (partage par lien)…', 'accelererAffichage')
     .addItem('Mettre à jour la liste des photos', 'mettreAJourListe')
     .addItem('Recommencer la mise à jour depuis le début', 'recommencerListe')
     .addSeparator()

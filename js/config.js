@@ -11,7 +11,7 @@ export const CONFIG = {
   modele: '14uz4wTE8GG05nZ4Md2MKrY0HnP4Y257NRgvaN_HcGCs',
 
   // Version affichée dans l'écran « À propos ».
-  version: '0.14.0',
+  version: '0.15.0',
 
   // Envoi groupé des événements (section 7.4 des spécifications).
   envoiToutesLesNActions: 10,
@@ -20,7 +20,7 @@ export const CONFIG = {
   // Préchargement des grandes images (section 3.3).
   prechargementAvance: 5,
   requetesSimultanees: 3, // Apps Script limite le nombre d'exécutions simultanées
-  miniaturesParLot: 16,
+  miniaturesParLot: 8, // petits lots : une vignette lente ne bloque pas les autres
 };
 
 const parametres = new URLSearchParams(location.search);

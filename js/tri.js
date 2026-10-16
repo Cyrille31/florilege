@@ -11,12 +11,12 @@
 import {
   PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.14.0';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.14.0';
-import { ouvrirVisionneuse } from './zoom.js?v=0.14.0';
-import { CONFIG } from './config.js?v=0.14.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.14.0';
-import { boutonAide } from './aide.js?v=0.14.0';
+} from './etat.js?v=0.15.0';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.15.0';
+import { ouvrirVisionneuse } from './zoom.js?v=0.15.0';
+import { CONFIG } from './config.js?v=0.15.0';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.15.0';
+import { boutonAide } from './aide.js?v=0.15.0';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };
@@ -57,7 +57,8 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   let visionneuse = null;
   let vue = null; // vue affichée : { racine, afficher, detruire, majPhoto(i), clavier(e), position() }
 
-  images.minis(photos.map(p => p.id), 1);
+  // Les miniatures sont demandées au fur et à mesure de l'affichage (pas toutes d'un coup : la file d'attente
+  // serait occupée longtemps et la photo affichée attendrait).
 
   // ---- entête commun
   const selecteur = el('div', { class: 'selecteur-mode', role: 'tablist', 'aria-label': 'Mode d\'affichage' },

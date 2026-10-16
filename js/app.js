@@ -1,18 +1,18 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi } from './config.js?v=0.14.0';
+import { CONFIG, modeDemo, urlApi } from './config.js?v=0.15.0';
 import {
   backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
   memoriserMotDePasse, oublierMotDePasse,
   nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.14.0';
-import { ChargeurImages } from './images.js?v=0.14.0';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.14.0';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.14.0';
-import { ecranEnsemble } from './tri.js?v=0.14.0';
-import { supprimerStockage } from './stockage.js?v=0.14.0';
-import { boutonAide, ouvrirAide } from './aide.js?v=0.14.0';
+} from './api.js?v=0.15.0';
+import { ChargeurImages } from './images.js?v=0.15.0';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.15.0';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.15.0';
+import { ecranEnsemble } from './tri.js?v=0.15.0';
+import { supprimerStockage } from './stockage.js?v=0.15.0';
+import { boutonAide, ouvrirAide } from './aide.js?v=0.15.0';
 
 const PHRASES_PHASE = {
   manche1: 'Triez les photos : ✖️ je passe, ❤️ je garde, ⭐ coup de cœur.',
@@ -285,6 +285,7 @@ async function demarrer() {
   try {
     const { etat, horsLigne } = await chargerEtat(jeton, ctx.file);
     ctx.etat = etat;
+    ctx.images.definirLiens(etat.photos);
     majIndicateur(horsLigne ? 'horsligne' : ctx.file.statut(), ctx.file.enAttente());
     if (horsLigne) notifier('Hors ligne : vous pouvez continuer, tout sera envoyé plus tard.');
   } catch (e) {
@@ -324,6 +325,7 @@ async function resynchroniser() {
     const { etat, horsLigne } = await chargerEtat(ctx.jeton, ctx.file);
     if (horsLigne || JSON.stringify(etat.votes) === JSON.stringify(ctx.etat.votes)) return;
     ctx.etat = etat;
+    ctx.images.definirLiens(etat.photos);
     const position = ecranCourant?.position?.();
     if (position) {
       montrer(ecranEnsemble(ctx, position.ensembleId, nav, { mode: position.mode, index: position.index }));
