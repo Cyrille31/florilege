@@ -221,6 +221,17 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
   overflow: hidden;
 }
 .tri-entete { display: flex; align-items: center; gap: 8px; }
+.tri-entete .selecteur-mode { margin-top: 0; flex: 0 1 300px; }
+/* Téléphone : bouton Accueil réduit à 🏠 pour garder le nom de l'ensemble et les modes sur une seule ligne. */
+@media (max-width: 560px) {
+  .libelle-accueil { display: none; }
+  .tri-entete .selecteur-mode { flex: 0 1 220px; }
+  .tri-entete .selecteur-mode button { font-size: .82rem; padding: 0 4px; }
+  .ligne-modes { gap: 0 12px; }
+  .option-tri { font-size: .85rem; }
+}
+.tri-entete .selecteur-mode button { padding: 0 8px; }
+
 .tri-infos { flex: 1; min-width: 0; }
 .tri-titre { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tri-compteur { font-size: .85rem; color: var(--texte-doux); font-variant-numeric: tabular-nums; }
@@ -240,8 +251,7 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 @media (prefers-color-scheme: dark) { .btn-accueil { background: var(--vert); color: #06261f; } }
 
 /* Sélecteur des trois modes d'affichage */
-.ligne-modes { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 10px; }
-.ligne-modes .selecteur-mode { margin-top: 0; flex: 1 1 260px; max-width: 420px; }
+.ligne-modes { display: flex; flex-wrap: wrap; align-items: center; gap: 0 16px; margin-top: 4px; }
 .option-tri {
   display: flex; align-items: center; gap: 6px;
   min-height: 40px;
@@ -343,7 +353,7 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 .defil[data-valeur="0"] img { opacity: .55; filter: grayscale(.8); }
 .defil.centre[data-valeur="0"] img { opacity: .75; filter: grayscale(1); }
 
-/* Pastille du choix (· / ❤️ / ✖️) en haut à gauche : la toucher change le choix. */
+/* Pastille du choix (· / ❤️ / ⭐ / ✖️) en haut à gauche : la toucher change le choix. */
 .choix {
   position: absolute; top: 6px; left: 6px;
   width: 48px; height: 48px;
@@ -359,26 +369,9 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 }
 .choix:active { transform: scale(.85); }
 .defil[data-valeur=""] .choix { background: rgba(255, 255, 255, .6); }
+.defil[data-valeur="2"] .choix { background: #fff3c4; box-shadow: 0 0 0 3px var(--jaune), 0 1px 4px rgba(0, 0, 0, .3); }
 .defil:not(.centre) .choix { transform: scale(.55); transform-origin: top left; pointer-events: none; }
 .defil:not(.centre)[data-valeur=""] .choix { display: none; }
-
-/* Étoile du coup de cœur, dans le coin : grise si non choisie, dorée si choisie. */
-.etoile {
-  position: absolute; top: 6px; right: 6px;
-  width: 48px; height: 48px;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, .35);
-  color: #d4d4d4;
-  font-size: 1.9rem;
-  line-height: 1;
-  transition: transform .15s, color .15s;
-}
-.etoile:hover { color: #fff; }
-.etoile.doree { color: #ffc94a; background: rgba(0, 0, 0, .45); text-shadow: 0 0 10px rgba(255, 201, 74, .8); }
-.etoile:active { transform: scale(.85); }
-.defil:not(.centre) .etoile { transform: scale(.55); transform-origin: top right; pointer-events: none; }
-.defil:not(.centre) .etoile:not(.doree) { display: none; }
 
 .tampon {
   position: absolute;
@@ -433,6 +426,8 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 }
 .btn-rond:active { transform: scale(.9); }
 .btn-rond.petit { width: 48px; height: 48px; font-size: 1.3rem; }
+.btn-rond.etoile-bas { color: #b9b9b9; font-size: 2rem; }
+.btn-rond.etoile-bas.doree { color: #ffc94a; box-shadow: var(--ombre), inset 0 0 0 3px color-mix(in srgb, var(--jaune) 55%, transparent); }
 .btn-rond.garde { box-shadow: var(--ombre), inset 0 0 0 3px color-mix(in srgb, var(--rouge) 35%, transparent); }
 
 .scene-vide {

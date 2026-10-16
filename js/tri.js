@@ -4,17 +4,18 @@
 // La case « Retenues » limite l'affichage aux photos gardées (❤️ ou ⭐), dans tous les modes.
 // Gestes : glisser à gauche / à droite pour défiler sans rien valider (un geste rapide fait défiler
 // plusieurs photos, avec ralentissement), vers le haut pour ❤️ (je garde), vers le bas pour ✖️ (je passe).
-// L'étoile, dans le coin de la photo, marque un coup de cœur ; la pastille de l'autre coin change le choix.
+// La pastille en haut à gauche de la photo montre le choix (· ❤️ ⭐ ✖️) et le change ; le bouton ⭐ du bas
+// marque un coup de cœur.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
 import {
   PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.13.0';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.13.0';
-import { ouvrirVisionneuse } from './zoom.js?v=0.13.0';
-import { CONFIG } from './config.js?v=0.13.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.13.0';
+} from './etat.js?v=0.13.1';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.13.1';
+import { ouvrirVisionneuse } from './zoom.js?v=0.13.1';
+import { CONFIG } from './config.js?v=0.13.1';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.13.1';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };
@@ -36,7 +37,7 @@ const rapport = p => (p.largeur > 0 && p.hauteur > 0 ? p.largeur / p.hauteur : 4
 const ratioDe = p => (p.largeur > 0 && p.hauteur > 0 ? `${p.largeur} / ${p.hauteur}` : '4 / 3');
 
 function badgeDe(v) {
-  return v === PASSE ? SYMBOLES[PASSE] : estRetenue(v) ? SYMBOLES[GARDE] : '·';
+  return estTrie(v) ? SYMBOLES[v] : '·';
 }
 
 export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
@@ -69,7 +70,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     ecrireStockage(CLE_AVANCE, avanceAuto);
   });
   const optionAvance = el('label', { class: 'option-tri', title: 'Passer à la photo suivante après ❤️ ou ✖️' }, caseAvance, ' Suivante après choix');
-  const ligneModes = el('div', { class: 'ligne-modes' }, selecteur,
+  const ligneModes = el('div', { class: 'ligne-modes' },
     el('label', { class: 'option-tri', title: 'Seulement les photos gardées (❤️ et ⭐) — touche R' }, caseRetenues, ' Retenues ❤️'),
     optionAvance);
   const stats = el('div', { class: 'tri-stats' });
@@ -77,8 +78,9 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   const corps = el('div', { class: 'tri-corps' });
   const racine = el('section', { class: 'ecran ecran-tri' },
     el('header', { class: 'tri-entete' },
-      el('button', { class: 'btn-accueil', title: 'Retour à l\'accueil (Échap)', onclick: nav.accueil }, '🏠 Accueil'),
-      el('div', { class: 'tri-infos' }, el('div', { class: 'tri-titre' }, ens.nom))),
+      el('button', { class: 'btn-accueil', title: 'Retour à l\'accueil (Échap)', 'aria-label': 'Accueil', onclick: nav.accueil }, '🏠', el('span', { class: 'libelle-accueil' }, ' Accueil')),
+      el('div', { class: 'tri-infos' }, el('div', { class: 'tri-titre' }, ens.nom)),
+      selecteur),
     ligneModes,
     stats,
     el('div', { class: 'barre-progression' }, barre),
@@ -220,6 +222,14 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     let ordre = [];           // indices des photos affichées, dans l'ordre
     let pos = 0;              // position de la photo courante dans « ordre »
     let inertie = null;
+    const boutonEtoile = el('button', { class: 'btn-rond etoile-bas', 'aria-label': 'Coup de cœur', title: 'Coup de cœur ⭐ (E)',
+      onclick: () => { if (ordre.length && !basculerEtoile()) secouer(cartes.get(cur)); } }, '★');
+    // Le bouton ⭐ est doré quand la photo affichée est un coup de cœur.
+    function majBoutonEtoile() {
+      const v = ordre.length ? etat.votes[photos[cur].id] : null;
+      boutonEtoile.classList.toggle('doree', v === COEUR);
+      boutonEtoile.setAttribute('aria-pressed', v === COEUR ? 'true' : 'false');
+    }
 
     // Ascenseur horizontal : position dans l'ensemble ; le faire glisser fait défiler les photos.
     const curseur = el('input', { type: 'range', class: 'curseur-photos', min: 1, max: 1, value: 1, step: 1, 'aria-label': 'Position dans l\'ensemble' });
@@ -238,7 +248,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         el('button', { class: 'btn-rond petit', 'aria-label': 'Effacer le choix de cette photo', title: 'Effacer le choix : la photo redevient « à trier » (Suppr)', onclick: () => ordre.length && effacer() }, EFFACER),
         el('button', { class: 'btn-rond passe', 'aria-label': 'Je passe', title: 'Je passe (↓)', onclick: () => choisir(PASSE) }, SYMBOLES[PASSE]),
         el('button', { class: 'btn-rond garde', 'aria-label': 'Je garde', title: 'Je garde (↑)', onclick: () => choisir(GARDE) }, SYMBOLES[GARDE]),
-        el('button', { class: 'btn-rond petit', 'aria-label': 'Voir en grand', title: 'Voir en grand (clic sur la photo, ou Entrée)', onclick: ouvrirGrand }, '🔍')));
+        boutonEtoile));
 
     // « C'est la dernière photo » : au milieu de la photo (ou de la visionneuse), seulement si l'on tente d'aller plus loin.
     let minuteurBout = null;
@@ -272,26 +282,19 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     function creerCarte(i) {
       const p = photos[i];
       const img = el('img', { alt: `Photo ${p.ordre} sur ${photos.length} — ${ens.nom}`, draggable: 'false' });
-      const etoile = el('button', { class: 'etoile', 'aria-label': 'Coup de cœur', title: 'Coup de cœur (E)' }, '★');
       const choix = el('button', { class: 'choix', title: 'Changer le choix : · → ❤️ → ⭐ → ✖️' });
-      for (const b of [etoile, choix]) b.addEventListener('pointerdown', e => e.stopPropagation());
-      etoile.addEventListener('click', e => {
-        e.stopPropagation();
-        if (i !== cur) { allerPhoto(i); return; }
-        if (!basculerEtoile(i)) secouer(carte);
-      });
+      choix.addEventListener('pointerdown', e => e.stopPropagation());
       choix.addEventListener('click', e => {
         e.stopPropagation();
         if (i !== cur) { allerPhoto(i); return; }
         changerChoix(i);
       });
       const carte = el('div', { class: 'defil nouvelle' },
-        el('div', { class: 'cadre' }, img, choix, etoile,
+        el('div', { class: 'cadre' }, img, choix,
           el('span', { class: 'tampon tampon-haut', 'aria-hidden': 'true' }, `${SYMBOLES[GARDE]} Je garde`),
           el('span', { class: 'tampon tampon-bas', 'aria-hidden': 'true' }, `${SYMBOLES[PASSE]} Je passe`)));
       carte.indice = i;
       carte.img = img;
-      carte.etoile = etoile;
       carte.choix = choix;
       // Tant qu'aucune image n'est affichée, la carte indique « Chargement… » ; « Image indisponible » en cas d'échec.
       img.addEventListener('load', () => { carte.classList.add('chargee'); carte.classList.remove('echec'); });
@@ -315,8 +318,6 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       carte.dataset.valeur = estTrie(v) ? v : '';
       carte.choix.textContent = badgeDe(v);
       carte.choix.setAttribute('aria-label', `Choix : ${TEXTES[v] || 'à trier'}. Toucher pour changer.`);
-      carte.etoile.classList.toggle('doree', v === COEUR);
-      carte.etoile.setAttribute('aria-pressed', v === COEUR ? 'true' : 'false');
     }
 
     function chargerGrande(carte) {
@@ -423,6 +424,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       placer(0, leger);
       if (!leger) precharger();
       majCurseur();
+      majBoutonEtoile();
       actualiserEntete();
       if (visionneuse) {
         visionneuse.changerPhoto(photos[cur].id, ratioDe(photos[cur]));
@@ -637,7 +639,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
 
     return {
       racine: racineVue,
-      afficher() { placer(); precharger(); majCurseur(); },
+      afficher() { placer(); precharger(); majCurseur(); majBoutonEtoile(); },
       detruire() { observateurTaille.disconnect(); clearTimeout(inertie); clearTimeout(minuteurBout); },
       position: () => ({ n: ordre.length ? pos + 1 : 0, total: ordre.length }),
       allerA: (n, leger) => allerPos(n, { leger, silencieux: true }),
@@ -646,6 +648,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       majPhoto(i) {
         const c = cartes.get(i);
         if (c) majCarte(c);
+        majBoutonEtoile();
         if (seulementRetenues) {
           const avant = cur;
           calculerOrdre();
