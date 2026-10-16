@@ -1,17 +1,17 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi } from './config.js?v=0.12.3';
+import { CONFIG, modeDemo, urlApi } from './config.js?v=0.12.4';
 import {
   backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
   memoriserMotDePasse, oublierMotDePasse,
   nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.12.3';
-import { ChargeurImages } from './images.js?v=0.12.3';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.12.3';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.12.3';
-import { ecranEnsemble } from './tri.js?v=0.12.3';
-import { supprimerStockage } from './stockage.js?v=0.12.3';
+} from './api.js?v=0.12.4';
+import { ChargeurImages } from './images.js?v=0.12.4';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.12.4';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.12.4';
+import { ecranEnsemble } from './tri.js?v=0.12.4';
+import { supprimerStockage } from './stockage.js?v=0.12.4';
 
 const PHRASE_BAL = 'En échange, une seule chose vous est demandée, sur l\'honneur : faire une bonne action '
   + 'chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -192,7 +192,14 @@ function montrerConnexionImpossible(e) {
       el('p', { style: 'font-size:.85rem;word-break:break-all' }, `Adresse du serveur : ${url}`),
       el('p', { style: 'font-size:.85rem' }, `Détail technique : ${e?.message || e}`)),
     el('p', {}, el('button', { class: 'btn-secondaire', onclick: () => location.reload() }, 'Réessayer')),
+    el('p', {}, el('button', { class: 'btn-secondaire', onclick: oublierServeur }, 'Oublier ce serveur (revenir à l\'accueil)')),
     pied()) });
+}
+
+// Efface le serveur mémorisé sur l'appareil (lien d'invitation périmé) et revient à la page d'accueil du site.
+function oublierServeur() {
+  try { localStorage.removeItem('florilege-serveur'); } catch { /* navigation privée */ }
+  location.href = location.pathname;
 }
 
 // ---------------------------------------------------------------- identification par le nom

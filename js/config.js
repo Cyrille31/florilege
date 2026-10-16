@@ -11,7 +11,7 @@ export const CONFIG = {
   modele: '14uz4wTE8GG05nZ4Md2MKrY0HnP4Y257NRgvaN_HcGCs',
 
   // Version affichée dans l'écran « À propos ».
-  version: '0.12.3',
+  version: '0.12.4',
 
   // Envoi groupé des événements (section 7.4 des spécifications).
   envoiToutesLesNActions: 10,
@@ -30,6 +30,8 @@ let serveurMemoire = '';
 // mémorisé sur l'appareil pour les visites suivantes. Chaque organisateur a le sien : le même site sert à tous.
 export function identifiantServeur() {
   const s = parametres.get('s');
+  // ?s=oublier : efface le serveur mémorisé (lien d'invitation périmé).
+  if (s === 'oublier') { try { localStorage.removeItem('florilege-serveur'); } catch { /* navigation privée */ } return ''; }
   if (s && /^[\w-]{20,200}$/.test(s)) {
     serveurMemoire = s;
     try { localStorage.setItem('florilege-serveur', s); } catch { /* navigation privée */ }
