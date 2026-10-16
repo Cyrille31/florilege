@@ -71,6 +71,7 @@ h2 { font-size: 1.1rem; margin: 1.4em 0 .6em; }
   font-size: 1.1rem;
 }
 .btn-principal { background: var(--vert-fonce); color: #fff; box-shadow: var(--ombre); }
+a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box; }
 .btn-principal:hover { background: #1b725e; }
 .btn-principal.grand { min-height: 64px; font-size: 1.3rem; margin: 18px 0; }
 .btn-secondaire { background: transparent; border: 2px solid var(--bord); }
