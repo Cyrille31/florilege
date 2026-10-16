@@ -6,7 +6,7 @@
 // L'écran appelant fournit les actions et met la visionneuse à jour avec changerPhoto() et maj().
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el } from './ludique.js?v=0.11.1';
+import { el } from './ludique.js?v=0.11.2';
 
 const ZOOM_INITIAL = 2.5;
 const ZOOM_MAX = 6;

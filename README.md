@@ -199,8 +199,10 @@ signalée ; l'option `--nettoyer` la supprime (`lancer_reduction.bat --nettoyer`
 
 > **Avec le classeur modèle** (quand il est disponible) : la page d'accueil du site, sans lien d'invitation, propose
 > « Vous organisez une sélection ? Créer la vôtre » ; le bouton « Copier le modèle Florilège » crée dans votre Google
-> Drive un classeur qui contient déjà le script. Il suffit ensuite de lancer **Florilège → Installer / configurer…**
-> (dossier des photos, mot de passe), qui guide aussi pour la publication. Les étapes ci-dessous sont celles de
+> Drive un classeur qui contient déjà le script. **Google range cette copie à la racine de « Mon Drive »** : lancer
+> ensuite **Florilège → Installer / configurer…** et coller le lien du dossier des photos, le classeur y est déplacé
+> automatiquement (on peut aussi le déplacer soi-même : clic droit → Organiser → Déplacer). Le même menu demande le mot
+> de passe et guide pour la publication. Les étapes ci-dessous sont celles de
 > l'installation manuelle.
 
 1. Dans le dossier Google Drive : **Nouveau → Google Sheets**, par exemple `Florilège — choix`.
@@ -255,7 +257,8 @@ d'activer GitHub Pages et de changer `application` dans les `REGLAGES` de `Code.
 3. **Partager → Accès général : « Tous les utilisateurs disposant du lien » – Lecteur**.
 4. Copier l'identifiant du classeur (la partie entre `/d/` et `/edit` de son adresse) dans `modele` de
    [`js/config.js`](js/config.js), ou me le transmettre.
-5. À chaque nouvelle version de `Code.gs`, la recoller aussi dans le modèle.
+5. À chaque nouvelle version de `Code.gs`, la recoller aussi dans le modèle (sinon les copies auront l'ancien menu :
+   vérifier que le menu Florilège du modèle commence bien par « Installer / configurer… »).
 
 ### Onglets et dossiers inutiles
 
@@ -299,6 +302,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.11.2 | Page « Organiser une sélection » : la copie du modèle arrive à la racine du Drive, le menu Installer la range dans le dossier des photos. |
 | 0.11.1 | Classeur modèle configuré : la page « Organiser une sélection » propose « Copier le modèle Florilège ». |
 | 0.11.0 | Création des photos allégées directement dans Google Drive (en tâche de fond, relançable, liste mise à jour à la fin) ; menu « Installer / configurer… » (dossier des photos, mot de passe, publication guidée) ; page « Organiser une sélection » sur le site, prête pour le classeur modèle. |
 | 0.10.0 | Lien d'invitation (l'adresse du serveur n'est plus dans GitHub ; le même site sert à plusieurs sélections et comptes Google) ; ascenseur horizontal et compteur 📷 n/N, aussi en plein écran ; un seul toucher pour agrandir ; « Chargement… » / « Image indisponible » ; images reconnues aussi d'après leur extension ; fichiers ignorés signalés par la mise à jour de la liste. |

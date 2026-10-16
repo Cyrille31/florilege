@@ -1,17 +1,17 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi } from './config.js?v=0.11.1';
+import { CONFIG, modeDemo, urlApi } from './config.js?v=0.11.2';
 import {
   backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
   memoriserMotDePasse, oublierMotDePasse,
   nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.11.1';
-import { ChargeurImages } from './images.js?v=0.11.1';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.11.1';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.11.1';
-import { ecranEnsemble } from './tri.js?v=0.11.1';
-import { supprimerStockage } from './stockage.js?v=0.11.1';
+} from './api.js?v=0.11.2';
+import { ChargeurImages } from './images.js?v=0.11.2';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.11.2';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.11.2';
+import { ecranEnsemble } from './tri.js?v=0.11.2';
+import { supprimerStockage } from './stockage.js?v=0.11.2';
 
 const PHRASE_BAL = 'En échange, une seule chose vous est demandée, sur l\'honneur : faire une bonne action '
   + 'chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -213,10 +213,12 @@ function montrerOrganisateur() {
       el('ol', { class: 'etapes' },
         el('li', {}, 'Dans Google Drive, rangez vos photos dans un dossier, avec un sous-dossier par année (« 2001 », « 2002 »…).'),
         el('li', {}, lienModele
-          ? ['Copiez le classeur modèle dans votre Google Drive : ', el('a', { href: lienModele, target: '_blank', rel: 'noopener' }, 'Copier le modèle Florilège'), '.']
+          ? ['Copiez le classeur modèle dans votre Google Drive : ', el('a', { href: lienModele, target: '_blank', rel: 'noopener' }, 'Copier le modèle Florilège'),
+            '. Google place la copie (« Copie de … ») à la racine de « Mon Drive » : à l\'étape suivante, le menu Installer la range dans le dossier de vos photos '
+            + '(vous pouvez aussi la déplacer vous-même : clic droit sur le fichier → Organiser → Déplacer).']
           : ['Créez un Google Sheet dans ce dossier et ajoutez-lui le script de Florilège, comme indiqué dans le ',
             el('a', { href: guide, target: '_blank', rel: 'noopener' }, 'guide de mise en service'), '.']),
-        el('li', {}, 'Dans le classeur, menu Florilège → Installer / configurer… : indiquez le dossier des photos et choisissez un mot de passe ; une fenêtre vous guide pour publier l\'application (quelques clics).'),
+        el('li', {}, 'Ouvrez la copie : menu Florilège → Installer / configurer… (le menu apparaît quelques secondes après l\'ouverture). Collez le lien du dossier de vos photos (adresse affichée par le navigateur quand le dossier est ouvert dans Google Drive) : le classeur y est rangé automatiquement. Choisissez ensuite un mot de passe ; une fenêtre vous guide pour publier l\'application (quelques clics).'),
         el('li', {}, 'Menu Florilège → Créer les photos allégées : les copies réduites sont préparées dans votre Google Drive, en tâche de fond.'),
         el('li', {}, 'Menu Florilège → Lien d\'invitation pour les testeurs : envoyez-le, avec le mot de passe.')),
       el('button', { class: 'btn-secondaire', onclick: () => location.reload() }, 'Retour'),
