@@ -11,12 +11,12 @@
 import {
   PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.15.0';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.15.0';
-import { ouvrirVisionneuse } from './zoom.js?v=0.15.0';
-import { CONFIG } from './config.js?v=0.15.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.15.0';
-import { boutonAide } from './aide.js?v=0.15.0';
+} from './etat.js?v=0.15.1';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.15.1';
+import { ouvrirVisionneuse } from './zoom.js?v=0.15.1';
+import { CONFIG } from './config.js?v=0.15.1';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.15.1';
+import { boutonAide } from './aide.js?v=0.15.1';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };
@@ -485,8 +485,9 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       pas();
     }
 
-    // Défilement selon la longueur du geste (la vitesse ne compte pas) :
-    // jusqu'à 4 cm, une photo ; au-delà, 2 photos ; plusieurs grands gestes de suite, 5 photos.
+    // Défilement : un geste lent fait toujours passer une seule photo, quelle que soit sa longueur.
+    // Un geste lancé (doigt encore rapide au moment de le lever) : jusqu'à 4 cm, une photo ; au-delà, 2 photos ;
+    // plusieurs grands gestes lancés de suite, 5 photos. distance = 0 : une photo (boutons, gestes lents).
     let dernierGrandGeste = { t: 0, sens: 0 };
     function defilerSelonGeste(sens, distance) {
       if (distance <= CM * 4) {
@@ -622,7 +623,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         const v = (b.x - a.x) / Math.max(b.t - a.t, 1);
         const distance = Math.abs(g.dx);
         const lance = Math.abs(v) > 0.3 && Math.sign(v) === Math.sign(g.dx);
-        if (distance > CM * 0.8 || (lance && distance > 15)) defilerSelonGeste(g.dx < 0 ? 1 : -1, distance);
+        if (distance > CM * 0.8 || (lance && distance > 15)) defilerSelonGeste(g.dx < 0 ? 1 : -1, lance ? distance : 0);
         else placer();
         return;
       }

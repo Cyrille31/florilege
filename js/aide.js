@@ -1,8 +1,8 @@
 // Florilège — menu « ? » : mode d'emploi, tutoriel animé, à propos (licence BAL, CGExcel).
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.15.0';
-import { el } from './ludique.js?v=0.15.0';
+import { CONFIG, modeDemo } from './config.js?v=0.15.1';
+import { el } from './ludique.js?v=0.15.1';
 
 const PHRASE_BAL = 'En échange de l\'usage libre et gratuit de ce logiciel, une seule chose vous est demandée, sur l\'honneur : '
   + 'faire une bonne action chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -28,7 +28,8 @@ function modeEmploi() {
     rubrique('Trier une à une',
       'Glisser la photo vers le haut (ou flèche ↑) : ❤️ ; encore vers le haut sur un ❤️ : ⭐.',
       'Glisser vers le bas (ou flèche ↓) : ✖️.',
-      'Glisser à gauche ou à droite (ou flèches ← →, boutons ‹ ›, réglette) : photo suivante ou précédente, sans rien choisir.',
+      'Glisser à gauche ou à droite (ou flèches ← →, boutons ‹ ›, réglette) : photo suivante ou précédente, sans rien choisir. '
+        + 'Un geste lent fait passer une seule photo ; un geste vif, lancé, en fait passer plusieurs.',
       'Boutons du bas, toujours dans le même ordre : ⊙ effacer, ✖️, ❤️, ⭐.',
       'La pastille en haut à gauche de la photo montre le choix ; la toucher fait passer au choix suivant.',
       'Case « Suivante après choix » : la photo suivante s\'affiche dès qu\'on a choisi.'),

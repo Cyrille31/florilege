@@ -7,7 +7,7 @@
 // L'écran appelant fournit les actions et met la visionneuse à jour avec changerPhoto() et maj().
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el } from './ludique.js?v=0.15.0';
+import { el } from './ludique.js?v=0.15.1';
 
 const ZOOM_MAX = 6;
 
@@ -173,7 +173,7 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
       pincement = { d0: Math.hypot(a.x - b.x, a.y - b.y), s0: s, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
       glisse = null;
     } else if (pointeurs.size === 1) {
-      glisse = { x: e.clientX, y: e.clientY, tx, ty, x0: e.clientX, y0: e.clientY, t0: performance.now() };
+      glisse = { x: e.clientX, y: e.clientY, tx, ty, x0: e.clientX, y0: e.clientY, t0: performance.now(), traces: [{ x: e.clientX, t: performance.now() }] };
     }
   });
 
@@ -195,6 +195,9 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
       pincement.my = my;
       zoomerVers(pincement.s0 * d / pincement.d0, mx, my);
     } else if (glisse && e.pointerType !== 'mouse') {
+      const t = performance.now();
+      glisse.traces.push({ x: e.clientX, t });
+      while (glisse.traces.length > 2 && t - glisse.traces[0].t > 100) glisse.traces.shift();
       if (s <= 1.01) {
         // Sans zoom : la photo suit un peu le doigt, pour montrer le geste (défiler ou choisir).
         cadre.style.transform = `translate(${(e.clientX - glisse.x) * 0.6}px, ${(e.clientY - glisse.y) * 0.6}px)`;
@@ -214,11 +217,19 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
     const dx = e.clientX - glisse.x0;
     const dy = e.clientY - glisse.y0;
     const immobile = Math.hypot(dx, dy) < 10 && performance.now() - glisse.t0 < 350;
+    const glisse0 = glisse;
     glisse = null;
     if (!immobile) {
       if (e.pointerType === 'mouse' || s > 1.01) return;
       appliquer();
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) actions.defiler?.(dx < 0 ? 1 : -1, Math.abs(dx));
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+        // Geste lent : une seule photo, quelle que soit sa longueur ; geste lancé : selon sa longueur.
+        const a = glisse0.traces[0];
+        const b = glisse0.traces[glisse0.traces.length - 1];
+        const v = (b.x - a.x) / Math.max(b.t - a.t, 1);
+        const lance = Math.abs(v) > 0.3 && Math.sign(v) === Math.sign(dx);
+        actions.defiler?.(dx < 0 ? 1 : -1, lance ? Math.abs(dx) : 0);
+      }
       else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 60) (dy < 0 ? actions.haut : actions.bas)?.();
       return;
     }
