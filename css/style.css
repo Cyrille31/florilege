@@ -240,6 +240,16 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 @media (prefers-color-scheme: dark) { .btn-accueil { background: var(--vert); color: #06261f; } }
 
 /* Sélecteur des trois modes d'affichage */
+.ligne-modes { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 10px; }
+.ligne-modes .selecteur-mode { margin-top: 0; flex: 1 1 260px; max-width: 420px; }
+.option-tri {
+  display: flex; align-items: center; gap: 6px;
+  min-height: 40px;
+  font-size: .9rem; font-weight: 600; color: var(--texte-doux);
+  white-space: nowrap; cursor: pointer;
+}
+.option-tri[hidden] { display: none; }
+.option-tri input { width: 20px; height: 20px; accent-color: var(--vert-fonce); }
 .selecteur-mode {
   display: flex;
   margin-top: 10px;
@@ -425,14 +435,6 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 .btn-rond.petit { width: 48px; height: 48px; font-size: 1.3rem; }
 .btn-rond.garde { box-shadow: var(--ombre), inset 0 0 0 3px color-mix(in srgb, var(--rouge) 35%, transparent); }
 
-.option-avance {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 44px;
-  font-size: .9rem; color: var(--texte-doux);
-  flex: none;
-}
-.option-avance input { width: 22px; height: 22px; accent-color: var(--vert-fonce); }
-
 .scene-vide {
   position: absolute; inset: 0;
   display: grid; place-content: center; justify-items: center;
@@ -442,14 +444,25 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 .scene-vide[hidden] { display: none; }
 .scene-vide .btn-secondaire { width: auto; padding: 0 20px; }
 
-.aide-clavier { display: none; margin: 8px 0 0; text-align: center; font-size: .8rem; color: var(--texte-doux); flex: none; }
-@media (hover: hover) and (pointer: fine) { .aide-clavier { display: block; } }
+/* « C'est la dernière photo » : au milieu de la photo, puis s'efface. */
+.message-bout, .visionneuse-message {
+  position: absolute; left: 50%; top: 50%; z-index: 25;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .7); color: #fff;
+  font-weight: 700;
+  transform: translate(-50%, -50%) scale(.9);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s, transform .25s;
+}
+.message-bout.visible, .visionneuse-message.visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
 /* Fin d'ensemble : bandeau qui monte puis s'estompe, sans bloquer l'écran. */
 .fin-bandeau {
   position: fixed;
   left: 50%; top: calc(env(safe-area-inset-top) + 150px);
-  z-index: 20;
+  z-index: 35; /* au-dessus de la visionneuse */
   width: min(460px, calc(100% - 32px));
   display: flex; align-items: center; gap: 12px;
   padding: 10px 12px;
@@ -567,10 +580,9 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
   background: #000;
   touch-action: none;
   overflow: hidden;
-  cursor: zoom-in;
+  cursor: zoom-out; /* un clic revient à l'écran précédent */
   animation: apparait .2s;
 }
-.zoom.zoome { cursor: zoom-out; }
 .zoom { display: grid; place-items: center; container-type: size; }
 .zoom-cadre {
   --ratio: 4 / 3;
@@ -601,9 +613,18 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
   position: absolute;
   top: max(14px, env(safe-area-inset-top)); left: max(14px, env(safe-area-inset-left));
   right: 70px;
-  display: flex; flex-wrap: wrap; gap: 8px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
   pointer-events: none;
 }
+.visionneuse-option {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .55); color: #fff;
+  font-weight: 700;
+  pointer-events: auto; cursor: pointer;
+}
+.visionneuse-option input { width: 18px; height: 18px; margin: 0; }
 .visionneuse-choix, .visionneuse-compteur {
   padding: 6px 12px;
   border-radius: 999px;
@@ -656,7 +677,7 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 }
 #notification.visible { transform: translate(-50%, 0); opacity: 1; }
 
-.confettis { position: fixed; inset: 0; z-index: 25; pointer-events: none; overflow: hidden; }
+.confettis { position: fixed; inset: 0; z-index: 36; pointer-events: none; overflow: hidden; }
 .confettis i {
   position: absolute; left: 50%; top: 45%;
   width: 10px; height: 14px;
@@ -728,6 +749,6 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 /* ---------------------------------------------------------------- PC */
 
 @media (min-width: 700px) {
-  .ecran-tri { max-width: 900px; }
+  .ecran-tri { max-width: 1400px; }
   .btn-principal.grand { max-width: 360px; }
 }

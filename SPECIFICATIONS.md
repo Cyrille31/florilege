@@ -255,7 +255,7 @@ L'admin ouvre et ferme chaque phase. Quand une phase est fermée, l'interface de
 | ⭐ Coup de cœur | étoile dans le coin de la photo (grise si non choisie, dorée si choisie) | E, ou clic sur l'étoile | 2 |
 | Changer le choix | pastille dans l'autre coin de la photo : · → ❤️ → ⭐ → ✖️ → · | clic sur la pastille | — |
 | Effacer le choix (la photo redevient « à trier »), même longtemps après | bouton ⌫ | Suppr ou Retour arrière | vide |
-| Voir en grand | toucher deux fois, pincer, ou 🔍 | clic sur la photo, Entrée ou 🔍 (plein écran si possible) | — |
+| Voir en grand | toucher la photo, ou 🔍 (nouveau toucher : retour ; pincer pour zoomer) | clic sur la photo, Entrée ou 🔍 (plein écran si possible ; nouveau clic : retour ; molette pour zoomer) | — |
 
 - **Visionneuse plein écran** : les mêmes commandes y restent disponibles (sans zoom : glisser gauche / droite / haut / bas ; flèches du clavier ; barre de boutons ✖️ ‹ ⭐ › ❤️), avec en haut le choix de la photo et un petit compteur ⭐ x/4 · ❤️+⭐ ; la photo y garde son pourtour de couleur.
 

@@ -11,7 +11,7 @@ export const CONFIG = {
   modele: '14uz4wTE8GG05nZ4Md2MKrY0HnP4Y257NRgvaN_HcGCs',
 
   // Version affichée dans l'écran « À propos ».
-  version: '0.12.6',
+  version: '0.13.0',
 
   // Envoi groupé des événements (section 7.4 des spécifications).
   envoiToutesLesNActions: 10,

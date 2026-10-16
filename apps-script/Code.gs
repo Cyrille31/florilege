@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.12.6';
+const VERSION = '0.13.0';
 
 // Réglages (modifiables ici).
 const REGLAGES = {

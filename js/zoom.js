@@ -1,14 +1,14 @@
 // Florilège — visionneuse : la photo en grand, en plein écran si l'appareil le permet.
-// Téléphone : pincer pour zoomer, glisser pour se déplacer, toucher deux fois pour basculer 1× / 2,5×.
-// PC : clic pour zoomer (la photo suit alors la souris), nouveau clic pour revenir ; molette pour régler.
+// Un clic (ou un toucher) sur la photo revient à l'écran précédent.
+// Téléphone : pincer pour zoomer, glisser pour se déplacer (un toucher sur une photo zoomée revient à 1×).
+// PC : molette pour zoomer (la photo suit alors la souris).
 // Les touches du clavier (flèches, E…) restent actives. Sans zoom, on peut aussi glisser :
 // gauche / droite pour défiler, haut pour ❤️, bas pour ✖️ ; une barre de boutons fait de même.
 // L'écran appelant fournit les actions et met la visionneuse à jour avec changerPhoto() et maj().
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el } from './ludique.js?v=0.12.6';
+import { el } from './ludique.js?v=0.13.0';
 
-const ZOOM_INITIAL = 2.5;
 const ZOOM_MAX = 6;
 
 function pleinEcranPossible() {
@@ -23,6 +23,10 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
   const cadre = el('div', { class: 'zoom-cadre' }, img);
   const choix = el('span', { class: 'visionneuse-choix', 'aria-live': 'polite' });
   const compteur = el('span', { class: 'visionneuse-compteur' });
+  const caseRetenues = el('input', { type: 'checkbox' });
+  caseRetenues.addEventListener('change', () => actions.retenues?.(caseRetenues.checked));
+  const optionRetenues = el('label', { class: 'visionneuse-option', title: 'Seulement les photos gardées (❤️ et ⭐) — touche R' }, caseRetenues, ' Retenues ❤️');
+  const message = el('div', { class: 'visionneuse-message', 'aria-live': 'polite' });
   const fermer = el('button', { class: 'btn-icone visionneuse-fermer', 'aria-label': 'Fermer (Échap)', title: 'Fermer (Échap)' }, '✕');
   const bouton = (libelle, titre, fn, classe = '') => el('button', { class: `btn-visionneuse ${classe}`, 'aria-label': titre, title: titre, onclick: e => { e.stopPropagation(); fn?.(); } }, libelle);
   const etoile = bouton('★', 'Coup de cœur (E)', actions.etoile, 'etoile-visionneuse');
@@ -39,8 +43,12 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
   curseur.addEventListener('keydown', e => { e.preventDefault(); curseur.blur(); });
   const bas = el('div', { class: 'visionneuse-bas' }, curseur, barre);
   const couche = el('div', { class: 'zoom chargement', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Photo agrandie' },
-    cadre, el('div', { class: 'visionneuse-haut' }, choix, compteur), fermer, bas);
-  for (const b of [fermer, curseur, ...barre.children]) b.addEventListener('pointerdown', e => e.stopPropagation());
+    cadre, message, el('div', { class: 'visionneuse-haut' }, choix, compteur, optionRetenues), fermer, bas);
+  for (const b of [fermer, curseur, optionRetenues, ...barre.children]) {
+    b.addEventListener('pointerdown', e => e.stopPropagation());
+    b.addEventListener('pointerup', e => e.stopPropagation());
+  }
+  optionRetenues.addEventListener('click', e => e.stopPropagation());
   img.addEventListener('load', () => couche.classList.remove('chargement'));
   const precedent = document.activeElement;
   let pleinEcranDemande = false;
@@ -101,7 +109,8 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
   }
 
   // etat : { choix: texte, valeur: 0|1|2|null, coeur: booléen, compteur: texte }
-  function maj({ choix: texte, valeur, coeur, compteur: tc, position, total } = {}) {
+  function maj({ choix: texte, valeur, coeur, compteur: tc, position, total, retenues } = {}) {
+    if (retenues !== undefined) caseRetenues.checked = !!retenues;
     if (total !== undefined) {
       curseur.max = String(Math.max(1, total));
       curseur.value = String(position || 1);
@@ -111,6 +120,15 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
     if (texte !== undefined) { choix.textContent = texte || ''; choix.hidden = !texte; }
     if (coeur !== undefined) etoile.classList.toggle('doree', !!coeur);
     if (tc !== undefined) compteur.textContent = tc;
+  }
+
+  // Message court au milieu de l'écran (« C'est la dernière photo »…).
+  let minuteurMessage = null;
+  function afficherMessage(texte) {
+    message.textContent = texte;
+    message.classList.add('visible');
+    clearTimeout(minuteurMessage);
+    minuteurMessage = setTimeout(() => message.classList.remove('visible'), 1400);
   }
 
   function detruire() {
@@ -144,7 +162,6 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
   const pointeurs = new Map();
   let pincement = null;
   let glisse = null;
-  let dernierTap = 0;
 
   couche.addEventListener('pointerdown', e => {
     couche.setPointerCapture(e.pointerId);
@@ -203,18 +220,9 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
       else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 60) (dy < 0 ? actions.haut : actions.bas)?.();
       return;
     }
-    if (e.pointerType === 'mouse') {
-      if (s > 1.01) reinitialiser();
-      else { s = ZOOM_INITIAL; suivreSouris(e.clientX, e.clientY); }
-      return;
-    }
-    const maintenant = performance.now();
-    if (maintenant - dernierTap < 320) {
-      dernierTap = 0;
-      if (s > 1.01) reinitialiser(); else zoomerVers(ZOOM_INITIAL, e.clientX, e.clientY);
-    } else {
-      dernierTap = maintenant;
-    }
+    // Simple clic ou toucher : retour à l'écran précédent (sur téléphone, une photo zoomée revient d'abord à 1×).
+    if (e.pointerType !== 'mouse' && s > 1.01) { reinitialiser(); return; }
+    detruire();
   }
   couche.addEventListener('pointerup', finPointeur);
   couche.addEventListener('pointercancel', finPointeur);
@@ -232,5 +240,5 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
     pleinEcranDemande = true;
     document.documentElement.requestFullscreen().catch(() => { pleinEcranDemande = false; });
   }
-  return { fermer: detruire, changerPhoto, maj };
+  return { fermer: detruire, changerPhoto, maj, message: afficherMessage };
 }

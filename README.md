@@ -79,9 +79,11 @@ Sur **téléphone** (Android et iPhone si possible) :
 - [ ] Imagettes : un appui long sélectionne une photo ; ensuite un appui court ajoute ou retire une photo,
       un appui long sélectionne toute la plage depuis la précédente ; la barre en bas applique ❤️ ⭐ ✖️ ou ·
       à toute la sélection (✕ ou Échap pour annuler). Sur PC : Ctrl+clic et Maj+clic.
-- [ ] Les trois modes « Une à une », « Retenues », « Imagettes » se choisissent à tout moment ; en « Retenues »,
-      une photo passée à ✖️ ou effacée disparaît.
-- [ ] Toucher deux fois la photo, pincer ou 🔍 : visionneuse plein écran ; on peut pincer et se déplacer ; ✕ pour fermer.
+- [ ] Les modes « Une à une » et « Imagettes » se choisissent à tout moment ; la case « Retenues ❤️ » (aussi dans la
+      visionneuse, touche R) ne montre que les photos gardées : une photo passée à ✖️ ou effacée disparaît.
+- [ ] Un clic (ou un toucher) sur la photo, ou 🔍 : visionneuse plein écran ; un nouveau clic revient à « Une à une » ;
+      zoom à la molette ou en pinçant ; le nombre de photos à trier y est affiché.
+- [ ] « C'est la dernière photo » s'affiche au milieu de la photo seulement si l'on tente d'aller plus loin.
 - [ ] Dans la visionneuse (sans zoom) : glisser gauche / droite pour défiler, haut pour ❤️, bas pour ✖️ ;
       la barre de boutons ✖️ ‹ ⭐ › ❤️ fait de même ; en haut, le choix et le compteur ⭐ x/4 · ❤️+⭐.
 - [ ] Le bouton « 🏠 Accueil » ramène à l'accueil.
@@ -303,6 +305,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.13.0 | Interface : photos plus grandes sur PC ; un clic dans la visionneuse revient à « Une à une » (zoom à la molette ou aux doigts) ; « Retenues » devient une case à cocher valable dans tous les modes, visionneuse comprise ; cases « Retenues » et « Suivante après choix » sur la ligne des modes ; nombre de photos à trier dans la visionneuse ; bandeau de fin d'ensemble visible aussi en grand ; bouton « effacer le choix » ⊙ ; « C'est la dernière photo » au milieu de la photo ; ligne d'aide clavier et compteur en double supprimés. |
 | 0.12.6 | Copie du modèle : l'installation et l'invitation indiquent clairement que le script de la copie doit être publié (Nouveau déploiement) puis son URL collée une fois. |
 | 0.12.5 | « Lien d'invitation » : un lien qui ne fonctionne pas n'est plus affiché ; explication sur l'adresse de test renvoyée par Google. |
 | 0.12.4 | Bouton « Oublier ce serveur » (et adresse `?s=oublier`) pour sortir d'un lien d'invitation périmé mémorisé sur l'appareil. |
