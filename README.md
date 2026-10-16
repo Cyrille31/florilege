@@ -303,6 +303,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.12.1 | Écran « Le serveur ne répond pas » : bouton « Tester le serveur » et causes habituelles (déploiement, accès, autorisation) au lieu de « Connexion impossible ». |
 | 0.12.0 | Installation : explorateur de dossiers Google Drive (fil d'Ariane, dossiers d'année repérés, bilan) ou lien collé avec exemple, puis mot de passe, le tout dans une seule fenêtre. |
 | 0.11.2 | Page « Organiser une sélection » : la copie du modèle arrive à la racine du Drive, le menu Installer la range dans le dossier des photos. |
 | 0.11.1 | Classeur modèle configuré : la page « Organiser une sélection » propose « Copier le modèle Florilège ». |

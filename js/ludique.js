@@ -2,9 +2,9 @@
 // messages d'encouragement, confettis, petites notifications.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { progressionEnsemble, progressionGlobale, ensemblesTries, photosDe } from './etat.js?v=0.12.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.12.0';
-import { cleLocale } from './config.js?v=0.12.0';
+import { progressionEnsemble, progressionGlobale, ensemblesTries, photosDe } from './etat.js?v=0.12.1';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.12.1';
+import { cleLocale } from './config.js?v=0.12.1';
 
 // Les huit teintes des pétales de l'icône.
 export const TEINTES = ['#ff6f61', '#ff9a3d', '#f4a623', '#5cbf4a', '#22a8c4', '#3d8bfd', '#8e5cf7', '#e85aa7'];

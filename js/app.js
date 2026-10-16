@@ -1,17 +1,17 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi } from './config.js?v=0.12.0';
+import { CONFIG, modeDemo, urlApi } from './config.js?v=0.12.1';
 import {
   backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
   memoriserMotDePasse, oublierMotDePasse,
   nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.12.0';
-import { ChargeurImages } from './images.js?v=0.12.0';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.12.0';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.12.0';
-import { ecranEnsemble } from './tri.js?v=0.12.0';
-import { supprimerStockage } from './stockage.js?v=0.12.0';
+} from './api.js?v=0.12.1';
+import { ChargeurImages } from './images.js?v=0.12.1';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.12.1';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.12.1';
+import { ecranEnsemble } from './tri.js?v=0.12.1';
+import { supprimerStockage } from './stockage.js?v=0.12.1';
 
 const PHRASE_BAL = 'En échange, une seule chose vous est demandée, sur l\'honneur : faire une bonne action '
   + 'chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -165,6 +165,36 @@ function montrerMessage(titre, texte) {
   montrer({ racine: el('main', { class: 'ecran ecran-accueil' }, entete(), el('h1', {}, titre), el('p', { class: 'phrase' }, texte), pied()) });
 }
 
+// Le serveur ne répond pas en JSON : hors ligne, ou (cas le plus fréquent à l'installation) Google renvoie
+// une page d'erreur à la place du script (publication incomplète, autorisation à renouveler…).
+function montrerConnexionImpossible(e) {
+  if (!navigator.onLine) {
+    montrerMessage('Connexion impossible', 'Vous semblez hors ligne. Vérifiez votre connexion Internet puis rechargez la page.');
+    return;
+  }
+  const url = urlApi();
+  montrer({ racine: el('main', { class: 'ecran ecran-accueil' }, entete(),
+    el('h1', {}, 'Le serveur ne répond pas'),
+    el('p', { class: 'phrase' }, 'Florilège n\'obtient pas de réponse du script Google de cette sélection. '
+      + 'Si votre connexion Internet fonctionne, le script n\'est probablement pas (ou plus) accessible.'),
+    el('p', {}, el('a', { class: 'btn-principal', href: url, target: '_blank', rel: 'noopener' }, 'Tester le serveur')),
+    el('p', { class: 'phrase' }, 'Ce bouton ouvre l\'adresse du serveur dans un nouvel onglet. Si tout va bien, on y lit '
+      + '« {"ok":true,"application":"Florilège",…} ». Sinon, la page de Google indique le problème.'),
+    el('details', {},
+      el('summary', {}, 'Pour l\'organisateur : causes habituelles'),
+      el('ul', {},
+        el('li', {}, 'Le lien d\'invitation vient d\'un ancien déploiement, supprimé depuis : regénérez-le (Florilège → Lien d\'invitation pour les testeurs).'),
+        el('li', {}, 'Le déploiement n\'est pas ouvert à « Tout le monde » (et non « Tout le monde disposant d\'un compte Google ») : '
+          + 'Déployer → Gérer les déploiements → crayon → Qui a accès : Tout le monde.'),
+        el('li', {}, 'Le script a été modifié et attend une nouvelle autorisation : dans le classeur, choisissez un article du menu '
+          + 'Florilège (par exemple « À propos ») et acceptez les autorisations demandées.'),
+        el('li', {}, 'Le code a été collé mais pas republié : Déployer → Gérer les déploiements → crayon → Version : Nouvelle version → Déployer.')),
+      el('p', { style: 'font-size:.85rem;word-break:break-all' }, `Adresse du serveur : ${url}`),
+      el('p', { style: 'font-size:.85rem' }, `Détail technique : ${e?.message || e}`)),
+    el('p', {}, el('button', { class: 'btn-secondaire', onclick: () => location.reload() }, 'Réessayer')),
+    pied()) });
+}
+
 // ---------------------------------------------------------------- identification par le nom
 
 // demanderMotDePasse : le serveur exige le mot de passe commun (absent ou incorrect sur cet appareil).
@@ -271,7 +301,7 @@ async function demarrer() {
         + 'Dans l\'éditeur Apps Script : Déployer → Gérer les déploiements → crayon → Version : Nouvelle version → Déployer.');
     }
     else if (e instanceof ErreurServeur) montrerMessage('Problème sur le serveur', e.message);
-    else montrerMessage('Connexion impossible', 'Vérifiez votre connexion Internet puis rechargez la page.');
+    else montrerConnexionImpossible(e);
     return;
   }
   // Un rechargement en plein tri rouvre l'accueil (l'historique du navigateur est remis à zéro).

@@ -4,10 +4,10 @@
 // arrière-plan et à la fermeture. En cas d'échec, nouvel essai avec délai croissant.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi, cleLocale } from './config.js?v=0.12.0';
-import { backendSimule } from './simulation.js?v=0.12.0';
-import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.12.0';
-import { appliquer } from './etat.js?v=0.12.0';
+import { CONFIG, modeDemo, urlApi, cleLocale } from './config.js?v=0.12.1';
+import { backendSimule } from './simulation.js?v=0.12.1';
+import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.12.1';
+import { appliquer } from './etat.js?v=0.12.1';
 
 // ---------------------------------------------------------------- back-end Apps Script
 // Les requêtes POST sont en text/plain (corps JSON) pour éviter la requête CORS préalable.
@@ -52,7 +52,8 @@ async function appelUnique(action, donnees) {
   if (!rep.ok) throw new Error(`HTTP ${rep.status}`);
   const texte = await rep.text();
   mesures.push({ action, ms: performance.now() - debut, octets: texte.length });
-  const json = JSON.parse(texte);
+  let json;
+  try { json = JSON.parse(texte); } catch { throw new Error('Réponse illisible (page HTML au lieu de données)'); }
   if (json.erreur) throw new ErreurServeur(json.erreur, json.code);
   return json;
 }
