@@ -3,7 +3,7 @@
 // cache Cache Storage pour ne jamais retélécharger une image déjà vue sur cet appareil.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, cleLocale } from './config.js?v=0.12.5';
+import { CONFIG, cleLocale } from './config.js?v=0.12.6';
 
 const NOM_CACHE = cleLocale('images-v1'); // un cache par sélection
 const GRANDES_EN_MEMOIRE = 40;

@@ -10,11 +10,11 @@
 import {
   PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.12.5';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.12.5';
-import { ouvrirVisionneuse } from './zoom.js?v=0.12.5';
-import { CONFIG } from './config.js?v=0.12.5';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.12.5';
+} from './etat.js?v=0.12.6';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.12.6';
+import { ouvrirVisionneuse } from './zoom.js?v=0.12.6';
+import { CONFIG } from './config.js?v=0.12.6';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.12.6';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };

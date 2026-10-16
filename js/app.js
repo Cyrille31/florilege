@@ -1,17 +1,17 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi } from './config.js?v=0.12.5';
+import { CONFIG, modeDemo, urlApi } from './config.js?v=0.12.6';
 import {
   backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
   memoriserMotDePasse, oublierMotDePasse,
   nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.12.5';
-import { ChargeurImages } from './images.js?v=0.12.5';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.12.5';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.12.5';
-import { ecranEnsemble } from './tri.js?v=0.12.5';
-import { supprimerStockage } from './stockage.js?v=0.12.5';
+} from './api.js?v=0.12.6';
+import { ChargeurImages } from './images.js?v=0.12.6';
+import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.12.6';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.12.6';
+import { ecranEnsemble } from './tri.js?v=0.12.6';
+import { supprimerStockage } from './stockage.js?v=0.12.6';
 
 const PHRASE_BAL = 'En échange, une seule chose vous est demandée, sur l\'honneur : faire une bonne action '
   + 'chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -257,7 +257,10 @@ function montrerOrganisateur() {
             el('a', { href: guide, target: '_blank', rel: 'noopener' }, 'guide de mise en service'), '.']),
         el('li', {}, 'Ouvrez la copie : menu Florilège → Installer / configurer… (le menu apparaît quelques secondes après l\'ouverture). Une fenêtre permet de naviguer dans votre Google Drive jusqu\'au dossier de vos photos (ou d\'en coller le lien) : le classeur y est rangé automatiquement. Choisissez ensuite un mot de passe ; une fenêtre vous guide pour publier l\'application (quelques clics).'),
         el('li', {}, 'Menu Florilège → Créer les photos allégées : les copies réduites sont préparées dans votre Google Drive, en tâche de fond.'),
-        el('li', {}, 'Menu Florilège → Lien d\'invitation pour les testeurs : envoyez-le, avec le mot de passe.')),
+        el('li', {}, 'Publiez le script de votre copie (une seule fois) : Extensions → Apps Script → Déployer → Nouveau déploiement → '
+          + 'roue dentée → Application Web ; « Exécuter en tant que : Moi », « Qui a accès : Tout le monde » ; Déployer et accepter '
+          + 'les autorisations. Copiez l\'URL affichée (…/exec).'),
+        el('li', {}, 'Menu Florilège → Lien d\'invitation pour les testeurs : collez-y l\'URL copiée la première fois, puis envoyez le lien, avec le mot de passe.')),
       el('button', { class: 'btn-secondaire', onclick: () => location.reload() }, 'Retour'),
       pied()),
   });

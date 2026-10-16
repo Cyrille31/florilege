@@ -303,6 +303,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.12.6 | Copie du modèle : l'installation et l'invitation indiquent clairement que le script de la copie doit être publié (Nouveau déploiement) puis son URL collée une fois. |
 | 0.12.5 | « Lien d'invitation » : un lien qui ne fonctionne pas n'est plus affiché ; explication sur l'adresse de test renvoyée par Google. |
 | 0.12.4 | Bouton « Oublier ce serveur » (et adresse `?s=oublier`) pour sortir d'un lien d'invitation périmé mémorisé sur l'appareil. |
 | 0.12.3 | Bouton « Tester le serveur » correctement centré. |

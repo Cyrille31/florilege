@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.12.5';
+const VERSION = '0.12.6';
 
 // Réglages (modifiables ici).
 const REGLAGES = {
@@ -523,15 +523,17 @@ function installerDans(idDossier, motDePasse) {
   const annees = [];
   const it = dossier.getFolders();
   while (it.hasNext()) { const d = it.next(); if (estDossierAnnee(d.getName())) annees.push(d.getName()); }
-  const deploye = !!idDeploiement(urlApplicationWeb());
+  // getUrl() renvoie souvent l'adresse du déploiement de test : seule une vraie réponse du serveur fait foi.
+  const deploye = verifierServeur(idDeploiement(urlApplicationWeb())).ok;
   return `<p>✅ Le classeur est rangé dans <b>${echapperHtml(dossier.getName())}</b>
       (${annees.length ? `dossiers d'année : ${echapperHtml(annees.sort(trierNoms).join(', '))}` : 'aucun dossier d\'année pour l\'instant'}).<br>
       ${mdp ? `Mot de passe commun : <b>${echapperHtml(mdp)}</b>.` : (proprietes.getProperty('mot_de_passe') ? 'Mot de passe commun inchangé.' : 'Pas de mot de passe : l\'application est ouverte à qui en a le lien.')}</p>
     <p><b>Étapes suivantes :</b></p>
     <ol>
-      ${deploye ? '<li>L\'application web est déjà publiée.</li>' : `<li><b>Publier l'application web</b> (une seule fois) : menu <i>Extensions → Apps Script</i>,
-        puis <i>Déployer → Nouveau déploiement</i>, roue dentée → <i>Application Web</i>, « Exécuter en tant que : <b>Moi</b> »,
-        « Qui a accès : <b>Tout le monde</b> », <i>Déployer</i>, puis autoriser (Paramètres avancés → Accéder à…, tout cocher).</li>`}
+      ${deploye ? '<li>L\'application web est déjà publiée.</li>' : `<li><b>Publier l'application web de ce classeur</b> (une seule fois ; une copie du modèle n'est jamais publiée d'office) :
+        menu <i>Extensions → Apps Script</i>, puis <i>Déployer → Nouveau déploiement</i>, roue dentée → <i>Application Web</i>,
+        « Exécuter en tant que : <b>Moi</b> », « Qui a accès : <b>Tout le monde</b> », <i>Déployer</i>, puis autoriser
+        (Paramètres avancés → Accéder à…, tout cocher). <b>Copiez l'URL affichée</b> : elle sera demandée à l'étape « Lien d'invitation ».</li>`}
       <li><b>Florilège → Créer les photos allégées</b> (en tâche de fond ; la liste des photos est mise à jour à la fin).</li>
       <li><b>Florilège → Lien d'invitation pour les testeurs</b>, à envoyer avec le mot de passe.</li>
     </ol>`;
@@ -675,8 +677,12 @@ function donneesInvitation() {
   const message = lien ? `Bonjour ! Pour participer à la sélection de photos, ouvre ce lien sur ton téléphone ou ton ordinateur :\n${lien}\n`
     + (mdp ? `Mot de passe : ${mdp}\n` : '')
     + 'Indique ton prénom : tu pourras t\'arrêter et reprendre quand tu veux, sur n\'importe quel appareil, avec le même prénom.' : '';
+  const memorisee = !!PropertiesService.getScriptProperties().getProperty('url_web');
+  if (!verification.ok && !memorisee) {
+    verification.message = 'Ce classeur n\'est pas encore publié en application web (Google ne propose que l\'adresse du déploiement de test).';
+  }
   return { url, lien, message, ok: verification.ok, verification: verification.message,
-    memorisee: !!PropertiesService.getScriptProperties().getProperty('url_web') };
+    memorisee };
 }
 
 // Adresse collée par l'organisateur (URL de l'application Web affichée dans Déployer → Gérer les déploiements).
@@ -700,6 +706,7 @@ const PAGE_INVITATION = `<!doctype html><html><head><base target="_top"><style>
   button{font-size:14px;padding:6px 12px;cursor:pointer}
   .ok{color:#2e7d32}.ko{color:#c62828}.aide{color:#666;font-size:12.5px}
   .rangee{display:flex;gap:6px}.rangee input{flex:1}
+  #actuelle{word-break:break-all}
 </style></head><body>
 <p id="etat">Vérification du serveur…</p>
 <div id="lien" style="display:none">
@@ -708,10 +715,12 @@ const PAGE_INVITATION = `<!doctype html><html><head><base target="_top"><style>
   <p><b>Message prêt à envoyer</b> (mail, WhatsApp…) :</p>
   <textarea id="t-message" rows="6" readonly onclick="this.select()"></textarea>
 </div>
-<p id="conseil" class="aide" style="display:none">L'adresse trouvée automatiquement par Google est souvent celle du
-  <i>déploiement de test</i>, qui ne marche que pour vous. Collez ci-dessous l'URL du vrai déploiement : elle n'est à donner qu'une fois.
-  S'il n'y a encore aucun déploiement : <i>Déployer → Nouveau déploiement</i> → Application Web,
-  « Exécuter en tant que : Moi », « Qui a accès : Tout le monde ».</p>
+<div id="conseil" class="aide" style="display:none"><b>À faire une fois, dans ce classeur</b> (chaque copie du modèle a son propre script,
+  à publier) :<ol style="margin:4px 0;padding-left:20px">
+  <li><i>Extensions → Apps Script</i>, puis <i>Déployer → Nouveau déploiement</i>, roue dentée → <i>Application Web</i>,
+  « Exécuter en tant que : Moi », « Qui a accès : Tout le monde », <i>Déployer</i> (accepter les autorisations).</li>
+  <li>Copier l'<b>URL</b> affichée (…/exec), la coller ci-dessous et cliquer sur <i>Utiliser</i>.</li></ol>
+  Si un déploiement existe déjà : <i>Déployer → Gérer les déploiements</i> pour retrouver son URL.</div>
 <details id="corriger">
   <summary>Corriger l'adresse du serveur</summary>
   <p class="aide">Dans l'éditeur Apps Script : <i>Déployer → Gérer les déploiements</i>, copier l'« URL » de l'application Web
