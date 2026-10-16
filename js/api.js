@@ -4,10 +4,10 @@
 // arrière-plan et à la fermeture. En cas d'échec, nouvel essai avec délai croissant.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi, cleLocale } from './config.js?v=0.15.2';
-import { backendSimule } from './simulation.js?v=0.15.2';
-import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.15.2';
-import { appliquer } from './etat.js?v=0.15.2';
+import { CONFIG, modeDemo, urlApi, cleLocale } from './config.js?v=0.15.3';
+import { backendSimule } from './simulation.js?v=0.15.3';
+import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.15.3';
+import { appliquer } from './etat.js?v=0.15.3';
 
 // ---------------------------------------------------------------- back-end Apps Script
 // Les requêtes POST sont en text/plain (corps JSON) pour éviter la requête CORS préalable.

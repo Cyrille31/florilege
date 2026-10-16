@@ -6,7 +6,7 @@
 // en cas d'échec, on repasse par le script.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, cleLocale } from './config.js?v=0.15.2';
+import { CONFIG, cleLocale } from './config.js?v=0.15.3';
 
 const NOM_CACHE = cleLocale('images-v1'); // un cache par sélection
 const GRANDES_EN_MEMOIRE = 40;

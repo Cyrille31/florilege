@@ -312,6 +312,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.15.3 | Mise à jour automatique : au démarrage, la page vérifie la version en ligne (version.json) et se recharge d'elle-même si le navigateur (souvent sur téléphone) a gardé une ancienne version. |
 | 0.15.2 | Défilement : toujours une seule photo par geste (pour aller plus vite : la réglette horizontale). |
 | 0.15.1 | Défilement : un geste lent fait passer une seule photo, quelle que soit sa longueur (seul un geste lancé en fait passer plusieurs), en mode « une à une » comme en plein écran. |
 | 0.15.0 | Rapidité : affichage direct des photos depuis Google Drive (menu « Affichage rapide des photos »), repli automatique sur le script ; seules les images visibles et les quelques suivantes sont demandées (plus toutes les miniatures de l'année d'un coup) ; une place réservée à la photo affichée ; lots de miniatures plus petits. |

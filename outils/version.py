@@ -50,6 +50,10 @@ def main():
         gs.write_text(nouveau, encoding="utf-8")
         modifies.append("apps-script/Code.gs")
 
+    # version.json : lu sans cache au démarrage ; si le navigateur a gardé une ancienne page, elle se recharge.
+    (RACINE / "version.json").write_text(f'{{"version": "{v}"}}\n', encoding="utf-8")
+    modifies.append("version.json")
+
     print(f"Version {v} : {len(modifies)} fichier(s) mis à jour.")
     for m in modifies:
         print(f"  {m}")
