@@ -200,8 +200,9 @@ signalée ; l'option `--nettoyer` la supprime (`lancer_reduction.bat --nettoyer`
 > **Avec le classeur modèle** (quand il est disponible) : la page d'accueil du site, sans lien d'invitation, propose
 > « Vous organisez une sélection ? Créer la vôtre » ; le bouton « Copier le modèle Florilège » crée dans votre Google
 > Drive un classeur qui contient déjà le script. **Google range cette copie à la racine de « Mon Drive »** : lancer
-> ensuite **Florilège → Installer / configurer…** et coller le lien du dossier des photos, le classeur y est déplacé
-> automatiquement (on peut aussi le déplacer soi-même : clic droit → Organiser → Déplacer). Le même menu demande le mot
+> ensuite **Florilège → Installer / configurer…** : une fenêtre permet de parcourir « Mon Drive » dossier par dossier
+> (les dossiers d'année sont signalés par 📅) ou de coller le lien du dossier des photos
+> (exemple : `https://drive.google.com/drive/folders/1AbCdEfGh…`) ; le classeur y est déplacé automatiquement (on peut aussi le déplacer soi-même : clic droit → Organiser → Déplacer). Le même menu demande le mot
 > de passe et guide pour la publication. Les étapes ci-dessous sont celles de
 > l'installation manuelle.
 
@@ -302,6 +303,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.12.0 | Installation : explorateur de dossiers Google Drive (fil d'Ariane, dossiers d'année repérés, bilan) ou lien collé avec exemple, puis mot de passe, le tout dans une seule fenêtre. |
 | 0.11.2 | Page « Organiser une sélection » : la copie du modèle arrive à la racine du Drive, le menu Installer la range dans le dossier des photos. |
 | 0.11.1 | Classeur modèle configuré : la page « Organiser une sélection » propose « Copier le modèle Florilège ». |
 | 0.11.0 | Création des photos allégées directement dans Google Drive (en tâche de fond, relançable, liste mise à jour à la fin) ; menu « Installer / configurer… » (dossier des photos, mot de passe, publication guidée) ; page « Organiser une sélection » sur le site, prête pour le classeur modèle. |

@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.11.2';
+const VERSION = '0.12.0';
 
 // Réglages (modifiables ici).
 const REGLAGES = {
@@ -467,39 +467,68 @@ function versionReduite(idFichier) {
 
 // ============================================================================ installation (nouvel organisateur)
 
+// Fenêtre d'installation : petit explorateur de dossiers Google Drive (ou lien collé), puis mot de passe.
 function installer() {
-  const ui = SpreadsheetApp.getUi();
-  const actuel = dossierSelection();
-  const rep = ui.prompt('Installer Florilège',
-    'Lien (adresse) du dossier Google Drive qui contient vos dossiers de photos, un par année (« 2001 », « 2002 »…).\n'
-    + `Laisser vide pour garder le dossier actuel du classeur : « ${actuel.getName()} ».`, ui.ButtonSet.OK_CANCEL);
-  if (rep.getSelectedButton() !== ui.Button.OK) return;
-  const texte = rep.getResponseText().trim();
-  let dossier = actuel;
-  if (texte) {
-    const m = /folders\/([\w-]+)/.exec(texte) || /^([\w-]{20,})$/.exec(texte) || /[?&]id=([\w-]+)/.exec(texte);
-    try {
-      dossier = DriveApp.getFolderById(m ? m[1] : texte);
-    } catch (err) {
-      ui.alert('Florilège', 'Dossier introuvable. Dans Google Drive, ouvrez le dossier et copiez l\'adresse affichée par le navigateur.', ui.ButtonSet.OK);
-      return;
-    }
-    if (dossier.getId() !== actuel.getId()) DriveApp.getFileById(ss().getId()).moveTo(dossier);
+  const html = HtmlService.createHtmlOutput(PAGE_INSTALLATION).setWidth(600).setHeight(560);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Installer Florilège');
+}
+
+function echapperHtml(t) {
+  return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Identifiant d'un dossier à partir d'un lien Google Drive (ou de l'identifiant lui-même).
+function extraireIdDossier(texte) {
+  const t = String(texte || '').trim();
+  const m = /folders\/([\w-]+)/.exec(t) || /[?&]id=([\w-]+)/.exec(t) || /^([\w-]{15,})$/.exec(t);
+  return m ? m[1] : '';
+}
+
+// Appelée par la fenêtre : contenu d'un dossier (sous-dossiers, fil d'Ariane, nombre de dossiers d'année).
+function listerDossiers(idOuLien) {
+  let dossier;
+  const id = extraireIdDossier(idOuLien);
+  if (idOuLien === 'racine') dossier = DriveApp.getRootFolder();
+  else if (id) {
+    try { dossier = DriveApp.getFolderById(id); } catch (err) { throw new Error('Dossier introuvable : vérifiez le lien.'); }
+  } else dossier = dossierSelection();
+  const chemin = [];
+  let courant = dossier;
+  for (let k = 0; k < 12; k++) {
+    chemin.unshift({ id: courant.getId(), nom: courant.getName() });
+    const parents = courant.getParents();
+    if (!parents.hasNext()) break;
+    courant = parents.next();
   }
+  const enfants = [];
+  const it = dossier.getFolders();
+  while (it.hasNext()) {
+    const d = it.next();
+    enfants.push({ id: d.getId(), nom: d.getName(), annee: estDossierAnnee(d.getName()), allege: estDossierAllege(d.getName()) });
+  }
+  enfants.sort((x, y) => trierNoms(x.nom, y.nom));
+  return { id: dossier.getId(), nom: dossier.getName(), chemin, enfants, nbAnnees: enfants.filter(e => e.annee).length };
+}
+
+// Appelée par la fenêtre : range le classeur dans le dossier choisi, mot de passe, feuille Choix.
+// Renvoie le texte HTML des étapes suivantes.
+function installerDans(idDossier, motDePasse) {
+  const dossier = DriveApp.getFolderById(idDossier);
+  if (dossier.getId() !== dossierSelection().getId()) DriveApp.getFileById(ss().getId()).moveTo(dossier);
+  const proprietes = PropertiesService.getScriptProperties();
+  const mdp = normaliserMotDePasse(motDePasse);
+  if (mdp) proprietes.setProperty('mot_de_passe', mdp);
+  feuilleChoix();
+  proprietes.setProperty('installe', 'oui');
   const annees = [];
   const it = dossier.getFolders();
   while (it.hasNext()) { const d = it.next(); if (estDossierAnnee(d.getName())) annees.push(d.getName()); }
-  feuilleChoix();
-  definirMotDePasse();
-  PropertiesService.getScriptProperties().setProperty('installe', 'oui');
-
   let url = '';
   try { url = ScriptApp.getService().getUrl() || ''; } catch (err) { /* pas encore déployé */ }
   const deploye = /\/s\/[\w-]+\/exec/.test(url);
-  const html = HtmlService.createHtmlOutput(`
-    <style>body{font-family:sans-serif;font-size:14px;line-height:1.45}li{margin:4px 0}</style>
-    <p>Le classeur est rangé dans <b>${String(dossier.getName()).replace(/</g, '&lt;')}</b>
-      (${annees.length ? `dossiers d'année : ${annees.sort(trierNoms).join(', ')}` : 'aucun dossier d\'année pour l\'instant'}).</p>
+  return `<p>✅ Le classeur est rangé dans <b>${echapperHtml(dossier.getName())}</b>
+      (${annees.length ? `dossiers d'année : ${echapperHtml(annees.sort(trierNoms).join(', '))}` : 'aucun dossier d\'année pour l\'instant'}).<br>
+      ${mdp ? `Mot de passe commun : <b>${echapperHtml(mdp)}</b>.` : (proprietes.getProperty('mot_de_passe') ? 'Mot de passe commun inchangé.' : 'Pas de mot de passe : l\'application est ouverte à qui en a le lien.')}</p>
     <p><b>Étapes suivantes :</b></p>
     <ol>
       ${deploye ? '<li>L\'application web est déjà publiée.</li>' : `<li><b>Publier l'application web</b> (une seule fois) : menu <i>Extensions → Apps Script</i>,
@@ -507,9 +536,91 @@ function installer() {
         « Qui a accès : <b>Tout le monde</b> », <i>Déployer</i>, puis autoriser (Paramètres avancés → Accéder à…, tout cocher).</li>`}
       <li><b>Florilège → Créer les photos allégées</b> (en tâche de fond ; la liste des photos est mise à jour à la fin).</li>
       <li><b>Florilège → Lien d'invitation pour les testeurs</b>, à envoyer avec le mot de passe.</li>
-    </ol>`).setWidth(520).setHeight(360);
-  ui.showModalDialog(html, 'Florilège est installé');
+    </ol>`;
 }
+
+const PAGE_INSTALLATION = `<!doctype html><html><head><base target="_top"><style>
+  body{font-family:Arial,sans-serif;font-size:14px;color:#1d2b27;margin:0}
+  h3{margin:4px 0 8px;font-size:15px}
+  .chemin{margin:6px 0;color:#5b6b66;font-size:13px}
+  .chemin a{color:#155e4d;cursor:pointer;text-decoration:underline}
+  .liste{border:1px solid #ddd;border-radius:8px;height:230px;overflow:auto;margin:6px 0}
+  .ligne{padding:7px 10px;border-bottom:1px solid #eee;cursor:pointer;display:flex;gap:8px;align-items:center}
+  .ligne:hover{background:#eef6f3}
+  .ligne.annee{color:#155e4d;font-weight:bold}
+  .ligne.allege{color:#999}
+  .vide{padding:10px;color:#888}
+  .bilan{margin:8px 0;padding:8px 10px;border-radius:8px;background:#f3f6f5}
+  .bilan.ok{background:#e3f4ec}
+  button{font:inherit;padding:8px 14px;border-radius:18px;border:1px solid #155e4d;background:#fff;color:#155e4d;cursor:pointer}
+  button.principal{background:#155e4d;color:#fff}
+  input{font:inherit;padding:7px 10px;border:1px solid #bbb;border-radius:8px;width:100%;box-sizing:border-box}
+  .petit{font-size:12px;color:#777}
+  .rangee{display:flex;gap:8px;align-items:center;margin-top:6px}
+  #erreur{color:#c62828;margin:6px 0}
+</style></head><body>
+<div id="etape1">
+  <h3>1. Le dossier de vos photos</h3>
+  <div>Choisissez le dossier Google Drive qui contient vos dossiers de photos, un par année (« 2001 », « 2002 »…).
+    Cliquez sur un dossier pour l'ouvrir.</div>
+  <div class="chemin" id="chemin">Chargement…</div>
+  <div class="liste" id="liste"></div>
+  <div class="bilan" id="bilan"></div>
+  <div class="rangee"><button class="principal" id="choisir" onclick="choisir()">Choisir ce dossier</button></div>
+  <p class="petit">Ou collez le lien du dossier (l'adresse affichée par le navigateur quand le dossier est ouvert dans Google Drive),
+    par exemple <i>https://drive.google.com/drive/folders/1AbCdEfGh…</i></p>
+  <div class="rangee"><input id="lien" placeholder="https://drive.google.com/drive/folders/…"><button onclick="ouvrirLien()">Ouvrir</button></div>
+</div>
+<div id="etape2" style="display:none">
+  <h3>2. Le mot de passe commun</h3>
+  <div>Il sera demandé une fois à chaque testeur, avec son prénom (majuscules et espaces ne comptent pas).
+    Laisser vide pour ne pas en mettre (ou garder celui déjà défini).</div>
+  <div class="rangee"><input id="mdp" placeholder="Mot de passe commun"></div>
+  <div class="rangee"><button onclick="retour()">‹ Changer de dossier</button><button class="principal" onclick="terminer()">Terminer l'installation</button></div>
+</div>
+<div id="etape3" style="display:none"><div id="fin"></div><div class="rangee"><button class="principal" onclick="google.script.host.close()">Fermer</button></div></div>
+<div id="erreur"></div>
+<script>
+  let courant = null;
+  function echapper(t) { return String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function erreur(e) { document.getElementById('erreur').textContent = e && e.message ? e.message : String(e); }
+  function charger(id) {
+    document.getElementById('erreur').textContent = '';
+    document.getElementById('liste').innerHTML = '<div class="vide">Chargement…</div>';
+    google.script.run.withSuccessHandler(afficher).withFailureHandler(erreur).listerDossiers(id);
+  }
+  function afficher(d) {
+    courant = d;
+    document.getElementById('chemin').innerHTML = '<a onclick="charger(\\'racine\\')">Mon Drive</a>' + d.chemin.slice(1)
+      .map(c => ' › <a onclick="charger(\\'' + c.id + '\\')">' + echapper(c.nom) + '</a>').join('');
+    document.getElementById('liste').innerHTML = d.enfants.length ? d.enfants.map(e =>
+      '<div class="ligne' + (e.annee ? ' annee' : '') + (e.allege ? ' allege' : '') + '" onclick="charger(\\'' + e.id + '\\')">'
+      + (e.annee ? '📅' : '📁') + ' ' + echapper(e.nom) + '</div>').join('') : '<div class="vide">Aucun sous-dossier.</div>';
+    const b = document.getElementById('bilan');
+    b.className = 'bilan' + (d.nbAnnees ? ' ok' : '');
+    b.innerHTML = d.nbAnnees ? '✅ <b>' + echapper(d.nom) + '</b> contient ' + d.nbAnnees + ' dossier(s) d\\'année : c\\'est sans doute le bon.'
+      : 'Le dossier <b>' + echapper(d.nom) + '</b> ne contient pas de dossier d\\'année (nom commençant par un chiffre).';
+  }
+  function ouvrirLien() { const l = document.getElementById('lien').value.trim(); if (l) charger(l); }
+  function choisir() {
+    if (!courant) return;
+    if (!courant.nbAnnees && !confirm('Ce dossier ne contient pas de dossier d\\'année. Le choisir quand même ?')) return;
+    document.getElementById('etape1').style.display = 'none';
+    document.getElementById('etape2').style.display = 'block';
+    document.getElementById('mdp').focus();
+  }
+  function retour() { document.getElementById('etape2').style.display = 'none'; document.getElementById('etape1').style.display = 'block'; }
+  function terminer() {
+    document.getElementById('erreur').textContent = 'Installation…';
+    google.script.run.withSuccessHandler(html => {
+      document.getElementById('erreur').textContent = '';
+      document.getElementById('etape2').style.display = 'none';
+      document.getElementById('etape3').style.display = 'block';
+      document.getElementById('fin').innerHTML = html;
+    }).withFailureHandler(erreur).installerDans(courant.id, document.getElementById('mdp').value);
+  }
+  charger('');
+</script></body></html>`;
 
 // ============================================================================ mot de passe commun
 // Gardé dans les propriétés privées du script (jamais dans le dépôt GitHub, qui est public).
