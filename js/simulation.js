@@ -4,7 +4,7 @@
 // la reprise après fermeture de l'onglet.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.15.3';
+import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.16.0';
 
 const parametres = new URLSearchParams(location.search);
 // Latence simulée d'une requête (ms), pour juger l'effet du préchargement : ?latence=800
@@ -203,6 +203,14 @@ export const backendSimule = {
       if (p) res[id] = await dessiner(p, 320);
     }
     return res;
+  },
+
+  // Photo « d'origine » (téléchargement) : { nom, blob }
+  async original(jeton, id) {
+    await reseau(LATENCE, false);
+    const p = PHOTOS_PAR_ID.get(id);
+    if (!p) throw new Error(`Photo inconnue : ${id}`);
+    return { nom: `${ENSEMBLES.find(e => e.id === p.ensemble_id).nom} ${p.ordre}.jpg`, blob: await dessiner(p, 2000) };
   },
 
   // Copie réduite (1 080 px) d'une photo : Blob

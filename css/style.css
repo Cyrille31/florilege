@@ -276,6 +276,13 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
   white-space: nowrap; cursor: pointer;
 }
 .option-tri[hidden] { display: none; }
+.btn-telecharger {
+  width: 40px; height: 40px; flex: none;
+  border: 0; border-radius: 50%;
+  background: var(--surface); box-shadow: var(--ombre);
+  font-size: 1.15rem; line-height: 1;
+}
+.btn-telecharger:hover { background: var(--bord); }
 .option-tri input { width: 20px; height: 20px; accent-color: var(--vert-fonce); }
 .selecteur-mode {
   display: flex;
@@ -629,6 +636,15 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
   pointer-events: auto; cursor: pointer;
 }
 .visionneuse-option input { width: 18px; height: 18px; margin: 0; }
+.visionneuse-telecharger { border: 0; font-size: 1rem; }
+.libelle-court { display: none; }
+/* Téléphone : plein écran plus sobre en haut (libellés courts, compteur plus petit). */
+@media (max-width: 560px) {
+  .libelle-long { display: none; }
+  .libelle-court { display: inline; }
+  .visionneuse-compteur, .visionneuse-choix, .visionneuse-option { padding: 4px 9px; font-size: .8rem; }
+  .visionneuse-haut { gap: 5px; }
+}
 .visionneuse-choix, .visionneuse-compteur {
   padding: 6px 12px;
   border-radius: 999px;

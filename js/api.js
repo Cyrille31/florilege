@@ -4,10 +4,10 @@
 // arrière-plan et à la fermeture. En cas d'échec, nouvel essai avec délai croissant.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi, cleLocale } from './config.js?v=0.15.3';
-import { backendSimule } from './simulation.js?v=0.15.3';
-import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.15.3';
-import { appliquer } from './etat.js?v=0.15.3';
+import { CONFIG, modeDemo, urlApi, cleLocale } from './config.js?v=0.16.0';
+import { backendSimule } from './simulation.js?v=0.16.0';
+import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.16.0';
+import { appliquer } from './etat.js?v=0.16.0';
 
 // ---------------------------------------------------------------- back-end Apps Script
 // Les requêtes POST sont en text/plain (corps JSON) pour éviter la requête CORS préalable.
@@ -75,6 +75,11 @@ const backendHttp = {
   async image(nom, id) {
     const json = await appel('image', { testeur: nom, id });
     return base64VersBlob(json.donnees, json.type);
+  },
+  // Photo d'origine (pour le téléchargement) : { nom, blob }.
+  async original(nom, id) {
+    const json = await appel('original', { testeur: nom, id });
+    return { nom: json.nom, blob: base64VersBlob(json.donnees, json.type) };
   },
   erreur: (nom, message) => appel('erreur', { testeur: nom, message }),
 };

@@ -1,8 +1,8 @@
 // Florilège — menu « ? » : mode d'emploi, tutoriel animé, à propos (licence BAL, CGExcel).
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.15.3';
-import { el } from './ludique.js?v=0.15.3';
+import { CONFIG, modeDemo } from './config.js?v=0.16.0';
+import { el } from './ludique.js?v=0.16.0';
 
 const PHRASE_BAL = 'En échange de l\'usage libre et gratuit de ce logiciel, une seule chose vous est demandée, sur l\'honneur : '
   + 'faire une bonne action chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -44,7 +44,11 @@ function modeEmploi() {
       'Boutons du bas : appliquer ⊙ ✖️ ❤️ ⭐ à toute la sélection.',
       'Double toucher ou double clic : ouvrir la photo en mode « une à une ».'),
     rubrique('Retenues',
-      'Cochez « Retenues ❤️ » pour ne voir que les photos gardées (❤️ et ⭐), dans tous les modes, plein écran compris.'),
+      'Cochez « Retenues ❤️ » pour ne voir que les photos gardées (❤️ et ⭐), dans tous les modes, plein écran compris.',
+      '« Suivante après choix » existe aussi dans tous les modes ; en Imagettes, la photo suivante est sélectionnée après un choix.'),
+    rubrique('Télécharger',
+      'Le bouton ⬇️ (à côté des cases, et en haut en plein écran) télécharge la photo d\'origine, en pleine qualité.',
+      'En mode Imagettes, il télécharge toutes les photos sélectionnées, l\'une après l\'autre.'),
     rubrique('Reprendre plus tard',
       'Chaque choix est enregistré aussitôt. Sans connexion, il est gardé sur l\'appareil et envoyé plus tard.',
       'Pour continuer sur un autre appareil, ouvrez le même lien et donnez le même prénom.'),

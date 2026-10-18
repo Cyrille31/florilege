@@ -11,12 +11,13 @@
 import {
   PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.15.3';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.15.3';
-import { ouvrirVisionneuse } from './zoom.js?v=0.15.3';
-import { CONFIG } from './config.js?v=0.15.3';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.15.3';
-import { boutonAide } from './aide.js?v=0.15.3';
+} from './etat.js?v=0.16.0';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.16.0';
+import { ouvrirVisionneuse } from './zoom.js?v=0.16.0';
+import { CONFIG } from './config.js?v=0.16.0';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.16.0';
+import { boutonAide } from './aide.js?v=0.16.0';
+import { telechargerOriginaux } from './telechargement.js?v=0.16.0';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };
@@ -67,14 +68,13 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   const caseRetenues = el('input', { type: 'checkbox', checked: retenues });
   caseRetenues.addEventListener('change', () => basculerRetenues(caseRetenues.checked));
   const caseAvance = el('input', { type: 'checkbox', checked: avanceAuto });
-  caseAvance.addEventListener('change', () => {
-    avanceAuto = caseAvance.checked;
-    ecrireStockage(CLE_AVANCE, avanceAuto);
-  });
-  const optionAvance = el('label', { class: 'option-tri', title: 'Passer à la photo suivante après ❤️ ou ✖️' }, caseAvance, ' Suivante après choix');
+  caseAvance.addEventListener('change', () => basculerAvance(caseAvance.checked));
+  const optionAvance = el('label', { class: 'option-tri', title: 'Passer à la photo suivante après un choix' }, caseAvance, ' Suivante après choix');
+  const boutonTelecharger = el('button', { class: 'btn-telecharger', title: 'Télécharger la photo d\'origine (en imagettes : les photos sélectionnées)',
+    'aria-label': 'Télécharger', onclick: () => telecharger() }, '⬇️');
   const ligneModes = el('div', { class: 'ligne-modes' },
     el('label', { class: 'option-tri', title: 'Seulement les photos gardées (❤️ et ⭐) — touche R' }, caseRetenues, ' Retenues ❤️'),
-    optionAvance);
+    optionAvance, boutonTelecharger);
   const stats = el('div', { class: 'tri-stats' });
   const barre = el('span');
   const corps = el('div', { class: 'tri-corps' });
@@ -105,7 +105,6 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     ].filter(Boolean));
     barre.style.width = `${photos.length ? 100 * triees / photos.length : 0}%`;
     for (const b of selecteur.children) b.setAttribute('aria-selected', b.dataset.mode === mode ? 'true' : 'false');
-    optionAvance.hidden = mode === 'grille';
   }
 
   // ---- enregistrement d'un choix (commun à tous les modes)
@@ -167,6 +166,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       position: position.n,
       total: position.total,
       retenues,
+      avance: avanceAuto,
     };
   }
 
@@ -185,6 +185,8 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         effacer: () => effacer(),
         allerA: (n, leger) => vue?.allerA?.(n, leger),
         retenues: v => basculerRetenues(v),
+        avance: v => basculerAvance(v),
+        telecharger: () => telecharger(),
       },
     });
     visionneuse.maj(etatVisionneuse());
@@ -198,6 +200,22 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     corps.replaceChildren(vue.racine);
     actualiserEntete();
     vue.afficher?.();
+  }
+
+  // Case « Suivante après choix » (entête ou visionneuse).
+  function basculerAvance(v) {
+    avanceAuto = v;
+    ecrireStockage(CLE_AVANCE, v);
+    caseAvance.checked = v;
+    visionneuse?.maj({ avance: v });
+  }
+
+  // Téléchargement de la photo d'origine : la photo affichée, ou en imagettes les photos sélectionnées.
+  function telecharger() {
+    const ids = mode === 'grille'
+      ? (vue.selection?.() || []).map(i => photos[i].id)
+      : (vue?.position?.().total ? [photos[cur].id] : []);
+    telechargerOriginaux(images.backend, ctx.jeton, ids);
   }
 
   // Case « Retenues » (entête ou visionneuse) : on reconstruit la vue avec ou sans filtre.
@@ -752,6 +770,15 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       for (const i of indices) voter(i, valeur);
       notifier(`${indices.length} photo${indices.length > 1 ? 's' : ''} : ${TEXTES[valeur] || 'à trier'}`);
       viderSelection();
+      // « Suivante après choix » : une seule photo choisie → la suivante est sélectionnée à son tour.
+      if (avanceAuto && indices.length === 1) {
+        let j = indices[0] + 1;
+        while (j < photos.length && !visible(j)) j++;
+        if (j < photos.length) {
+          basculer(j);
+          vignettes[j].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      }
     }
 
     function ouvrir(i) {
@@ -824,6 +851,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       afficher() { requestAnimationFrame(() => vignettes[cur]?.scrollIntoView({ block: 'center' })); },
       detruire() { observateur.disconnect(); annulerAppui(); },
       majPhoto(i) { maj(i); majVide(); },
+      selection: () => [...selection].sort((a, b) => a - b),
       position: () => ({ n: 0, total: 0 }),
       clavier(e) {
         if (e.key === 'Escape' && selection.size) { viderSelection(); return true; }

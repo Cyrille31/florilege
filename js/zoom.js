@@ -7,7 +7,7 @@
 // L'écran appelant fournit les actions et met la visionneuse à jour avec changerPhoto() et maj().
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el } from './ludique.js?v=0.15.3';
+import { el } from './ludique.js?v=0.16.0';
 
 const ZOOM_MAX = 6;
 
@@ -25,7 +25,14 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
   const compteur = el('span', { class: 'visionneuse-compteur' });
   const caseRetenues = el('input', { type: 'checkbox' });
   caseRetenues.addEventListener('change', () => actions.retenues?.(caseRetenues.checked));
-  const optionRetenues = el('label', { class: 'visionneuse-option', title: 'Seulement les photos gardées (❤️ et ⭐) — touche R' }, caseRetenues, ' Retenues ❤️');
+  const optionRetenues = el('label', { class: 'visionneuse-option', title: 'Seulement les photos gardées (❤️ et ⭐) — touche R' }, caseRetenues,
+    el('span', { class: 'libelle-long' }, ' Retenues ❤️'), el('span', { class: 'libelle-court' }, ' ❤️ seules'));
+  const caseAvance = el('input', { type: 'checkbox' });
+  caseAvance.addEventListener('change', () => actions.avance?.(caseAvance.checked));
+  const optionAvance = el('label', { class: 'visionneuse-option', title: 'Passer à la photo suivante après un choix' }, caseAvance,
+    el('span', { class: 'libelle-long' }, ' Suivante après choix'), el('span', { class: 'libelle-court' }, ' Suivante'));
+  const telecharger = el('button', { class: 'visionneuse-option visionneuse-telecharger', title: 'Télécharger la photo d\'origine', 'aria-label': 'Télécharger',
+    onclick: e => { e.stopPropagation(); actions.telecharger?.(); } }, '⬇️');
   const message = el('div', { class: 'visionneuse-message', 'aria-live': 'polite' });
   const fermer = el('button', { class: 'btn-icone visionneuse-fermer', 'aria-label': 'Fermer (Échap)', title: 'Fermer (Échap)' }, '✕');
   const bouton = (libelle, titre, fn, classe = '') => el('button', { class: `btn-visionneuse ${classe}`, 'aria-label': titre, title: titre, onclick: e => { e.stopPropagation(); fn?.(); } }, libelle);
@@ -45,12 +52,13 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
   curseur.addEventListener('keydown', e => { e.preventDefault(); curseur.blur(); });
   const bas = el('div', { class: 'visionneuse-bas' }, curseur, barre);
   const couche = el('div', { class: 'zoom chargement', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Photo agrandie' },
-    cadre, message, el('div', { class: 'visionneuse-haut' }, choix, compteur, optionRetenues), fermer, bas);
-  for (const b of [fermer, curseur, optionRetenues, ...barre.children]) {
+    cadre, message, el('div', { class: 'visionneuse-haut' }, choix, compteur, optionRetenues, optionAvance, telecharger), fermer, bas);
+  for (const b of [fermer, curseur, optionRetenues, optionAvance, telecharger, ...barre.children]) {
     b.addEventListener('pointerdown', e => e.stopPropagation());
     b.addEventListener('pointerup', e => e.stopPropagation());
   }
   optionRetenues.addEventListener('click', e => e.stopPropagation());
+  optionAvance.addEventListener('click', e => e.stopPropagation());
   img.addEventListener('load', () => couche.classList.remove('chargement'));
   const precedent = document.activeElement;
   let pleinEcranDemande = false;
@@ -111,8 +119,9 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
   }
 
   // etat : { choix: texte, valeur: 0|1|2|null, coeur: booléen, compteur: texte }
-  function maj({ choix: texte, valeur, coeur, compteur: tc, position, total, retenues } = {}) {
+  function maj({ choix: texte, valeur, coeur, compteur: tc, position, total, retenues, avance } = {}) {
     if (retenues !== undefined) caseRetenues.checked = !!retenues;
+    if (avance !== undefined) caseAvance.checked = !!avance;
     if (total !== undefined) {
       curseur.max = String(Math.max(1, total));
       curseur.value = String(position || 1);

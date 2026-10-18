@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.15.3';
+const VERSION = '0.16.0';
 
 // Réglages (modifiables ici).
 const REGLAGES = {
@@ -801,6 +801,7 @@ function doPost(e) {
       case 'evenements': return repondre(apiEvenements(testeur, requete.evenements));
       case 'miniatures': return repondre(apiMiniatures(requete.ids));
       case 'image': return repondre(apiImage(requete.id));
+      case 'original': return repondre(apiOriginal(requete.id));
       case 'erreur':
         console.error(`Erreur client (${testeur}) : ${requete.message}`);
         return repondre({ ok: true });
@@ -1017,6 +1018,49 @@ function apiImage(id) {
   const fichier = DriveApp.getFileById(photo.d);
   const blob = fichier.getBlob();
   return { donnees: Utilities.base64Encode(blob.getBytes()), type: typeImage(blob, fichier.getName()) };
+}
+
+// Photo d'origine (dossier de l'année, pas « -allégé ») pour le bouton de téléchargement.
+// Copie faite dans Drive : sa description donne l'original (florilege:<id>:<date>) ; sinon on le cherche
+// par son chemin (dossier de l'année / sous-dossiers / nom d'origine).
+const TAILLE_MAX_ORIGINAL = 35 * 1024 * 1024; // une réponse Apps Script est limitée à environ 50 Mo (base64 compris)
+
+function trouverOriginal(photo) {
+  const cache = CacheService.getScriptCache();
+  const cle = `o_${photo.d}`;
+  const connu = cache.get(cle);
+  if (connu) { try { return DriveApp.getFileById(connu); } catch (e) { /* déplacé ou supprimé : on recherche */ } }
+  let fichier = null;
+  try {
+    const m = /^florilege:([\w-]+):/.exec(DriveApp.getFileById(photo.d).getDescription() || '');
+    if (m) fichier = DriveApp.getFileById(m[1]);
+  } catch (e) { /* pas de description utilisable */ }
+  if (!fichier) {
+    let dossier = dossierSelection();
+    for (const nom of String(photo.dossier).split('/')) {
+      const it = dossier.getFoldersByName(nom);
+      if (!it.hasNext()) { dossier = null; break; }
+      dossier = it.next();
+    }
+    if (dossier) {
+      const it = dossier.getFilesByName(photo.nom);
+      if (it.hasNext()) fichier = it.next();
+    }
+  }
+  if (fichier) cache.put(cle, fichier.getId(), 21600);
+  return fichier;
+}
+
+function apiOriginal(id) {
+  const photo = indexParId()[String(id || '')];
+  if (!photo) return { erreur: 'Photo inconnue (la liste des photos a peut-être changé : rechargez la page).' };
+  const fichier = trouverOriginal(photo);
+  if (!fichier) return { erreur: `Photo d'origine introuvable : ${photo.dossier}/${photo.nom}` };
+  if (fichier.getSize() > TAILLE_MAX_ORIGINAL) {
+    return { erreur: `${photo.nom} est trop volumineuse pour être téléchargée par l'application (plus de 35 Mo).` };
+  }
+  const blob = fichier.getBlob();
+  return { nom: fichier.getName(), type: blob.getContentType() || typeImage(blob, fichier.getName()), donnees: Utilities.base64Encode(blob.getBytes()) };
 }
 
 // ============================================================================ menu du classeur

@@ -312,6 +312,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.16.0 | Cases « Retenues » et « Suivante après choix » dans les trois modes (en Imagettes, la photo suivante est sélectionnée après un choix) ; bouton ⬇️ de téléchargement de la photo d'origine (dossier de l'année), ou des photos sélectionnées en Imagettes. |
 | 0.15.3 | Mise à jour automatique : au démarrage, la page vérifie la version en ligne (version.json) et se recharge d'elle-même si le navigateur (souvent sur téléphone) a gardé une ancienne version. |
 | 0.15.2 | Défilement : toujours une seule photo par geste (pour aller plus vite : la réglette horizontale). |
 | 0.15.1 | Défilement : un geste lent fait passer une seule photo, quelle que soit sa longueur (seul un geste lancé en fait passer plusieurs), en mode « une à une » comme en plein écran. |
