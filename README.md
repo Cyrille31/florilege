@@ -127,7 +127,7 @@ Photos famille/                       (exemple de nom)
 - Un **ensemble** = un dossier d'année (nom commençant par un chiffre) ; ses sous-dossiers sont regroupés.
 - La feuille **Choix** contient une ligne par photo et par testeur :
   `Photo | Dossier | Choix | Testeur | Horodatage`. « Photo » est le nom du fichier **original**, « Dossier » son
-  chemin relatif (par exemple `2001/Vacances`), « Choix » vaut `cœur`, `étoile`, `x` ou `non classé`.
+  chemin relatif (par exemple `2001/Vacances`), « Choix » vaut `cœur`, `étoile`, `x`, `non classé` ou `A` (écartée automatiquement par l'outil d'écartement : voir ci-dessous).
   Quand un testeur change d'avis, sa ligne est mise à jour (pas de doublon).
 
 > **Mot de passe commun** : à définir dans le Google Sheet par **Florilège → Définir le mot de passe commun…**
@@ -312,6 +312,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.17.0 | Écartement automatique (bouton de l'accueil, à la place de « Continuer ») : les photos encore à trier qu'au moins une des personnes choisies a écartées, et qu'aucune n'a gardées, deviennent « A » (grisées, inscrites `A` dans le fichier) ; relance = recalcul, « Annuler » = remise à trier. Menu « Afficher » (⭐ ❤️ ⊙ ✖️ A, par défaut ⭐ ❤️ ⊙) à la place de la case « Retenues », dans tous les modes. |
 | 0.16.0 | Cases « Retenues » et « Suivante après choix » dans les trois modes (en Imagettes, la photo suivante est sélectionnée après un choix) ; bouton ⬇️ de téléchargement de la photo d'origine (dossier de l'année), ou des photos sélectionnées en Imagettes. |
 | 0.15.3 | Mise à jour automatique : au démarrage, la page vérifie la version en ligne (version.json) et se recharge d'elle-même si le navigateur (souvent sur téléphone) a gardé une ancienne version. |
 | 0.15.2 | Défilement : toujours une seule photo par geste (pour aller plus vite : la réglette horizontale). |

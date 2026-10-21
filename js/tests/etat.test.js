@@ -1,11 +1,11 @@
 // Florilège — tests du module etat.js.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { test, egal, vrai } from './mini_test.js?v=0.16.0';
+import { test, egal, vrai } from './mini_test.js?v=0.17.0';
 import {
-  PASSE, GARDE, COEUR, photosDe, progressionEnsemble, progressionGlobale, indexProchaine,
+  PASSE, GARDE, COEUR, AUTO, categorie, photosDe, progressionEnsemble, progressionGlobale, indexProchaine,
   ensembleAContinuer, peutMettreCoeur, appliquer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from '../etat.js?v=0.16.0';
+} from '../etat.js?v=0.17.0';
 
 function etatExemple() {
   return {
@@ -92,7 +92,7 @@ test('comptesEnsemble', () => {
   const e = etatExemple();
   appliquer(e, { type: 'tri', photo_id: 'a1', valeur: COEUR });
   appliquer(e, { type: 'tri', photo_id: 'a2', valeur: GARDE });
-  egal(comptesEnsemble(e, 'a'), { passes: 0, gardes: 1, coeurs: 1, nonTries: 1 });
+  egal(comptesEnsemble(e, 'a'), { passes: 0, autos: 0, gardes: 1, coeurs: 1, nonTries: 1 });
 });
 
 test('valeurApresFleche : échelle ✖️ ↔ ❤️ ↔ ⭐', () => {
@@ -105,4 +105,16 @@ test('valeurApresFleche : échelle ✖️ ↔ ❤️ ↔ ⭐', () => {
   egal(valeurApresFleche(COEUR, false, true), GARDE);
   egal(valeurApresFleche(GARDE, false, true), PASSE);
   egal(valeurApresFleche(PASSE, false, true), PASSE);
+});
+
+test('« A » (écartée automatiquement) : comptée comme triée, puis choix ordinaire', () => {
+  const e = etatExemple();
+  appliquer(e, { type: 'tri', photo_id: 'a1', valeur: AUTO });
+  egal(progressionEnsemble(e, 'a').faits, 1);
+  egal(comptesEnsemble(e, 'a').autos, 1);
+  egal(prochaineATrier(e, 'a', -1), 1); // a1 est sautée
+  egal(valeurSuivante(AUTO, true), GARDE);
+  egal(valeurApresFleche(AUTO, false, true), PASSE);
+  egal(valeurApresFleche(AUTO, true, true), GARDE);
+  egal([COEUR, GARDE, null, PASSE, AUTO].map(categorie), ['coeur', 'garde', 'atrier', 'passe', 'auto']);
 });

@@ -4,7 +4,7 @@
 // la reprise après fermeture de l'onglet.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.16.0';
+import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.17.0';
 
 const parametres = new URLSearchParams(location.search);
 // Latence simulée d'une requête (ms), pour juger l'effet du préchargement : ?latence=800
@@ -51,6 +51,17 @@ function construirePhotos() {
 
 const PHOTOS = construirePhotos();
 const PHOTOS_PAR_ID = new Map(PHOTOS.map(p => [p.id, p]));
+
+// Autres testeurs fictifs de la démonstration (pour l'écartement automatique).
+const AUTRES_TESTEURS = ['Alice', 'Bruno', 'Test organisateur'];
+function votesFictifs(nom) {
+  const votes = {};
+  for (const p of PHOTOS) {
+    const h = graineDe(`${nom}/${p.id}`) % 10;
+    if (h < 4) votes[p.id] = 0; else if (h < 6) votes[p.id] = 1; else if (h < 7) votes[p.id] = 2;
+  }
+  return votes;
+}
 
 function cleServeur(jeton) {
   return `florilege-demo-serveur-${String(jeton).trim().toLowerCase()}`;
@@ -203,6 +214,35 @@ export const backendSimule = {
       if (p) res[id] = await dessiner(p, 320);
     }
     return res;
+  },
+
+  // Écartement automatique (même règle que le serveur), avec trois autres testeurs fictifs.
+  async ecartement(jeton, { mode, personnes = [] }) {
+    await reseau();
+    const autres = AUTRES_TESTEURS.map(nom => ({ nom, votes: votesFictifs(nom) }));
+    if (mode === 'liste') {
+      return { personnes: autres.map(a => ({ nom: a.nom,
+        ecartees: Object.values(a.votes).filter(v => v === 0).length,
+        gardees: Object.values(a.votes).filter(v => v === 1 || v === 2).length })) };
+    }
+    const serveur = lireServeur(jeton);
+    const maintenant = new Date().toISOString();
+    let retirees = 0;
+    for (const v of Object.values(serveur.votes)) if (v.valeur === 3) { v.valeur = null; v.horodatage = maintenant; retirees++; }
+    let ecartees = 0;
+    if (mode === 'appliquer') {
+      const choisis = autres.filter(a => personnes.includes(a.nom));
+      for (const p of PHOTOS) {
+        const valeurs = choisis.map(a => a.votes[p.id]);
+        if (!valeurs.includes(0) || valeurs.some(v => v === 1 || v === 2)) continue;
+        const mien = serveur.votes[p.id];
+        if (mien && mien.valeur !== null && mien.valeur !== undefined) continue;
+        serveur.votes[p.id] = { valeur: 3, horodatage: maintenant };
+        ecartees++;
+      }
+    }
+    ecrireStockage(cleServeur(jeton), serveur);
+    return { ecartees, retirees };
   },
 
   // Photo « d'origine » (téléchargement) : { nom, blob }

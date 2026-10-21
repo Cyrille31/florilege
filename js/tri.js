@@ -1,7 +1,7 @@
 // Florilège — manche 1 : examen d'un ensemble. Deux modes, plus l'affichage en grand :
 //   « Une à une »  : la photo courante en grand, les 3 voisines de chaque côté en plus petit ;
 //   « Imagettes »  : grille de miniatures.
-// La case « Retenues » limite l'affichage aux photos gardées (❤️ ou ⭐), dans tous les modes.
+// Le menu « Afficher » choisit les photos montrées selon leur choix (⭐ ❤️ ⊙ ✖️ A), dans tous les modes.
 // Gestes : glisser à gauche / à droite pour passer à la photo suivante ou précédente (une seule à la fois),
 // vers le haut pour ❤️ (je garde), vers le bas pour ✖️ (je passe).
 // La pastille en haut à gauche de la photo montre le choix (· ❤️ ⭐ ✖️) et le change ; le bouton ⭐ du bas
@@ -9,23 +9,32 @@
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
 import {
-  PASSE, GARDE, COEUR, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
+  PASSE, GARDE, COEUR, AUTO, categorie, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.16.0';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.16.0';
-import { ouvrirVisionneuse } from './zoom.js?v=0.16.0';
-import { CONFIG } from './config.js?v=0.16.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.16.0';
-import { boutonAide } from './aide.js?v=0.16.0';
-import { telechargerOriginaux } from './telechargement.js?v=0.16.0';
+} from './etat.js?v=0.17.0';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.17.0';
+import { ouvrirVisionneuse } from './zoom.js?v=0.17.0';
+import { CONFIG } from './config.js?v=0.17.0';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.17.0';
+import { boutonAide } from './aide.js?v=0.17.0';
+import { telechargerOriginaux } from './telechargement.js?v=0.17.0';
 
-export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐' };
-const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur' };
+export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐', [AUTO]: 'A' };
+const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur', [AUTO]: 'A Écartée automatiquement' };
 const VOISINS = 3;
 const ECHELLES = [1, 0.55, 0.4, 0.3]; // taille des photos selon leur distance à la photo centrale
 const CLE_MODE = 'florilege-mode';
 const CLE_AVANCE = 'florilege-avance-auto';
-const CLE_RETENUES = 'florilege-retenues';
+const CLE_FILTRE = 'florilege-filtre';
+// Catégories du menu « Afficher », dans l'ordre habituel ; par défaut : coups de cœur, gardées et à trier.
+const CATEGORIES = [
+  { id: 'coeur', icone: '⭐', libelle: 'Coups de cœur' },
+  { id: 'garde', icone: '❤️', libelle: 'Gardées' },
+  { id: 'atrier', icone: '⊙', libelle: 'À trier' },
+  { id: 'passe', icone: '✖️', libelle: 'Écartées' },
+  { id: 'auto', icone: 'A', libelle: 'Écartées automatiquement' },
+];
+const FILTRE_DEFAUT = ['coeur', 'garde', 'atrier'];
 const CM = 38; // un centimètre à l'écran, en pixels CSS (96 px par pouce)
 const MODES = [
   { id: 'photo', icone: '▢', libelle: 'Une à une', titre: 'Les photos une à une. Clavier : ← → défiler · ↑ je garde · ↓ je passe · E coup de cœur · Suppr effacer · Entrée voir en grand' },
@@ -33,7 +42,6 @@ const MODES = [
 ];
 const EFFACER = '⊙'; // même dessin que la pastille d'une photo « à trier »
 
-const estRetenue = v => v === GARDE || v === COEUR;
 // Proportions d'une photo ; inconnues (0) tant que l'image n'est pas chargée : 4/3 par défaut.
 const rapport = p => (p.largeur > 0 && p.hauteur > 0 ? p.largeur / p.hauteur : 4 / 3);
 const ratioDe = p => (p.largeur > 0 && p.hauteur > 0 ? `${p.largeur} / ${p.hauteur}` : '4 / 3');
@@ -48,8 +56,12 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   const photos = photosDe(etat, ensembleId);
   const max = etat.config.max_coups_de_coeur ?? 4;
   let mode = options.mode || lireStockage(CLE_MODE, 'photo');
-  let retenues = lireStockage(CLE_RETENUES, false);
-  if (mode === 'retenues') { mode = 'photo'; retenues = true; } // ancien mode « Retenues »
+  let filtre = new Set(lireStockage(CLE_FILTRE, FILTRE_DEFAUT).filter(c => CATEGORIES.some(k => k.id === c)));
+  if (!filtre.size) filtre = new Set(FILTRE_DEFAUT);
+  if (mode === 'retenues') mode = 'photo'; // ancien mode « Retenues »
+  const toutAffiche = () => filtre.size === CATEGORIES.length;
+  const estAffichee = i => filtre.has(categorie(etat.votes[photos[i].id]));
+  const menusFiltre = new Set(); // menus « Afficher » (entête et visionneuse), tenus à jour ensemble
   if (!MODES.some(m => m.id === mode)) mode = 'photo';
   let avanceAuto = lireStockage(CLE_AVANCE, false);
   let cur = options.index ?? Math.max(0, prochaineATrier(etat, ensembleId, -1));
@@ -65,15 +77,13 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   const selecteur = el('div', { class: 'selecteur-mode', role: 'tablist', 'aria-label': 'Mode d\'affichage' },
     MODES.map(m => el('button', { role: 'tab', 'data-mode': m.id, title: m.titre, onclick: () => changerMode(m.id) },
       el('span', { class: 'icone-mode', 'aria-hidden': 'true' }, `${m.icone} `), m.libelle)));
-  const caseRetenues = el('input', { type: 'checkbox', checked: retenues });
-  caseRetenues.addEventListener('change', () => basculerRetenues(caseRetenues.checked));
   const caseAvance = el('input', { type: 'checkbox', checked: avanceAuto });
   caseAvance.addEventListener('change', () => basculerAvance(caseAvance.checked));
   const optionAvance = el('label', { class: 'option-tri', title: 'Passer à la photo suivante après un choix' }, caseAvance, ' Suivante après choix');
   const boutonTelecharger = el('button', { class: 'btn-telecharger', title: 'Télécharger la photo d\'origine (en imagettes : les photos sélectionnées)',
     'aria-label': 'Télécharger', onclick: () => telecharger() }, '⬇️');
   const ligneModes = el('div', { class: 'ligne-modes' },
-    el('label', { class: 'option-tri', title: 'Seulement les photos gardées (❤️ et ⭐) — touche R' }, caseRetenues, ' Retenues ❤️'),
+    menuFiltre(),
     optionAvance, boutonTelecharger);
   const stats = el('div', { class: 'tri-stats' });
   const barre = el('span');
@@ -96,10 +106,11 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     const triees = photos.length - c.nonTries;
     const position = vue?.position?.();
     stats.replaceChildren(...[
-      position?.total ? el('span', { class: 'pilule', title: retenues ? 'Photo retenue affichée / nombre de photos retenues' : 'Photo affichée / nombre de photos' },
+      position?.total ? el('span', { class: 'pilule', title: toutAffiche() ? 'Photo affichée / nombre de photos' : 'Photo affichée / nombre de photos affichées (menu « Afficher »)' },
         `📷 ${position.n}/${position.total}`) : null,
       el('span', { class: 'pilule', title: 'Photos sans choix' }, `⊙ ${c.nonTries}`),
       el('span', { class: 'pilule', title: 'Photos écartées' }, `✖️ ${c.passes}`),
+      c.autos ? el('span', { class: 'pilule auto', title: 'Photos écartées automatiquement' }, `A ${c.autos}`) : null,
       el('span', { class: 'pilule', title: 'Photos gardées (❤️ et ⭐)' }, `❤️+⭐ ${c.gardes + c.coeurs}`),
       el('span', { class: `pilule${c.coeurs >= max ? ' plein' : ''}`, title: 'Coups de cœur utilisés' }, `⭐ ${c.coeurs}/${max}`),
     ].filter(Boolean));
@@ -162,10 +173,9 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       coeur: v === COEUR,
       compteur: `📷 ${position.n}/${position.total} · `
         + (c.nonTries ? `⊙ ${c.nonTries} à trier` : 'tout est trié')
-        + ` · ✖️ ${c.passes} · ❤️+⭐ ${c.gardes + c.coeurs} · ⭐ ${c.coeurs}/${max}`,
+        + ` · ✖️ ${c.passes}${c.autos ? ` · A ${c.autos}` : ''} · ❤️+⭐ ${c.gardes + c.coeurs} · ⭐ ${c.coeurs}/${max}`,
       position: position.n,
       total: position.total,
-      retenues,
       avance: avanceAuto,
     };
   }
@@ -173,6 +183,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   function ouvrirGrand() {
     if (visionneuse || !photos.length || !vue?.position?.().total) return;
     visionneuse = ouvrirVisionneuse(images, photos[cur].id, {
+      extras: [menuFiltre(true)],
       ratio: ratioDe(photos[cur]),
       surFermeture: () => { visionneuse = null; },
       actions: {
@@ -184,7 +195,6 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         etoile: () => basculerEtoile(),
         effacer: () => effacer(),
         allerA: (n, leger) => vue?.allerA?.(n, leger),
-        retenues: v => basculerRetenues(v),
         avance: v => basculerAvance(v),
         telecharger: () => telecharger(),
       },
@@ -196,7 +206,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     mode = m;
     ecrireStockage(CLE_MODE, m);
     vue?.detruire();
-    vue = m === 'grille' ? vueGrille(retenues) : vuePhoto(retenues);
+    vue = m === 'grille' ? vueGrille() : vuePhoto();
     corps.replaceChildren(vue.racine);
     actualiserEntete();
     vue.afficher?.();
@@ -218,30 +228,60 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     telechargerOriginaux(images.backend, ctx.jeton, ids);
   }
 
-  // Case « Retenues » (entête ou visionneuse) : on reconstruit la vue avec ou sans filtre.
-  function basculerRetenues(v) {
-    retenues = v;
-    ecrireStockage(CLE_RETENUES, v);
-    caseRetenues.checked = v;
+  // Menu « Afficher » : cases ⭐ ❤️ ⊙ ✖️ A. sombre : version pour la visionneuse.
+  function menuFiltre(sombre = false) {
+    const resume = el('span', { class: 'menu-filtre-resume' });
+    const cases = CATEGORIES.map(c => {
+      const input = el('input', { type: 'checkbox', 'data-id': c.id });
+      input.addEventListener('change', () => {
+        const nouveau = new Set(filtre);
+        if (input.checked) nouveau.add(c.id); else nouveau.delete(c.id);
+        if (!nouveau.size) { input.checked = true; notifier('Gardez au moins une catégorie.'); return; }
+        changerFiltre(nouveau);
+      });
+      return el('label', { class: 'menu-filtre-choix' }, input, el('span', { class: 'menu-filtre-icone' }, c.icone), ` ${c.libelle}`);
+    });
+    const menu = el('details', { class: `menu-filtre${sombre ? ' sombre' : ''}` },
+      el('summary', { title: 'Choisir les photos affichées (R : tout / par défaut)' }, el('span', { class: 'menu-filtre-libelle' }, 'Afficher '), resume),
+      el('div', { class: 'menu-filtre-liste' }, cases,
+        el('div', { class: 'menu-filtre-raccourcis' },
+          el('button', { type: 'button', onclick: () => changerFiltre(new Set(CATEGORIES.map(c => c.id))) }, 'Tout'),
+          el('button', { type: 'button', onclick: () => changerFiltre(new Set(FILTRE_DEFAUT)) }, 'Par défaut'))));
+    menu.maj = () => {
+      resume.textContent = toutAffiche() ? 'tout ▾' : `${CATEGORIES.filter(c => filtre.has(c.id)).map(c => c.icone).join(' ')} ▾`;
+      for (const input of menu.querySelectorAll('input')) input.checked = filtre.has(input.dataset.id);
+    };
+    // Un clic ailleurs referme le menu.
+    document.addEventListener('pointerdown', e => { if (menu.open && !menu.contains(e.target)) menu.open = false; }, true);
+    menu.maj();
+    menusFiltre.add(menu);
+    return menu;
+  }
+
+  // Nouveau choix de photos affichées : on reconstruit la vue (et on met à jour la visionneuse).
+  function changerFiltre(nouveau) {
+    filtre = nouveau;
+    ecrireStockage(CLE_FILTRE, [...filtre]);
+    for (const m of menusFiltre) { if (m.isConnected) m.maj(); else menusFiltre.delete(m); }
     changerMode(mode);
     if (!visionneuse) return;
-    if (mode === 'grille' || !vue.position().total) {
-      // Rien à montrer en grand (aucune photo retenue) : retour à l'écran normal, qui l'explique.
-      visionneuse.maj({ retenues: v });
-      if (!vue.position?.().total) { visionneuse.fermer(); notifier('Aucune photo retenue pour l\'instant.'); }
+    if (!vue.position?.().total) {
+      visionneuse.fermer();
+      notifier('Aucune photo à afficher avec ce choix.');
       return;
     }
     visionneuse.changerPhoto(photos[cur].id, ratioDe(photos[cur]));
     visionneuse.maj(etatVisionneuse());
   }
 
-  // ---------------------------------------------------------------- modes « une à une » et « retenues »
+  // ---------------------------------------------------------------- mode « une à une »
 
-  function vuePhoto(seulementRetenues) {
+  function vuePhoto() {
+    const filtrage = !toutAffiche();
     const scene = el('div', { class: 'scene' });
     const vide = el('div', { class: 'scene-vide', hidden: true },
-      el('p', {}, 'Aucune photo retenue pour l\'instant.'),
-      el('button', { class: 'btn-secondaire', onclick: () => basculerRetenues(false) }, 'Voir toutes les photos'));
+      el('p', {}, 'Aucune photo à afficher avec ce choix (menu « Afficher »).'),
+      el('button', { class: 'btn-secondaire', onclick: () => changerFiltre(new Set(CATEGORIES.map(c => c.id))) }, 'Voir toutes les photos'));
     const messageBout = el('div', { class: 'message-bout', 'aria-live': 'polite' });
     const cartes = new Map(); // indice de photo → élément
     let ordre = [];           // indices des photos affichées, dans l'ordre
@@ -288,8 +328,8 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     // Liste des photos affichées ; la photo courante reste la même si elle y figure encore.
     function calculerOrdre() {
       const avant = pos;
-      ordre = seulementRetenues
-        ? photos.map((p, i) => i).filter(i => estRetenue(etat.votes[photos[i].id]))
+      ordre = filtrage
+        ? photos.map((p, i) => i).filter(estAffichee)
         : photos.map((p, i) => i);
       const k = ordre.indexOf(cur);
       if (k >= 0) {
@@ -499,15 +539,13 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         carte.classList.add('pulse');
       }
       if (!avanceAuto) return;
-      if (!ordre.includes(i)) return; // en mode « retenues », la photo écartée a déjà laissé place à la suivante
+      if (!ordre.includes(i)) return; // photo sortie de l'affichage : la suivante a déjà pris sa place
       if (pos + 1 < ordre.length) { allerPos(pos + 1); return; }
-      if (!seulementRetenues) {
-        const j = prochaineATrier(etat, ensembleId, i);
-        if (j >= 0) {
-          const reste = comptesEnsemble(etat, ensembleId).nonTries;
-          signaler(`Il reste ${reste} photo${reste > 1 ? 's' : ''} à trier dans cet ensemble.`);
-          allerPhoto(j);
-        }
+      const j = prochaineATrier(etat, ensembleId, i);
+      if (j >= 0 && ordre.includes(j)) {
+        const reste = comptesEnsemble(etat, ensembleId).nonTries;
+        signaler(`Il reste ${reste} photo${reste > 1 ? 's' : ''} à trier dans cet ensemble.`);
+        allerPhoto(j);
       }
     }
 
@@ -629,7 +667,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         const c = cartes.get(i);
         if (c) majCarte(c);
         majBoutonEtoile();
-        if (seulementRetenues) {
+        if (filtrage) {
           const avant = cur;
           calculerOrdre();
           placer();
@@ -663,7 +701,8 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   // Un toucher (ou clic) sélectionne ou désélectionne une imagette ; un appui long (ou Maj+clic) sélectionne
   // toute la plage depuis la précédente ; un double toucher (ou double clic) ouvre la photo en « une à une ».
   // Les boutons du bas (⊙ ✖️ ❤️ ⭐, comme en « une à une ») s'appliquent à toute la sélection.
-  function vueGrille(seulementRetenues) {
+  function vueGrille() {
+    const filtrage = !toutAffiche();
     const APPUI_LONG = 500; // ms
     const selection = new Set();
     let ancre = null;      // dernière imagette touchée en mode sélection
@@ -681,10 +720,10 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
 
     const vignettes = [];
     const grille = el('div', { class: 'grille-revue' });
-    const visible = i => !seulementRetenues || estRetenue(etat.votes[photos[i].id]);
+    const visible = i => !filtrage || estAffichee(i);
     const vide = el('div', { class: 'scene-vide grille-vide', hidden: true },
-      el('p', {}, 'Aucune photo retenue pour l\'instant.'),
-      el('button', { class: 'btn-secondaire', onclick: () => basculerRetenues(false) }, 'Voir toutes les photos'));
+      el('p', {}, 'Aucune photo à afficher avec ce choix (menu « Afficher »).'),
+      el('button', { class: 'btn-secondaire', onclick: () => changerFiltre(new Set(CATEGORIES.map(c => c.id))) }, 'Voir toutes les photos'));
     photos.forEach((p, i) => {
       const img = el('img', { alt: '', 'data-id': p.id, decoding: 'async', draggable: 'false' });
       const pastille = el('button', { class: 'pastille', title: 'Changer le choix' });
@@ -918,7 +957,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     if ((e.key === 'Enter' || e.key === ' ') && e.target.closest?.('button')) return;
     const touche = e.key.toLowerCase();
     if (touche === 'g' || touche === 'r') {
-      if (touche === 'r') basculerRetenues(!retenues);
+      if (touche === 'r') changerFiltre(new Set(toutAffiche() ? FILTRE_DEFAUT : CATEGORIES.map(c => c.id)));
       else changerMode(mode === 'grille' ? 'photo' : 'grille');
       e.preventDefault();
       return;

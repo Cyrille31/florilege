@@ -1,15 +1,26 @@
 // Florilège — état du sélectionneur : fonctions pures de calcul (testables sans navigateur).
 // L'état reçu du serveur a la forme :
-//   { selectionneur, config, ensembles: [...], photos: [...], votes: { photo_id: 0|1|2|null }, collectif }
-// Un vote absent ou null signifie « pas encore trié ».
+//   { selectionneur, config, ensembles: [...], photos: [...], votes: { photo_id: 0|1|2|3|null }, collectif }
+// Un vote absent ou null signifie « pas encore trié ». 3 (« A ») : écartée automatiquement par l'outil
+// d'écartement ; elle compte comme triée, et devient un choix ordinaire dès qu'on la change.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
 export const PASSE = 0;
 export const GARDE = 1;
 export const COEUR = 2;
+export const AUTO = 3;
 
 export function estTrie(valeur) {
-  return valeur === PASSE || valeur === GARDE || valeur === COEUR;
+  return valeur === PASSE || valeur === GARDE || valeur === COEUR || valeur === AUTO;
+}
+
+// Catégorie d'affichage d'une valeur (menu « Afficher ») : 'coeur', 'garde', 'atrier', 'passe' ou 'auto'.
+export function categorie(valeur) {
+  if (valeur === COEUR) return 'coeur';
+  if (valeur === GARDE) return 'garde';
+  if (valeur === PASSE) return 'passe';
+  if (valeur === AUTO) return 'auto';
+  return 'atrier';
 }
 
 // Photos d'un ensemble, dans l'ordre d'affichage.
@@ -86,7 +97,7 @@ export function appliquer(etat, ev) {
 // Valeur suivante quand on touche la pastille d'une imagette :
 // non trié → garde → coup de cœur → passe → non trié (le coup de cœur est sauté si la limite est atteinte).
 export function valeurSuivante(valeur, coeurPossible) {
-  if (!estTrie(valeur)) return GARDE;
+  if (!estTrie(valeur) || valeur === AUTO) return GARDE;
   if (valeur === GARDE) return coeurPossible ? COEUR : PASSE;
   if (valeur === COEUR) return PASSE;
   return null;
@@ -102,12 +113,13 @@ export function prochaineATrier(etat, ensembleId, apres = -1) {
   return -1;
 }
 
-// Comptes d'un ensemble par choix : { passes, gardes, coeurs, nonTries }.
+// Comptes d'un ensemble par choix : { passes, autos, gardes, coeurs, nonTries }.
 export function comptesEnsemble(etat, ensembleId) {
-  const c = { passes: 0, gardes: 0, coeurs: 0, nonTries: 0 };
+  const c = { passes: 0, autos: 0, gardes: 0, coeurs: 0, nonTries: 0 };
   for (const p of photosDe(etat, ensembleId)) {
     const v = etat.votes[p.id];
     if (v === PASSE) c.passes++;
+    else if (v === AUTO) c.autos++;
     else if (v === GARDE) c.gardes++;
     else if (v === COEUR) c.coeurs++;
     else c.nonTries++;
@@ -116,7 +128,7 @@ export function comptesEnsemble(etat, ensembleId) {
 }
 
 // Flèche (ou geste) vers le haut ou vers le bas : on monte ou on descend d'un cran sur l'échelle
-// ✖️ ↔ ❤️ ↔ ⭐. Une photo non triée devient ❤️ (haut) ou ✖️ (bas).
+// ✖️ ↔ ❤️ ↔ ⭐. Une photo non triée (ou « A ») devient ❤️ (haut) ou ✖️ (bas).
 // Si le coup de cœur n'est pas possible (limite atteinte), la valeur ne change pas.
 export function valeurApresFleche(valeur, versLeHaut, coeurPossible) {
   if (versLeHaut) {

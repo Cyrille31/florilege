@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.16.0';
+const VERSION = '0.17.0';
 
 // Réglages (modifiables ici).
 const REGLAGES = {
@@ -34,7 +34,9 @@ const REGLAGES = {
 };
 
 const COLONNES = ['Photo', 'Dossier', 'Choix', 'Testeur', 'Horodatage'];
-const CHOIX = { 0: 'x', 1: 'cœur', 2: 'étoile' };
+// 3 : « A », écartée automatiquement (outil d'écartement automatique, voir apiEcartement).
+const CHOIX = { 0: 'x', 1: 'cœur', 2: 'étoile', 3: 'A' };
+const AUTO = 3;
 const NON_CLASSE = 'non classé';
 const DUREE_CACHE = 21600; // 6 h, le maximum de CacheService
 const FICHIER_ENCOURS = 'florilege-photos-encours.json';
@@ -802,6 +804,7 @@ function doPost(e) {
       case 'miniatures': return repondre(apiMiniatures(requete.ids));
       case 'image': return repondre(apiImage(requete.id));
       case 'original': return repondre(apiOriginal(requete.id));
+      case 'ecartement': return repondre(apiEcartement(testeur, requete));
       case 'erreur':
         console.error(`Erreur client (${testeur}) : ${requete.message}`);
         return repondre({ ok: true });
@@ -818,6 +821,7 @@ function valeurDeChoix(texte) {
   if (t === 'x') return 0;
   if (t === 'cœur' || t === 'coeur') return 1;
   if (t === 'étoile' || t === 'etoile') return 2;
+  if (t === 'a') return AUTO;
   return null;
 }
 
@@ -1018,6 +1022,77 @@ function apiImage(id) {
   const fichier = DriveApp.getFileById(photo.d);
   const blob = fichier.getBlob();
   return { donnees: Utilities.base64Encode(blob.getBytes()), type: typeImage(blob, fichier.getName()) };
+}
+
+// ---------------------------------------------------------------- écartement automatique
+// Pour un testeur, une photo devient « A » (écartée automatiquement) si : elle est « à trier » pour lui,
+// au moins une des personnes choisies l'a écartée à la main (x), et aucune de ces personnes ne l'a gardée
+// (cœur ou étoile). Les « A » de ce testeur sont d'abord remis « à trier » : relancer l'outil recalcule tout ;
+// le mode « raz » les remet seulement « à trier ». Un « A » changé à la main devient un choix ordinaire.
+// mode : 'liste' (personnes à proposer), 'appliquer' (avec personnes : noms choisis), 'raz'.
+function apiEcartement(testeur, requete) {
+  const cle = cleTesteur(testeur);
+  if (requete.mode === 'liste') {
+    const stats = {};
+    for (const [, , choix, nom] of lireChoix()) {
+      const ct = cleTesteur(nom);
+      if (!ct || ct === cle) continue;
+      const st = stats[ct] = stats[ct] || { nom: String(nom).normalize('NFC').trim(), ecartees: 0, gardees: 0 };
+      const v = valeurDeChoix(choix);
+      if (v === 0) st.ecartees++;
+      else if (v === 1 || v === 2) st.gardees++;
+    }
+    return { personnes: Object.values(stats).sort((a, b) => a.nom.localeCompare(b.nom, 'fr')) };
+  }
+  if (requete.mode !== 'appliquer' && requete.mode !== 'raz') throw new Error('Mode d\'écartement inconnu.');
+  const verrou = LockService.getScriptLock();
+  verrou.waitLock(20000);
+  try {
+    const f = feuilleChoix();
+    const lignes = lireChoix();
+    const maintenant = maintenantLisible(new Date());
+    let modifie = false;
+    let retirees = 0;
+    const mienne = {};
+    lignes.forEach((l, k) => {
+      if (cleTesteur(l[3]) !== cle) return;
+      mienne[`${l[1]}/${l[0]}`] = k;
+      if (valeurDeChoix(l[2]) === AUTO) { l[2] = NON_CLASSE; l[4] = maintenant; retirees++; modifie = true; }
+    });
+    let ecartees = 0;
+    const nouvelles = [];
+    if (requete.mode === 'appliquer') {
+      const choisies = new Set((Array.isArray(requete.personnes) ? requete.personnes : []).map(cleTesteur));
+      choisies.delete(cle);
+      const ecartee = {};
+      const gardee = {};
+      for (const l of lignes) {
+        if (!choisies.has(cleTesteur(l[3]))) continue;
+        const v = valeurDeChoix(l[2]);
+        const id = `${l[1]}/${l[0]}`;
+        if (v === 0) ecartee[id] = true;
+        else if (v === 1 || v === 2) gardee[id] = true;
+      }
+      for (const p of listePhotos().photos) {
+        if (!ecartee[p.id] || gardee[p.id]) continue;
+        const k = mienne[p.id];
+        if (k === undefined) {
+          nouvelles.push([p.nom, p.dossier, CHOIX[AUTO], testeur, maintenant]);
+        } else {
+          if (valeurDeChoix(lignes[k][2]) !== null) continue; // déjà trié à la main
+          lignes[k][2] = CHOIX[AUTO];
+          lignes[k][4] = maintenant;
+          modifie = true;
+        }
+        ecartees++;
+      }
+    }
+    if (modifie) f.getRange(2, 1, lignes.length, COLONNES.length).setValues(lignes);
+    if (nouvelles.length) f.getRange(f.getLastRow() + 1, 1, nouvelles.length, COLONNES.length).setValues(nouvelles);
+    return { ecartees, retirees };
+  } finally {
+    verrou.releaseLock();
+  }
 }
 
 // Photo d'origine (dossier de l'année, pas « -allégé ») pour le bouton de téléchargement.

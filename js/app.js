@@ -1,18 +1,19 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi } from './config.js?v=0.16.0';
+import { CONFIG, modeDemo, urlApi } from './config.js?v=0.17.0';
 import {
   backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
   memoriserMotDePasse, oublierMotDePasse,
   nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.16.0';
-import { ChargeurImages } from './images.js?v=0.16.0';
-import { appliquer, estTrie, ensembleAContinuer, progressionGlobale } from './etat.js?v=0.16.0';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.16.0';
-import { ecranEnsemble } from './tri.js?v=0.16.0';
-import { supprimerStockage } from './stockage.js?v=0.16.0';
-import { boutonAide, ouvrirAide } from './aide.js?v=0.16.0';
+} from './api.js?v=0.17.0';
+import { ChargeurImages } from './images.js?v=0.17.0';
+import { appliquer, estTrie, ensembleAContinuer } from './etat.js?v=0.17.0';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.17.0';
+import { ecranEnsemble } from './tri.js?v=0.17.0';
+import { supprimerStockage } from './stockage.js?v=0.17.0';
+import { boutonAide, ouvrirAide } from './aide.js?v=0.17.0';
+import { ouvrirEcartement } from './ecartement.js?v=0.17.0';
 
 const PHRASES_PHASE = {
   manche1: 'Triez les photos : ✖️ je passe, ❤️ je garde, ⭐ coup de cœur.',
@@ -130,11 +131,12 @@ function montrerAccueil() {
   contenu.push(el('p', { class: 'phrase' }, PHRASES_PHASE[phase] || 'Merci de votre participation ! La suite arrive bientôt.'));
 
   if (phase === 'manche1') {
-    const aContinuer = ensembleAContinuer(etat);
-    const g = progressionGlobale(etat);
-    contenu.push(aContinuer
-      ? el('button', { class: 'btn-principal grand', onclick: () => nav.ensemble(aContinuer, 'photo') }, g.faits ? 'Continuer' : 'Commencer')
-      : el('p', { class: 'tout-fini' }, '🌸 Tout est trié, merci ! Vous pouvez encore revoir vos choix.'));
+    if (!ensembleAContinuer(etat)) contenu.push(el('p', { class: 'tout-fini' }, '🌸 Tout est trié, merci ! Vous pouvez encore revoir vos choix.'));
+    contenu.push(el('button', {
+      class: 'btn-secondaire bouton-ecartement',
+      title: 'Écarter d\'office les photos que d\'autres ont déjà écartées',
+      onclick: () => ouvrirEcartement({ backend, jeton: ctx.jeton, file: ctx.file, surTermine: apresEcartement }),
+    }, 'A  Écartement automatique…'));
     contenu.push(jaugeCollective(etat));
     contenu.push(rangeeBadges(etat));
     contenu.push(el('h2', {}, 'Vos ensembles'));
@@ -322,6 +324,17 @@ async function demarrer() {
   if (history.state?.ecran) history.replaceState(null, '');
   montrerAccueil();
   ctx.file.envoyer();
+}
+
+// Après l'écartement automatique : le serveur a modifié mes choix, on recharge l'état.
+async function apresEcartement(texte) {
+  try {
+    const { etat } = await chargerEtat(ctx.jeton, ctx.file);
+    ctx.etat = etat;
+    ctx.images.definirLiens(etat.photos);
+  } catch { /* l'accueil garde l'état précédent */ }
+  montrerAccueil();
+  notifier(texte, 4000);
 }
 
 // ---------------------------------------------------------------- plusieurs appareils

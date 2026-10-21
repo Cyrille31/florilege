@@ -369,13 +369,13 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 /* Pourtour de couleur selon le choix : rouge = gardée, doré = coup de cœur, gris = écartée. */
 .defil[data-valeur="1"] .cadre { box-shadow: 0 0 0 6px var(--rouge), 0 8px 30px rgba(0, 0, 0, .3); }
 .defil[data-valeur="2"] .cadre { box-shadow: 0 0 0 6px var(--jaune), 0 8px 30px rgba(0, 0, 0, .3); }
-.defil[data-valeur="0"] .cadre { box-shadow: 0 0 0 6px #8a9590, 0 8px 30px rgba(0, 0, 0, .3); }
+.defil[data-valeur="0"] .cadre, .defil[data-valeur="3"] .cadre { box-shadow: 0 0 0 6px #8a9590, 0 8px 30px rgba(0, 0, 0, .3); }
 .defil:not(.centre) .cadre { box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
 .defil:not(.centre)[data-valeur="1"] .cadre { box-shadow: 0 0 0 4px var(--rouge); }
 .defil:not(.centre)[data-valeur="2"] .cadre { box-shadow: 0 0 0 4px var(--jaune); }
-.defil:not(.centre)[data-valeur="0"] .cadre { box-shadow: 0 0 0 4px #8a9590; }
-.defil[data-valeur="0"] img { opacity: .55; filter: grayscale(.8); }
-.defil.centre[data-valeur="0"] img { opacity: .75; filter: grayscale(1); }
+.defil:not(.centre)[data-valeur="0"] .cadre, .defil:not(.centre)[data-valeur="3"] .cadre { box-shadow: 0 0 0 4px #8a9590; }
+.defil[data-valeur="0"] img, .defil[data-valeur="3"] img { opacity: .55; filter: grayscale(.8); }
+.defil.centre[data-valeur="0"] img, .defil.centre[data-valeur="3"] img { opacity: .75; filter: grayscale(1); }
 
 /* Pastille du choix (· / ❤️ / ⭐ / ✖️) en haut à gauche : la toucher change le choix. */
 .choix {
@@ -525,8 +525,8 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 }
 .vignette .ouvrir { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; }
 .vignette img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.vignette[data-valeur="0"] { border-color: #8a9590; }
-.vignette[data-valeur="0"] img { opacity: .45; filter: grayscale(.7); }
+.vignette[data-valeur="0"], .vignette[data-valeur="3"] { border-color: #8a9590; }
+.vignette[data-valeur="0"] img, .vignette[data-valeur="3"] img { opacity: .45; filter: grayscale(.7); }
 .vignette[data-valeur="1"] { border-color: var(--rouge); }
 .vignette[data-valeur="2"] { border-color: var(--jaune); }
 .vignette.courante { outline: 3px solid var(--vert); outline-offset: 2px; }
@@ -604,8 +604,8 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 /* Pourtour de couleur selon le choix, comme en mode photo. */
 .zoom-cadre[data-valeur="1"] { box-shadow: 0 0 0 6px var(--rouge); }
 .zoom-cadre[data-valeur="2"] { box-shadow: 0 0 0 6px var(--jaune); }
-.zoom-cadre[data-valeur="0"] { box-shadow: 0 0 0 6px #8a9590; }
-.zoom-cadre[data-valeur="0"] img { opacity: .75; filter: grayscale(1); }
+.zoom-cadre[data-valeur="0"], .zoom-cadre[data-valeur="3"] { box-shadow: 0 0 0 6px #8a9590; }
+.zoom-cadre[data-valeur="0"] img, .zoom-cadre[data-valeur="3"] img { opacity: .75; filter: grayscale(1); }
 .zoom img {
   width: 100%; height: 100%;
   object-fit: contain;
@@ -902,3 +902,48 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 .tuto-nav { display: flex; gap: 10px; }
 .tuto-nav .tuto-btn { margin: 0; min-height: 46px; font-size: 1rem; }
 .tuto-btn:disabled { opacity: .4; }
+
+/* « A » : écartée automatiquement (même gris que ✖️, lettre A dans la pastille). */
+.defil[data-valeur="3"] .choix, .vignette[data-valeur="3"] .pastille { font-weight: 800; font-family: system-ui, sans-serif; color: #5b6b66; }
+.pilule.auto { color: #5b6b66; }
+.bouton-ecartement { margin: 14px 0; }
+
+/* Menu « Afficher » : choix des photos montrées (⭐ ❤️ ⊙ ✖️ A). */
+.menu-filtre { position: relative; }
+.menu-filtre summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: center; gap: 4px;
+  min-height: 36px; padding: 0 12px;
+  border-radius: 999px;
+  background: var(--surface); box-shadow: var(--ombre);
+  font-size: .9rem; font-weight: 600; white-space: nowrap;
+}
+.menu-filtre summary::-webkit-details-marker { display: none; }
+.menu-filtre-liste {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 40;
+  min-width: 250px; padding: 8px;
+  border-radius: 14px;
+  background: var(--surface); color: var(--texte);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .3);
+}
+.menu-filtre-choix { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 6px; border-radius: 8px; cursor: pointer; font-weight: 500; }
+.menu-filtre-choix:hover { background: var(--bord); }
+.menu-filtre-choix input { width: 20px; height: 20px; accent-color: var(--vert-fonce); }
+.menu-filtre-icone { width: 1.5em; text-align: center; font-weight: 800; }
+.menu-filtre-raccourcis { display: flex; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--bord); }
+.menu-filtre-raccourcis button { flex: 1; min-height: 34px; border: 0; border-radius: 999px; background: var(--bord); font-weight: 600; }
+.menu-filtre.sombre summary { background: rgba(0, 0, 0, .55); color: #fff; box-shadow: none; pointer-events: auto; }
+.menu-filtre.sombre { pointer-events: auto; }
+@media (max-width: 560px) { .menu-filtre-libelle { display: none; } .menu-filtre summary { padding: 0 9px; font-size: .82rem; } }
+
+/* Fenêtre d'écartement automatique */
+.ecartement-titre { flex: 1; margin: 0; font-size: 1.15rem; }
+.ecartement-liste { display: flex; flex-direction: column; gap: 2px; margin: 6px 0 10px; }
+.ecartement-personne { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 8px; border-radius: 10px; cursor: pointer; }
+.ecartement-personne:hover { background: var(--bord); }
+.ecartement-personne input { width: 20px; height: 20px; accent-color: var(--vert-fonce); }
+.ecartement-nom { flex: 1; font-weight: 600; }
+.ecartement-stats { color: var(--texte-doux); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.ecartement-message { min-height: 1.4em; color: var(--texte-doux); }
+.ecartement-boutons { display: flex; flex-direction: column; gap: 0; }
+.ecartement-boutons button { margin: 6px 0; }

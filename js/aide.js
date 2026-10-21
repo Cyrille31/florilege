@@ -1,8 +1,8 @@
 // Florilège — menu « ? » : mode d'emploi, tutoriel animé, à propos (licence BAL, CGExcel).
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.16.0';
-import { el } from './ludique.js?v=0.16.0';
+import { CONFIG, modeDemo } from './config.js?v=0.17.0';
+import { el } from './ludique.js?v=0.17.0';
 
 const PHRASE_BAL = 'En échange de l\'usage libre et gratuit de ce logiciel, une seule chose vous est demandée, sur l\'honneur : '
   + 'faire une bonne action chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -22,6 +22,7 @@ function modeEmploi() {
       + 'les choix de tous sont ensuite réunis.'),
     rubrique('Les choix possibles',
       '⊙ à trier : pas encore de choix.',
+      'A : écartée automatiquement (voir « Écartement automatique » ci-dessous) ; grisée comme ✖️, on peut la changer.',
       '✖️ je passe : la photo n\'est pas retenue.',
       '❤️ je garde : la photo mérite d\'être retenue.',
       '⭐ coup de cœur : vos préférées, 4 au plus par année.'),
@@ -43,9 +44,15 @@ function modeEmploi() {
       'Appui long (ou Maj+clic) : sélectionne toute la plage depuis la photo précédente.',
       'Boutons du bas : appliquer ⊙ ✖️ ❤️ ⭐ à toute la sélection.',
       'Double toucher ou double clic : ouvrir la photo en mode « une à une ».'),
-    rubrique('Retenues',
-      'Cochez « Retenues ❤️ » pour ne voir que les photos gardées (❤️ et ⭐), dans tous les modes, plein écran compris.',
+    rubrique('Choisir les photos affichées',
+      'Le menu « Afficher » (dans tous les modes, plein écran compris) choisit les photos montrées : ⭐ coups de cœur, '
+        + '❤️ gardées, ⊙ à trier, ✖️ écartées, A écartées automatiquement. Par défaut : ⭐ ❤️ ⊙ (les photos écartées sont cachées).',
+      'Touche R : tout afficher, ou revenir au choix par défaut.',
       '« Suivante après choix » existe aussi dans tous les modes ; en Imagettes, la photo suivante est sélectionnée après un choix.'),
+    rubrique('Écartement automatique',
+      'Sur l\'écran d\'accueil, « Écartement automatique… » écarte d\'office (A) vos photos encore à trier qu\'au moins une des '
+        + 'personnes cochées a écartées et qu\'aucune n\'a gardées. Décochez les personnes à ne pas prendre en compte (des essais, par exemple).',
+      'Relancer l\'outil recalcule tout ; « Annuler l\'écartement automatique » remet les A à trier. Une photo A changée à la main garde votre choix.'),
     rubrique('Télécharger',
       'Le bouton ⬇️ (à côté des cases, et en haut en plein écran) télécharge la photo d\'origine, en pleine qualité.',
       'En mode Imagettes, il télécharge toutes les photos sélectionnées, l\'une après l\'autre.'),
@@ -53,7 +60,7 @@ function modeEmploi() {
       'Chaque choix est enregistré aussitôt. Sans connexion, il est gardé sur l\'appareil et envoyé plus tard.',
       'Pour continuer sur un autre appareil, ouvrez le même lien et donnez le même prénom.'),
     rubrique('Clavier (ordinateur)',
-      '← → défiler · ↑ je garde · ↓ je passe · E coup de cœur · Suppr effacer · Entrée voir en grand · G imagettes · R retenues · Échap accueil.'));
+      '← → défiler · ↑ je garde · ↓ je passe · E coup de cœur · Suppr effacer · Entrée voir en grand · G imagettes · R tout afficher / par défaut · Échap accueil.'));
 }
 
 // ---------------------------------------------------------------- tutoriel animé
@@ -67,7 +74,7 @@ const ETAPES = [
   { anim: 'pastille', titre: 'Changer d\'avis', texte: 'Touchez la pastille en haut à gauche : ⊙ → ❤️ → ⭐ → ✖️. Le bouton ⊙ efface le choix.', symbole: '⊙' },
   { anim: 'grand', titre: 'Voir en grand', texte: 'Touchez la photo : plein écran. Pincez ou utilisez la molette pour zoomer. Touchez à nouveau pour revenir.' },
   { anim: 'imagettes', titre: 'Imagettes', texte: 'Touchez des miniatures pour les sélectionner, puis un bouton du bas pour toutes. Double toucher : ouvrir la photo.' },
-  { anim: 'retenues', titre: 'Retenues', texte: 'Cochez « Retenues ❤️ » pour ne revoir que les photos gardées, et affiner vos coups de cœur.' },
+  { anim: 'retenues', titre: 'Afficher', texte: 'Le menu « Afficher » choisit les photos montrées : par exemple seulement ⭐ et ❤️, pour affiner vos coups de cœur.' },
   { anim: 'fin', titre: 'Et voilà !', texte: 'Tout est enregistré au fil de l\'eau. Vous pouvez vous arrêter et reprendre quand vous voulez.' },
 ];
 
@@ -78,7 +85,7 @@ function dessinEtape(etape) {
     contenu = el('span', { class: 'tuto-grille' }, [1, 2, 3, 4, 5, 6].map(n => el('span', { class: `tuto-mini p${n}` })),
       el('span', { class: 'tuto-doigt' }, '👆'));
   } else if (etape.anim === 'retenues') {
-    contenu = el('span', { class: 'tuto-retenues' }, el('span', { class: 'tuto-case' }, '✓'), ' Retenues ❤️',
+    contenu = el('span', { class: 'tuto-retenues' }, el('span', { class: 'tuto-case' }, '✓'), ' Afficher ⭐ ❤️',
       el('span', { class: 'tuto-rangee' }, photo(1), photo(2), photo(3)));
   } else if (etape.anim === 'fin') {
     contenu = el('span', { class: 'tuto-fin' }, '🌸');

@@ -2,7 +2,7 @@
 // Une photo à la fois, pour ne pas surcharger le serveur ; chaque photo devient un fichier téléchargé.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { notifier } from './ludique.js?v=0.16.0';
+import { notifier } from './ludique.js?v=0.17.0';
 
 let enCours = false;
 
