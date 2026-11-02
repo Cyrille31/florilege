@@ -11,14 +11,14 @@
 import {
   PASSE, GARDE, COEUR, AUTO, categorie, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, tagsDe, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.18.1';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.18.1';
-import { ouvrirVisionneuse } from './zoom.js?v=0.18.1';
-import { CONFIG } from './config.js?v=0.18.1';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.18.1';
-import { boutonAide } from './aide.js?v=0.18.1';
-import { telechargerOriginaux } from './telechargement.js?v=0.18.1';
-import { ouvrirPanneauTags, ouvrirGestionTags, nomsTags, fermerPanneauTags } from './tags.js?v=0.18.1';
+} from './etat.js?v=0.18.2';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.18.2';
+import { ouvrirVisionneuse } from './zoom.js?v=0.18.2';
+import { CONFIG } from './config.js?v=0.18.2';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.18.2';
+import { boutonAide } from './aide.js?v=0.18.2';
+import { telechargerOriginaux } from './telechargement.js?v=0.18.2';
+import { ouvrirPanneauTags, ouvrirGestionTags, nomsTags, fermerPanneauTags } from './tags.js?v=0.18.2';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐', [AUTO]: 'A' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur', [AUTO]: 'A Écartée automatiquement' };

@@ -3,8 +3,8 @@
 // les tags proposés au cochage. Le panneau (à droite de l'écran) se referme dès qu'on fait autre chose.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el, notifier } from './ludique.js?v=0.18.1';
-import { tagsDe, tagsProposes } from './etat.js?v=0.18.1';
+import { el, notifier } from './ludique.js?v=0.18.2';
+import { tagsDe, tagsProposes } from './etat.js?v=0.18.2';
 
 let panneau = null; // panneau ouvert : { racine, fermer }
 
@@ -32,7 +32,8 @@ export function ouvrirPanneauTags({ etat, photoIds, poser, surChangement, gerer 
   const racine = el('aside', { class: 'panneau-tags', role: 'dialog', 'aria-label': 'Tags de la photo' },
     el('div', { class: 'tags-titre' }, photoIds.length > 1 ? `🏷 Tags (${photoIds.length} photos)` : '🏷 Tags'),
     liste,
-    el('button', { class: 'btn-secondaire tags-gerer', onclick: () => { fermer(); gerer(); } }, '⚙ Gérer les tags…'));
+    el('button', { class: 'btn-secondaire tags-gerer', title: 'Gérer les tags : ajouter, renommer, ordonner, supprimer, choisir ceux proposés',
+      onclick: () => { fermer(); gerer(); } }, '⚙ Gérer…'));
 
   function remplir() {
     const proposes = tagsProposes(etat);
@@ -60,7 +61,13 @@ export function ouvrirPanneauTags({ etat, photoIds, poser, surChangement, gerer 
   }
 
   // N'importe quelle action en dehors du panneau (clic, touche) le referme.
-  const dehors = e => { if (!racine.contains(e.target) && !document.querySelector('dialog.tags-gestion')) fermer(); };
+  // Un appui dans le rectangle du panneau (même hors d'un tag, même pendant son apparition) ne le referme pas.
+  const dansPanneau = e => {
+    if (racine.contains(e.target)) return true;
+    const r = racine.getBoundingClientRect();
+    return e.clientX >= window.innerWidth - r.width && e.clientY >= r.top && e.clientY <= r.bottom;
+  };
+  const dehors = e => { if (!dansPanneau(e) && !document.querySelector('dialog.tags-gestion')) fermer(); };
   // Dans le panneau, Tab, Espace et Entrée servent à cocher ; toute autre touche referme le panneau (et agit).
   // Échap referme seulement le panneau (pas la visionneuse ni l'écran en dessous).
   const touche = e => {
@@ -73,10 +80,13 @@ export function ouvrirPanneauTags({ etat, photoIds, poser, surChangement, gerer 
     document.removeEventListener('pointerdown', dehors, true);
     window.removeEventListener('keydown', touche, true);
     racine.classList.add('ferme');
+    document.body.classList.remove('avec-tags');
     setTimeout(() => racine.remove(), 200);
   }
   remplir();
   document.body.append(racine);
+  // La photo se réduit pour rester entièrement visible à côté du panneau.
+  document.body.classList.add('avec-tags');
   panneau = { racine, fermer };
   // Le clic qui a ouvert le panneau ne doit pas le refermer aussitôt.
   setTimeout(() => {

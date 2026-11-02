@@ -985,12 +985,17 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 .tag-mini { position: absolute; left: 6px; bottom: 6px; font-size: 1rem; display: none; pointer-events: none; filter: drop-shadow(0 0 2px rgba(0, 0, 0, .7)); }
 .vignette.taguee .tag-mini { display: block; }
 
-/* Panneau vertical, à droite de l'écran : tags à cocher, bouton de gestion en bas. */
+/* Panneau vertical, à droite de l'écran (un quart de la largeur au plus) : tags à cocher, gestion en bas.
+   Pendant qu'il est ouvert, l'écran de tri et la visionneuse se réduisent pour que la photo reste visible. */
+:root { --largeur-tags: clamp(104px, 25vw, 240px); }
+body.avec-tags .ecran-tri { padding-right: calc(var(--largeur-tags) + 6px); transition: padding-right .2s; }
+body.avec-tags .zoom { right: var(--largeur-tags); }
 .panneau-tags {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 45;
-  width: min(280px, 78vw);
+  width: var(--largeur-tags);
+  box-sizing: border-box;
   display: flex; flex-direction: column;
-  padding: max(14px, env(safe-area-inset-top)) 12px max(14px, env(safe-area-inset-bottom));
+  padding: max(10px, env(safe-area-inset-top)) 6px max(10px, env(safe-area-inset-bottom));
   background: var(--surface); color: var(--texte);
   box-shadow: -8px 0 30px rgba(0, 0, 0, .35);
   animation: panneau-entre .2s ease-out;
@@ -998,13 +1003,19 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 }
 .panneau-tags.ferme { transform: translateX(100%); opacity: 0; }
 @keyframes panneau-entre { from { transform: translateX(100%); } }
-.tags-titre { font-weight: 800; font-size: 1.05rem; margin: 0 4px 8px; }
+.tags-titre { font-weight: 800; font-size: .9rem; margin: 0 4px 6px; }
 .tags-liste { flex: 1; min-height: 0; overflow-y: auto; }
-.tags-choix { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 8px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+.tags-choix {
+  display: flex; align-items: center; gap: 6px;
+  min-height: 38px; padding: 2px 4px;
+  border-radius: 8px; cursor: pointer;
+  font-size: .82rem; font-weight: 600; line-height: 1.15;
+  overflow-wrap: anywhere;
+}
 .tags-choix:hover { background: var(--bord); }
-.tags-choix input { width: 22px; height: 22px; accent-color: var(--vert-fonce); flex: none; }
-.tags-vide { color: var(--texte-doux); padding: 0 6px; }
-.tags-gerer { margin: 8px 0 0; min-height: 46px; font-size: 1rem; }
+.tags-choix input { width: 18px; height: 18px; margin: 0; accent-color: var(--vert-fonce); flex: none; }
+.tags-vide { color: var(--texte-doux); padding: 0 4px; font-size: .8rem; }
+.tags-gerer { margin: 6px 0 0; min-height: 40px; font-size: .85rem; padding: 0 4px; }
 
 /* Fenêtre de gestion */
 .tags-gestion-liste { display: flex; flex-direction: column; gap: 4px; margin: 8px 0 12px; }
