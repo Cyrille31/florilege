@@ -11,14 +11,14 @@
 import {
   PASSE, GARDE, COEUR, AUTO, categorie, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, tagsDe, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.18.0';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.18.0';
-import { ouvrirVisionneuse } from './zoom.js?v=0.18.0';
-import { CONFIG } from './config.js?v=0.18.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.18.0';
-import { boutonAide } from './aide.js?v=0.18.0';
-import { telechargerOriginaux } from './telechargement.js?v=0.18.0';
-import { ouvrirPanneauTags, ouvrirGestionTags, nomsTags, fermerPanneauTags } from './tags.js?v=0.18.0';
+} from './etat.js?v=0.18.1';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.18.1';
+import { ouvrirVisionneuse } from './zoom.js?v=0.18.1';
+import { CONFIG } from './config.js?v=0.18.1';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.18.1';
+import { boutonAide } from './aide.js?v=0.18.1';
+import { telechargerOriginaux } from './telechargement.js?v=0.18.1';
+import { ouvrirPanneauTags, ouvrirGestionTags, nomsTags, fermerPanneauTags } from './tags.js?v=0.18.1';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐', [AUTO]: 'A' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur', [AUTO]: 'A Écartée automatiquement' };
@@ -248,6 +248,12 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       gerer: () => ouvrirGestionTags({
         backend: images.backend, jeton: ctx.jeton, etat,
         surMaj: () => {
+          // Un tag supprimé ne doit plus filtrer l'affichage.
+          const existants = new Set((etat.tags || []).map(t => t.id));
+          if ([...filtreTags].some(id => !existants.has(id))) {
+            filtreTags = new Set([...filtreTags].filter(id => existants.has(id)));
+            changerFiltre(filtre);
+          }
           for (const m of menusFiltre) { if (m.isConnected) m.maj(); else menusFiltre.delete(m); }
           vue?.majToutes?.();
           if (visionneuse) visionneuse.maj(etatVisionneuse());

@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.18.0';
+const VERSION = '0.18.1';
 
 // Réglages (modifiables ici).
 const REGLAGES = {
@@ -1019,7 +1019,7 @@ function tagsAffiches(testeur) {
   try { return v ? JSON.parse(v) : null; } catch (e) { return null; }
 }
 
-// Gestion de la liste : op 'ajouter' { nom }, 'renommer' { id, nom }, 'ordonner' { ids }, 'affiches' { ids }.
+// Gestion de la liste : op 'ajouter' { nom }, 'renommer' { id, nom }, 'ordonner' { ids }, 'supprimer' { id }, 'affiches' { ids }.
 function apiTags(testeur, requete) {
   if (requete.op === 'affiches') {
     const ids = (Array.isArray(requete.ids) ? requete.ids : []).map(String).slice(0, 300);
@@ -1064,6 +1064,23 @@ function apiTags(testeur, requete) {
       }
       if (f && change) f.getRange(2, 1, lignes.length, COLONNES_TAGS_PHOTOS.length).setValues(lignes);
       return { tags, tagsAffiches: tagsAffiches(testeur) };
+    }
+    if (requete.op === 'supprimer') {
+      const tag = tags.find(t => t.id === String(requete.id));
+      if (!tag) return { tags, tagsAffiches: tagsAffiches(testeur) }; // déjà supprimé
+      const restants = tags.filter(t => t !== tag);
+      ecrireTags(restants);
+      // Le tag disparaît aussi de toutes les photos.
+      const f = classeur().getSheetByName(FEUILLE_TAGS_PHOTOS);
+      const lignes = lignesDe(FEUILLE_TAGS_PHOTOS, COLONNES_TAGS_PHOTOS);
+      let change = false;
+      for (const l of lignes) {
+        const noms = String(l[2] || '').split(';').map(n => n.trim()).filter(Boolean);
+        const gardes = noms.filter(n => n.toLowerCase() !== tag.nom.toLowerCase());
+        if (gardes.length !== noms.length) { l[2] = gardes.join(SEPARATEUR_TAGS); change = true; }
+      }
+      if (f && change) f.getRange(2, 1, lignes.length, COLONNES_TAGS_PHOTOS.length).setValues(lignes);
+      return { tags: restants, tagsAffiches: tagsAffiches(testeur) };
     }
     if (requete.op === 'ordonner') {
       const ordre = (Array.isArray(requete.ids) ? requete.ids : []).map(String);

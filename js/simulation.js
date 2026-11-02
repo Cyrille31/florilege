@@ -4,7 +4,7 @@
 // la reprise après fermeture de l'onglet.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.18.0';
+import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.18.1';
 
 const parametres = new URLSearchParams(location.search);
 // Latence simulée d'une requête (ms), pour juger l'effet du préchargement : ?latence=800
@@ -255,6 +255,9 @@ export const backendSimule = {
       if (!tag || !n) throw new Error('Nom invalide.');
       if (t.tags.some(x => x !== tag && x.nom.toLowerCase() === n.toLowerCase())) throw new Error(`Le tag « ${n} » existe déjà.`);
       tag.nom = n;
+    } else if (op === 'supprimer') {
+      t.tags = t.tags.filter(x => x.id !== id);
+      for (const v of Object.values(t.photos)) v.tags = v.tags.filter(x => x !== id);
     } else if (op === 'ordonner') {
       const rang = x => { const k = ids.indexOf(x.id); return k < 0 ? ids.length : k; };
       t.tags.sort((a, b) => rang(a) - rang(b));

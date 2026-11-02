@@ -312,6 +312,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.18.1 | Suppression d'un tag (🗑 dans « Gérer les tags », après confirmation) : retiré de la liste commune et de toutes les photos. |
 | 0.18.0 | Tags : bouton 🏷 en bas à droite de la photo (une à une, plein écran ; en Imagettes pour la sélection) ouvrant à droite la liste des tags à cocher, refermée par toute autre action ; « Gérer les tags » (ajouter, renommer, réordonner, choisir ses tags proposés) ; liste et tags des photos communs à tous, tags proposés propres à chacun ; filtre par tags dans le menu « Afficher » ; écartement automatique « sauf les photos qui ont l'un de ces tags ». |
 | 0.17.0 | Écartement automatique (bouton de l'accueil, à la place de « Continuer ») : les photos encore à trier qu'au moins une des personnes choisies a écartées, et qu'aucune n'a gardées, deviennent « A » (grisées, inscrites `A` dans le fichier) ; relance = recalcul, « Annuler » = remise à trier. Menu « Afficher » (⭐ ❤️ ⊙ ✖️ A, par défaut ⭐ ❤️ ⊙) à la place de la case « Retenues », dans tous les modes. |
 | 0.16.0 | Cases « Retenues » et « Suivante après choix » dans les trois modes (en Imagettes, la photo suivante est sélectionnée après un choix) ; bouton ⬇️ de téléchargement de la photo d'origine (dossier de l'année), ou des photos sélectionnées en Imagettes. |

@@ -3,8 +3,8 @@
 // les tags proposés au cochage. Le panneau (à droite de l'écran) se referme dès qu'on fait autre chose.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el, notifier } from './ludique.js?v=0.18.0';
-import { tagsDe, tagsProposes } from './etat.js?v=0.18.0';
+import { el, notifier } from './ludique.js?v=0.18.1';
+import { tagsDe, tagsProposes } from './etat.js?v=0.18.1';
 
 let panneau = null; // panneau ouvert : { racine, fermer }
 
@@ -100,7 +100,7 @@ export function ouvrirGestionTags({ backend, jeton, etat, surMaj }) {
       el('form', { method: 'dialog' }, el('button', { class: 'btn-aide-fermer', 'aria-label': 'Fermer', title: 'Fermer (Échap)' }, '✕'))),
     el('div', { class: 'aide-corps' },
       el('p', { class: 'aide-grille' }, 'La liste des tags est commune à tous. Cochez ceux qui vous sont proposés quand vous taguez une photo '
-        + '(ce choix n\'appartient qu\'à vous). Les flèches changent l\'ordre ; cliquez sur un nom pour le modifier.'),
+        + '(ce choix n\'appartient qu\'à vous). Les flèches changent l\'ordre ; cliquez sur un nom pour le modifier ; 🗑 supprime le tag pour tous.'),
       corps,
       el('div', { class: 'rangee-ajout' }, champ, ajouter),
       message));
@@ -146,9 +146,20 @@ export function ouvrirGestionTags({ backend, jeton, etat, surMaj }) {
         [ids[k], ids[k + d]] = [ids[k + d], ids[k]];
         envoyer({ op: 'ordonner', ids });
       };
+      const supprimer = async () => {
+        const n = Object.values(etat.tagsPhotos || {}).filter(ids => ids.includes(t.id)).length;
+        if (!confirm(`Supprimer le tag « ${t.nom} » pour tout le monde ?${n ? `\nIl sera retiré de ${n} photo${n > 1 ? 's' : ''}.` : ''}`)) return;
+        const r = await envoyer({ op: 'supprimer', id: t.id }, `Tag « ${t.nom} » supprimé.`);
+        if (!r) return;
+        for (const [photo, ids] of Object.entries(etat.tagsPhotos || {})) {
+          const restants = ids.filter(x => x !== t.id);
+          if (restants.length) etat.tagsPhotos[photo] = restants; else delete etat.tagsPhotos[photo];
+        }
+      };
       return el('div', { class: 'tags-ligne' }, coche, nom,
         el('button', { class: 'btn-ordre', title: 'Monter', 'aria-label': 'Monter', disabled: k === 0, onclick: () => deplacer(-1) }, '↑'),
-        el('button', { class: 'btn-ordre', title: 'Descendre', 'aria-label': 'Descendre', disabled: k === tags.length - 1, onclick: () => deplacer(1) }, '↓'));
+        el('button', { class: 'btn-ordre', title: 'Descendre', 'aria-label': 'Descendre', disabled: k === tags.length - 1, onclick: () => deplacer(1) }, '↓'),
+        el('button', { class: 'btn-ordre btn-supprimer', title: 'Supprimer ce tag (pour tout le monde)', 'aria-label': `Supprimer le tag ${t.nom}`, onclick: supprimer }, '🗑'));
     }));
   }
 
