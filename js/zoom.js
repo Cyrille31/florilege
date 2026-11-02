@@ -7,7 +7,7 @@
 // L'écran appelant fournit les actions et met la visionneuse à jour avec changerPhoto() et maj().
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el } from './ludique.js?v=0.17.0';
+import { el } from './ludique.js?v=0.18.0';
 
 const ZOOM_MAX = 6;
 
@@ -21,7 +21,11 @@ function pleinEcranPossible() {
 export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {}, ratio, extras = [] } = {}) {
   const img = el('img', { alt: 'Photo agrandie', draggable: 'false' });
   // Cadre aux proportions de la photo : il porte le pourtour de couleur du choix.
-  const cadre = el('div', { class: 'zoom-cadre' }, img);
+  // Tags de la photo : étiquettes en bas à gauche, bouton 🏷 en bas à droite.
+  const etiquettes = el('span', { class: 'tags-photo', 'aria-hidden': 'true' });
+  const boutonTags = el('button', { class: 'btn-tags', title: 'Tags de la photo', 'aria-label': 'Tags de la photo',
+    onclick: e => { e.stopPropagation(); actions.tags?.(); } }, '🏷');
+  const cadre = el('div', { class: 'zoom-cadre' }, img, etiquettes, boutonTags);
   const choix = el('span', { class: 'visionneuse-choix', 'aria-live': 'polite' });
   const compteur = el('span', { class: 'visionneuse-compteur' });
   const caseAvance = el('input', { type: 'checkbox' });
@@ -50,7 +54,7 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
   const bas = el('div', { class: 'visionneuse-bas' }, curseur, barre);
   const couche = el('div', { class: 'zoom chargement', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Photo agrandie' },
     cadre, message, el('div', { class: 'visionneuse-haut' }, choix, compteur, ...extras, optionAvance, telecharger), fermer, bas);
-  for (const b of [fermer, curseur, ...extras, optionAvance, telecharger, ...barre.children]) {
+  for (const b of [fermer, curseur, boutonTags, ...extras, optionAvance, telecharger, ...barre.children]) {
     b.addEventListener('pointerdown', e => e.stopPropagation());
     b.addEventListener('pointerup', e => e.stopPropagation());
   }
@@ -116,8 +120,12 @@ export function ouvrirVisionneuse(images, photoId, { surFermeture, actions = {},
   }
 
   // etat : { choix: texte, valeur: 0|1|2|null, coeur: booléen, compteur: texte }
-  function maj({ choix: texte, valeur, coeur, compteur: tc, position, total, avance } = {}) {
+  function maj({ choix: texte, valeur, coeur, compteur: tc, position, total, avance, tags } = {}) {
     if (avance !== undefined) caseAvance.checked = !!avance;
+    if (tags !== undefined) {
+      etiquettes.replaceChildren(...tags.map(n => el('span', { class: 'tag' }, n)));
+      boutonTags.classList.toggle('actif', tags.length > 0);
+    }
     if (total !== undefined) {
       curseur.max = String(Math.max(1, total));
       curseur.value = String(position || 1);

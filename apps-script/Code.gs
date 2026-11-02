@@ -21,7 +21,7 @@
  * Aider un voisin, sourire à un inconnu, ramasser un papier… c'est vous qui voyez.
  */
 
-const VERSION = '0.17.0';
+const VERSION = '0.18.0';
 
 // Réglages (modifiables ici).
 const REGLAGES = {
@@ -38,6 +38,13 @@ const COLONNES = ['Photo', 'Dossier', 'Choix', 'Testeur', 'Horodatage'];
 const CHOIX = { 0: 'x', 1: 'cœur', 2: 'étoile', 3: 'A' };
 const AUTO = 3;
 const NON_CLASSE = 'non classé';
+// Tags : liste commune (feuille « Tags ») ; tags posés sur les photos, communs à tous (feuille « Tags des photos ») ;
+// tags proposés au cochage : choix propre à chaque testeur (propriété tags_affiches_<testeur>).
+const FEUILLE_TAGS = 'Tags';
+const COLONNES_TAGS = ['Id', 'Nom', 'Ordre'];
+const FEUILLE_TAGS_PHOTOS = 'Tags des photos';
+const COLONNES_TAGS_PHOTOS = ['Photo', 'Dossier', 'Tags', 'Testeur', 'Horodatage'];
+const SEPARATEUR_TAGS = ' ; ';
 const DUREE_CACHE = 21600; // 6 h, le maximum de CacheService
 const FICHIER_ENCOURS = 'florilege-photos-encours.json';
 const FUSEAU = 'Europe/Paris';
@@ -805,6 +812,7 @@ function doPost(e) {
       case 'image': return repondre(apiImage(requete.id));
       case 'original': return repondre(apiOriginal(requete.id));
       case 'ecartement': return repondre(apiEcartement(testeur, requete));
+      case 'tags': return repondre(apiTags(testeur, requete));
       case 'erreur':
         console.error(`Erreur client (${testeur}) : ${requete.message}`);
         return repondre({ ok: true });
@@ -864,6 +872,9 @@ function apiEtat(testeur) {
     photos,
     votes,
     collectif: { faits: Math.min(faits, total), total },
+    tags: lireTags(),
+    tagsPhotos: lireTagsPhotos(),
+    tagsAffiches: tagsAffiches(testeur),
   };
 }
 
@@ -884,6 +895,8 @@ function apiEvenements(testeur, evenements) {
     const modifiees = {};
     const nouvelles = [];
     const nouvellesPos = {};
+    const evTags = evenements.filter(ev => ev.type === 'tags');
+    if (evTags.length) enregistrerTagsPhotos(testeur, evTags, index);
     for (const ev of evenements) {
       if (ev.type !== 'tri') continue;
       const photo = index[String(ev.photo_id || '')];
@@ -912,6 +925,157 @@ function apiEvenements(testeur, evenements) {
     verrou.releaseLock();
   }
   return { acceptes: evenements.map(e => e.event_id) };
+}
+
+// ---------------------------------------------------------------- tags
+
+function feuilleSimple(nom, colonnes) {
+  const ss = classeur();
+  let f = ss.getSheetByName(nom);
+  if (!f) {
+    f = ss.insertSheet(nom);
+    f.getRange(1, 1, 1, colonnes.length).setValues([colonnes]).setFontWeight('bold').setBackground('#e6f2ee');
+    f.setFrozenRows(1);
+    f.getRange(1, 1, f.getMaxRows(), colonnes.length).setNumberFormat('@');
+  }
+  return f;
+}
+
+function lignesDe(nom, colonnes) {
+  const f = classeur().getSheetByName(nom);
+  if (!f) return [];
+  const n = f.getLastRow() - 1;
+  return n > 0 ? f.getRange(2, 1, n, colonnes.length).getValues() : [];
+}
+
+function nettoyerNomTag(nom) {
+  return String(nom || '').normalize('NFC').replace(/[;\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+}
+
+// Liste commune des tags, dans l'ordre : [{ id, nom }].
+function lireTags() {
+  return lignesDe(FEUILLE_TAGS, COLONNES_TAGS)
+    .filter(l => l[0] && l[1])
+    .map(l => ({ id: String(l[0]), nom: String(l[1]), ordre: Number(l[2]) || 0 }))
+    .sort((a, b) => a.ordre - b.ordre)
+    .map(t => ({ id: t.id, nom: t.nom }));
+}
+
+function ecrireTags(tags) {
+  const f = feuilleSimple(FEUILLE_TAGS, COLONNES_TAGS);
+  const n = f.getLastRow() - 1;
+  if (n > 0) f.getRange(2, 1, n, COLONNES_TAGS.length).clearContent();
+  if (tags.length) f.getRange(2, 1, tags.length, COLONNES_TAGS.length).setValues(tags.map((t, k) => [t.id, t.nom, String(k + 1)]));
+}
+
+// Tags posés sur chaque photo (communs à tous) : { idPhoto: [idTag…] }. La feuille garde les noms, plus lisibles.
+function lireTagsPhotos() {
+  const parNom = {};
+  for (const t of lireTags()) parNom[t.nom.toLowerCase()] = t.id;
+  const res = {};
+  for (const l of lignesDe(FEUILLE_TAGS_PHOTOS, COLONNES_TAGS_PHOTOS)) {
+    const ids = String(l[2] || '').split(';').map(n => parNom[n.trim().toLowerCase()]).filter(Boolean);
+    if (ids.length) res[`${l[1]}/${l[0]}`] = ids;
+  }
+  return res;
+}
+
+// Événements { type: 'tags', photo_id, tags: [ids], horodatage } : le plus récent l'emporte, photo par photo.
+function enregistrerTagsPhotos(testeur, evenements, index) {
+  const nomDe = {};
+  for (const t of lireTags()) nomDe[t.id] = t.nom;
+  const f = feuilleSimple(FEUILLE_TAGS_PHOTOS, COLONNES_TAGS_PHOTOS);
+  const lignes = lignesDe(FEUILLE_TAGS_PHOTOS, COLONNES_TAGS_PHOTOS);
+  const position = {};
+  lignes.forEach((l, k) => { position[`${l[1]}/${l[0]}`] = k; });
+  const modifiees = {};
+  const nouvelles = [];
+  const nouvellesPos = {};
+  for (const ev of evenements) {
+    const photo = index[String(ev.photo_id || '')];
+    if (!photo) continue;
+    const noms = (Array.isArray(ev.tags) ? ev.tags : []).map(id => nomDe[id]).filter(Boolean);
+    const date = ev.horodatage ? new Date(ev.horodatage) : new Date();
+    const ligne = [photo.nom, photo.dossier, noms.join(SEPARATEUR_TAGS), testeur, maintenantLisible(isNaN(date) ? new Date() : date)];
+    if (photo.id in position) {
+      const k = position[photo.id];
+      const actuelle = modifiees[k] || lignes[k];
+      if (String(actuelle[4]) > ligne[4]) continue;
+      modifiees[k] = ligne;
+    } else if (photo.id in nouvellesPos) {
+      if (nouvelles[nouvellesPos[photo.id]][4] <= ligne[4]) nouvelles[nouvellesPos[photo.id]] = ligne;
+    } else {
+      nouvellesPos[photo.id] = nouvelles.length;
+      nouvelles.push(ligne);
+    }
+  }
+  for (const [k, ligne] of Object.entries(modifiees)) f.getRange(Number(k) + 2, 1, 1, COLONNES_TAGS_PHOTOS.length).setValues([ligne]);
+  if (nouvelles.length) f.getRange(f.getLastRow() + 1, 1, nouvelles.length, COLONNES_TAGS_PHOTOS.length).setValues(nouvelles);
+}
+
+// Tags proposés au cochage pour ce testeur (null : tous).
+function tagsAffiches(testeur) {
+  const v = PropertiesService.getScriptProperties().getProperty(`tags_affiches_${cleTesteur(testeur)}`);
+  try { return v ? JSON.parse(v) : null; } catch (e) { return null; }
+}
+
+// Gestion de la liste : op 'ajouter' { nom }, 'renommer' { id, nom }, 'ordonner' { ids }, 'affiches' { ids }.
+function apiTags(testeur, requete) {
+  if (requete.op === 'affiches') {
+    const ids = (Array.isArray(requete.ids) ? requete.ids : []).map(String).slice(0, 300);
+    PropertiesService.getScriptProperties().setProperty(`tags_affiches_${cleTesteur(testeur)}`, JSON.stringify(ids));
+    return { tags: lireTags(), tagsAffiches: ids };
+  }
+  const verrou = LockService.getScriptLock();
+  verrou.waitLock(20000);
+  try {
+    const tags = lireTags();
+    if (requete.op === 'ajouter') {
+      const nom = nettoyerNomTag(requete.nom);
+      if (!nom) throw new Error('Donnez un nom au tag.');
+      let tag = tags.find(t => t.nom.toLowerCase() === nom.toLowerCase());
+      if (!tag) {
+        const max = tags.reduce((m, t) => Math.max(m, Number(String(t.id).replace(/\D/g, '')) || 0), 0);
+        tag = { id: `t${max + 1}`, nom };
+        tags.push(tag);
+        ecrireTags(tags);
+      }
+      return { tags, tagsAffiches: tagsAffiches(testeur), ajoute: tag.id };
+    }
+    if (requete.op === 'renommer') {
+      const tag = tags.find(t => t.id === String(requete.id));
+      const nom = nettoyerNomTag(requete.nom);
+      if (!tag) throw new Error('Tag inconnu (la liste a peut-être changé).');
+      if (!nom) throw new Error('Donnez un nom au tag.');
+      if (tags.some(t => t !== tag && t.nom.toLowerCase() === nom.toLowerCase())) throw new Error(`Le tag « ${nom} » existe déjà.`);
+      const ancien = tag.nom;
+      tag.nom = nom;
+      ecrireTags(tags);
+      // Les photos gardent le nom des tags : on le remplace partout.
+      const f = classeur().getSheetByName(FEUILLE_TAGS_PHOTOS);
+      const lignes = lignesDe(FEUILLE_TAGS_PHOTOS, COLONNES_TAGS_PHOTOS);
+      let change = false;
+      for (const l of lignes) {
+        const noms = String(l[2] || '').split(';').map(n => n.trim()).filter(Boolean);
+        if (noms.some(n => n.toLowerCase() === ancien.toLowerCase())) {
+          l[2] = noms.map(n => (n.toLowerCase() === ancien.toLowerCase() ? nom : n)).join(SEPARATEUR_TAGS);
+          change = true;
+        }
+      }
+      if (f && change) f.getRange(2, 1, lignes.length, COLONNES_TAGS_PHOTOS.length).setValues(lignes);
+      return { tags, tagsAffiches: tagsAffiches(testeur) };
+    }
+    if (requete.op === 'ordonner') {
+      const ordre = (Array.isArray(requete.ids) ? requete.ids : []).map(String);
+      const rang = id => { const k = ordre.indexOf(id); return k < 0 ? ordre.length : k; };
+      const tries = tags.map((t, k) => ({ t, k })).sort((a, b) => rang(a.t.id) - rang(b.t.id) || a.k - b.k).map(x => x.t);
+      ecrireTags(tries);
+      return { tags: tries, tagsAffiches: tagsAffiches(testeur) };
+    }
+    throw new Error('Opération sur les tags inconnue.');
+  } finally {
+    verrou.releaseLock();
+  }
 }
 
 // ---------------------------------------------------------------- images
@@ -1073,8 +1237,12 @@ function apiEcartement(testeur, requete) {
         if (v === 0) ecartee[id] = true;
         else if (v === 1 || v === 2) gardee[id] = true;
       }
+      // « Sauf les photos qui ont l'un de ces tags » (tags communs posés sur les photos).
+      const sauf = new Set((Array.isArray(requete.saufTags) ? requete.saufTags : []).map(String));
+      const tagsPhotos = sauf.size ? lireTagsPhotos() : {};
       for (const p of listePhotos().photos) {
         if (!ecartee[p.id] || gardee[p.id]) continue;
+        if (sauf.size && (tagsPhotos[p.id] || []).some(id => sauf.has(id))) continue;
         const k = mienne[p.id];
         if (k === undefined) {
           nouvelles.push([p.nom, p.dossier, CHOIX[AUTO], testeur, maintenant]);

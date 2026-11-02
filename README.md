@@ -272,7 +272,7 @@ d'activer GitHub Pages et de changer `application` dans les `REGLAGES` de `Code.
 
 ### Onglets et dossiers inutiles
 
-Seule la feuille **Choix** sert. Les onglets d'une ancienne installation (Config, Selectionneurs, Personnes,
+Seules les feuilles **Choix**, **Tags** (liste commune des tags : Id, Nom, Ordre) et **Tags des photos** (Photo, Dossier, Tags séparés par « ; », Testeur, Horodatage) servent ; les deux dernières sont créées d'elles-mêmes au premier tag. Les onglets d'une ancienne installation (Config, Selectionneurs, Personnes,
 Ensembles, Photos, VisagesPicasa, Attributions, Votes, Etiquettes, ShortList, EtiquettesFinales, Resultat, Journal)
 et les dossiers `images`, `prep`, `exports`, `config`, `secret` qu'elle avait créés peuvent être supprimés.
 
@@ -312,6 +312,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.18.0 | Tags : bouton 🏷 en bas à droite de la photo (une à une, plein écran ; en Imagettes pour la sélection) ouvrant à droite la liste des tags à cocher, refermée par toute autre action ; « Gérer les tags » (ajouter, renommer, réordonner, choisir ses tags proposés) ; liste et tags des photos communs à tous, tags proposés propres à chacun ; filtre par tags dans le menu « Afficher » ; écartement automatique « sauf les photos qui ont l'un de ces tags ». |
 | 0.17.0 | Écartement automatique (bouton de l'accueil, à la place de « Continuer ») : les photos encore à trier qu'au moins une des personnes choisies a écartées, et qu'aucune n'a gardées, deviennent « A » (grisées, inscrites `A` dans le fichier) ; relance = recalcul, « Annuler » = remise à trier. Menu « Afficher » (⭐ ❤️ ⊙ ✖️ A, par défaut ⭐ ❤️ ⊙) à la place de la case « Retenues », dans tous les modes. |
 | 0.16.0 | Cases « Retenues » et « Suivante après choix » dans les trois modes (en Imagettes, la photo suivante est sélectionnée après un choix) ; bouton ⬇️ de téléchargement de la photo d'origine (dossier de l'année), ou des photos sélectionnées en Imagettes. |
 | 0.15.3 | Mise à jour automatique : au démarrage, la page vérifie la version en ligne (version.json) et se recharge d'elle-même si le navigateur (souvent sur téléphone) a gardé une ancienne version. |

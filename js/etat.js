@@ -91,7 +91,25 @@ export function peutMettreCoeur(etat, ensembleId, photoId) {
 // Applique un événement de tri à l'état (le dernier appliqué fait foi).
 export function appliquer(etat, ev) {
   if (ev.type === 'tri') etat.votes[ev.photo_id] = ev.valeur;
+  if (ev.type === 'tags') {
+    etat.tagsPhotos = etat.tagsPhotos || {};
+    if (ev.tags?.length) etat.tagsPhotos[ev.photo_id] = [...ev.tags];
+    else delete etat.tagsPhotos[ev.photo_id];
+  }
   return etat;
+}
+
+// Tags (identifiants) posés sur une photo.
+export function tagsDe(etat, photoId) {
+  return etat.tagsPhotos?.[photoId] || [];
+}
+
+// Tags proposés au cochage (choix personnel ; tous si aucun choix n'a été fait), dans l'ordre de la liste.
+export function tagsProposes(etat) {
+  const tous = etat.tags || [];
+  if (!Array.isArray(etat.tagsAffiches)) return tous;
+  const choisis = new Set(etat.tagsAffiches);
+  return tous.filter(t => choisis.has(t.id));
 }
 
 // Valeur suivante quand on touche la pastille d'une imagette :

@@ -1,19 +1,19 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi } from './config.js?v=0.17.0';
+import { CONFIG, modeDemo, urlApi } from './config.js?v=0.18.0';
 import {
   backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
   memoriserMotDePasse, oublierMotDePasse,
   nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.17.0';
-import { ChargeurImages } from './images.js?v=0.17.0';
-import { appliquer, estTrie, ensembleAContinuer } from './etat.js?v=0.17.0';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.17.0';
-import { ecranEnsemble } from './tri.js?v=0.17.0';
-import { supprimerStockage } from './stockage.js?v=0.17.0';
-import { boutonAide, ouvrirAide } from './aide.js?v=0.17.0';
-import { ouvrirEcartement } from './ecartement.js?v=0.17.0';
+} from './api.js?v=0.18.0';
+import { ChargeurImages } from './images.js?v=0.18.0';
+import { appliquer, estTrie, ensembleAContinuer } from './etat.js?v=0.18.0';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.18.0';
+import { ecranEnsemble } from './tri.js?v=0.18.0';
+import { supprimerStockage } from './stockage.js?v=0.18.0';
+import { boutonAide, ouvrirAide } from './aide.js?v=0.18.0';
+import { ouvrirEcartement } from './ecartement.js?v=0.18.0';
 
 const PHRASES_PHASE = {
   manche1: 'Triez les photos : ✖️ je passe, ❤️ je garde, ⭐ coup de cœur.',
@@ -23,7 +23,7 @@ const PHRASES_PHASE = {
 };
 
 const app = document.getElementById('app');
-const ctx = { etat: null, images: null, file: null, jeton: null, voter };
+const ctx = { etat: null, images: null, file: null, jeton: null, voter, poserTags };
 let ecranCourant = null;
 let minuteurMemo = null;
 
@@ -40,6 +40,15 @@ function voter(photoId, valeur) {
   if (etat.collectif && avant !== apres) etat.collectif.faits += apres ? 1 : -1;
   clearTimeout(minuteurMemo);
   minuteurMemo = setTimeout(() => memoriserEtat(ctx.jeton, etat), 1000);
+}
+
+// Tags posés sur une photo (communs à tous) : envoyés comme les choix, y compris hors ligne.
+function poserTags(photoId, tags) {
+  const ev = nouvelEvenement({ type: 'tags', photo_id: photoId, tags: [...tags] });
+  appliquer(ctx.etat, ev);
+  ctx.file.ajouter(ev);
+  clearTimeout(minuteurMemo);
+  minuteurMemo = setTimeout(() => memoriserEtat(ctx.jeton, ctx.etat), 1000);
 }
 
 // ---------------------------------------------------------------- navigation
@@ -135,7 +144,7 @@ function montrerAccueil() {
     contenu.push(el('button', {
       class: 'btn-secondaire bouton-ecartement',
       title: 'Écarter d\'office les photos que d\'autres ont déjà écartées',
-      onclick: () => ouvrirEcartement({ backend, jeton: ctx.jeton, file: ctx.file, surTermine: apresEcartement }),
+      onclick: () => ouvrirEcartement({ backend, jeton: ctx.jeton, file: ctx.file, tags: ctx.etat.tags || [], surTermine: apresEcartement }),
     }, 'A  Écartement automatique…'));
     contenu.push(jaugeCollective(etat));
     contenu.push(rangeeBadges(etat));

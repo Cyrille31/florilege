@@ -947,3 +947,79 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
 .ecartement-message { min-height: 1.4em; color: var(--texte-doux); }
 .ecartement-boutons { display: flex; flex-direction: column; gap: 0; }
 .ecartement-boutons button { margin: 6px 0; }
+
+/* ---------------------------------------------------------------- tags */
+
+.zoom-cadre { position: relative; }
+/* Bouton 🏷 en bas à droite de la photo ; étiquettes des tags en bas à gauche. */
+.btn-tags {
+  position: absolute; right: 6px; bottom: 6px; z-index: 3;
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  border: 0; border-radius: 50%;
+  background: rgba(255, 255, 255, .6);
+  font-size: 1.25rem; line-height: 1;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
+  filter: grayscale(1); opacity: .85;
+}
+.btn-tags.actif { background: rgba(255, 255, 255, .95); filter: none; opacity: 1; }
+.btn-tags:active { transform: scale(.88); }
+.defil:not(.centre) .btn-tags { display: none; }
+.tags-photo {
+  position: absolute; left: 6px; bottom: 8px; right: 58px; z-index: 2;
+  display: flex; flex-wrap: wrap-reverse; gap: 4px;
+  pointer-events: none;
+}
+.tags-photo .tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .6); color: #fff;
+  font-size: .78rem; font-weight: 600;
+  white-space: nowrap;
+}
+.defil:not(.centre) .tags-photo { display: none; }
+.zoom-cadre img { position: relative; }
+.zoom-cadre .tags-photo, .zoom-cadre .btn-tags { position: absolute; }
+
+/* Imagettes : petit 🏷 sur les photos taguées. */
+.tag-mini { position: absolute; left: 6px; bottom: 6px; font-size: 1rem; display: none; pointer-events: none; filter: drop-shadow(0 0 2px rgba(0, 0, 0, .7)); }
+.vignette.taguee .tag-mini { display: block; }
+
+/* Panneau vertical, à droite de l'écran : tags à cocher, bouton de gestion en bas. */
+.panneau-tags {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 45;
+  width: min(280px, 78vw);
+  display: flex; flex-direction: column;
+  padding: max(14px, env(safe-area-inset-top)) 12px max(14px, env(safe-area-inset-bottom));
+  background: var(--surface); color: var(--texte);
+  box-shadow: -8px 0 30px rgba(0, 0, 0, .35);
+  animation: panneau-entre .2s ease-out;
+  transition: transform .2s, opacity .2s;
+}
+.panneau-tags.ferme { transform: translateX(100%); opacity: 0; }
+@keyframes panneau-entre { from { transform: translateX(100%); } }
+.tags-titre { font-weight: 800; font-size: 1.05rem; margin: 0 4px 8px; }
+.tags-liste { flex: 1; min-height: 0; overflow-y: auto; }
+.tags-choix { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 8px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+.tags-choix:hover { background: var(--bord); }
+.tags-choix input { width: 22px; height: 22px; accent-color: var(--vert-fonce); flex: none; }
+.tags-vide { color: var(--texte-doux); padding: 0 6px; }
+.tags-gerer { margin: 8px 0 0; min-height: 46px; font-size: 1rem; }
+
+/* Fenêtre de gestion */
+.tags-gestion-liste { display: flex; flex-direction: column; gap: 4px; margin: 8px 0 12px; }
+.tags-ligne { display: flex; align-items: center; gap: 8px; }
+.tags-ligne input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--vert-fonce); flex: none; }
+.tags-ligne input[type="text"], .rangee-ajout input {
+  flex: 1; min-width: 0; min-height: 40px; padding: 0 10px;
+  border: 1px solid var(--bord); border-radius: 10px;
+  background: var(--fond); color: var(--texte); font-size: .95rem;
+}
+.btn-ordre { width: 38px; height: 38px; flex: none; border: 0; border-radius: 50%; background: var(--bord); font-size: 1.05rem; }
+.btn-ordre:disabled { opacity: .3; }
+.rangee-ajout { display: flex; gap: 8px; align-items: center; }
+.rangee-ajout .btn-principal.petit { flex: none; }
+
+/* Menu « Afficher » : partie tags */
+.menu-filtre-sous-titre { margin: 8px 6px 2px; padding-top: 6px; border-top: 1px solid var(--bord); font-size: .8rem; color: var(--texte-doux); }
+.menu-filtre-liste { max-height: min(70vh, 520px); overflow-y: auto; }

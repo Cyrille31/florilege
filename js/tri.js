@@ -10,14 +10,15 @@
 
 import {
   PASSE, GARDE, COEUR, AUTO, categorie, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
-  ensembleAContinuer, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.17.0';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.17.0';
-import { ouvrirVisionneuse } from './zoom.js?v=0.17.0';
-import { CONFIG } from './config.js?v=0.17.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.17.0';
-import { boutonAide } from './aide.js?v=0.17.0';
-import { telechargerOriginaux } from './telechargement.js?v=0.17.0';
+  ensembleAContinuer, tagsDe, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
+} from './etat.js?v=0.18.0';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.18.0';
+import { ouvrirVisionneuse } from './zoom.js?v=0.18.0';
+import { CONFIG } from './config.js?v=0.18.0';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.18.0';
+import { boutonAide } from './aide.js?v=0.18.0';
+import { telechargerOriginaux } from './telechargement.js?v=0.18.0';
+import { ouvrirPanneauTags, ouvrirGestionTags, nomsTags, fermerPanneauTags } from './tags.js?v=0.18.0';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐', [AUTO]: 'A' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur', [AUTO]: 'A Écartée automatiquement' };
@@ -35,6 +36,7 @@ const CATEGORIES = [
   { id: 'auto', icone: 'A', libelle: 'Écartées automatiquement' },
 ];
 const FILTRE_DEFAUT = ['coeur', 'garde', 'atrier'];
+const CLE_FILTRE_TAGS = 'florilege-filtre-tags';
 const CM = 38; // un centimètre à l'écran, en pixels CSS (96 px par pouce)
 const MODES = [
   { id: 'photo', icone: '▢', libelle: 'Une à une', titre: 'Les photos une à une. Clavier : ← → défiler · ↑ je garde · ↓ je passe · E coup de cœur · Suppr effacer · Entrée voir en grand' },
@@ -59,8 +61,11 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   let filtre = new Set(lireStockage(CLE_FILTRE, FILTRE_DEFAUT).filter(c => CATEGORIES.some(k => k.id === c)));
   if (!filtre.size) filtre = new Set(FILTRE_DEFAUT);
   if (mode === 'retenues') mode = 'photo'; // ancien mode « Retenues »
-  const toutAffiche = () => filtre.size === CATEGORIES.length;
-  const estAffichee = i => filtre.has(categorie(etat.votes[photos[i].id]));
+  // Filtre par tags (menu « Afficher ») : aucun tag coché = pas de filtre ; sinon, photos ayant l'un des tags cochés.
+  let filtreTags = new Set(lireStockage(CLE_FILTRE_TAGS, []).filter(id => (etat.tags || []).some(t => t.id === id)));
+  const toutAffiche = () => filtre.size === CATEGORIES.length && !filtreTags.size;
+  const estAffichee = i => filtre.has(categorie(etat.votes[photos[i].id]))
+    && (!filtreTags.size || tagsDe(etat, photos[i].id).some(id => filtreTags.has(id)));
   const menusFiltre = new Set(); // menus « Afficher » (entête et visionneuse), tenus à jour ensemble
   if (!MODES.some(m => m.id === mode)) mode = 'photo';
   let avanceAuto = lireStockage(CLE_AVANCE, false);
@@ -177,6 +182,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       position: position.n,
       total: position.total,
       avance: avanceAuto,
+      tags: nomsTags(etat, photos[cur].id),
     };
   }
 
@@ -197,6 +203,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         allerA: (n, leger) => vue?.allerA?.(n, leger),
         avance: v => basculerAvance(v),
         telecharger: () => telecharger(),
+        tags: () => { if (vue?.position?.().total) ouvrirTags([cur]); },
       },
     });
     visionneuse.maj(etatVisionneuse());
@@ -228,6 +235,27 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     telechargerOriginaux(images.backend, ctx.jeton, ids);
   }
 
+  // Panneau des tags (à droite de l'écran) pour une ou plusieurs photos (indices).
+  function ouvrirTags(indices) {
+    ouvrirPanneauTags({
+      etat,
+      photoIds: indices.map(i => photos[i].id),
+      poser: (id, tags) => ctx.poserTags(id, tags),
+      surChangement: () => {
+        for (const i of indices) vue?.majPhoto(i);
+        if (visionneuse) visionneuse.maj(etatVisionneuse());
+      },
+      gerer: () => ouvrirGestionTags({
+        backend: images.backend, jeton: ctx.jeton, etat,
+        surMaj: () => {
+          for (const m of menusFiltre) { if (m.isConnected) m.maj(); else menusFiltre.delete(m); }
+          vue?.majToutes?.();
+          if (visionneuse) visionneuse.maj(etatVisionneuse());
+        },
+      }),
+    });
+  }
+
   // Menu « Afficher » : cases ⭐ ❤️ ⊙ ✖️ A. sombre : version pour la visionneuse.
   function menuFiltre(sombre = false) {
     const resume = el('span', { class: 'menu-filtre-resume' });
@@ -241,15 +269,32 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       });
       return el('label', { class: 'menu-filtre-choix' }, input, el('span', { class: 'menu-filtre-icone' }, c.icone), ` ${c.libelle}`);
     });
+    const zoneTags = el('div', { class: 'menu-filtre-tags' });
+    function remplirTags() {
+      const tags = etat.tags || [];
+      zoneTags.replaceChildren(...(tags.length ? [
+        el('div', { class: 'menu-filtre-sous-titre' }, '🏷 Avec l\'un de ces tags (aucun coché : tous)'),
+        ...tags.map(t => {
+          const input = el('input', { type: 'checkbox', 'data-tag': t.id, checked: filtreTags.has(t.id) });
+          input.addEventListener('change', () => {
+            const nouveau = new Set(filtreTags);
+            if (input.checked) nouveau.add(t.id); else nouveau.delete(t.id);
+            changerFiltreTags(nouveau);
+          });
+          return el('label', { class: 'menu-filtre-choix' }, input, el('span', { class: 'menu-filtre-icone' }, '🏷'), ` ${t.nom}`);
+        })] : []));
+    }
     const menu = el('details', { class: `menu-filtre${sombre ? ' sombre' : ''}` },
       el('summary', { title: 'Choisir les photos affichées (R : tout / par défaut)' }, el('span', { class: 'menu-filtre-libelle' }, 'Afficher '), resume),
-      el('div', { class: 'menu-filtre-liste' }, cases,
+      el('div', { class: 'menu-filtre-liste' }, cases, zoneTags,
         el('div', { class: 'menu-filtre-raccourcis' },
-          el('button', { type: 'button', onclick: () => changerFiltre(new Set(CATEGORIES.map(c => c.id))) }, 'Tout'),
-          el('button', { type: 'button', onclick: () => changerFiltre(new Set(FILTRE_DEFAUT)) }, 'Par défaut'))));
+          el('button', { type: 'button', onclick: () => { filtreTags = new Set(); changerFiltre(new Set(CATEGORIES.map(c => c.id))); } }, 'Tout'),
+          el('button', { type: 'button', onclick: () => { filtreTags = new Set(); changerFiltre(new Set(FILTRE_DEFAUT)); } }, 'Par défaut'))));
     menu.maj = () => {
-      resume.textContent = toutAffiche() ? 'tout ▾' : `${CATEGORIES.filter(c => filtre.has(c.id)).map(c => c.icone).join(' ')} ▾`;
-      for (const input of menu.querySelectorAll('input')) input.checked = filtre.has(input.dataset.id);
+      resume.textContent = toutAffiche() ? 'tout ▾'
+        : `${CATEGORIES.filter(c => filtre.has(c.id)).map(c => c.icone).join(' ')}${filtreTags.size ? ` 🏷${filtreTags.size}` : ''} ▾`;
+      remplirTags();
+      for (const input of menu.querySelectorAll('input[data-id]')) input.checked = filtre.has(input.dataset.id);
     };
     // Un clic ailleurs referme le menu.
     document.addEventListener('pointerdown', e => { if (menu.open && !menu.contains(e.target)) menu.open = false; }, true);
@@ -259,9 +304,15 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   }
 
   // Nouveau choix de photos affichées : on reconstruit la vue (et on met à jour la visionneuse).
+  function changerFiltreTags(nouveau) {
+    filtreTags = nouveau;
+    changerFiltre(filtre);
+  }
+
   function changerFiltre(nouveau) {
     filtre = nouveau;
     ecrireStockage(CLE_FILTRE, [...filtre]);
+    ecrireStockage(CLE_FILTRE_TAGS, [...filtreTags]);
     for (const m of menusFiltre) { if (m.isConnected) m.maj(); else menusFiltre.delete(m); }
     changerMode(mode);
     if (!visionneuse) return;
@@ -353,13 +404,23 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
         if (i !== cur) { allerPhoto(i); return; }
         changerChoix(i);
       });
+      const etiquettes = el('span', { class: 'tags-photo', 'aria-hidden': 'true' });
+      const boutonTags = el('button', { class: 'btn-tags', title: 'Tags de la photo', 'aria-label': 'Tags de la photo' }, '🏷');
+      boutonTags.addEventListener('pointerdown', e => e.stopPropagation());
+      boutonTags.addEventListener('click', e => {
+        e.stopPropagation();
+        if (i !== cur) { allerPhoto(i); return; }
+        ouvrirTags([i]);
+      });
       const carte = el('div', { class: 'defil nouvelle' },
-        el('div', { class: 'cadre' }, img, choix,
+        el('div', { class: 'cadre' }, img, choix, etiquettes, boutonTags,
           el('span', { class: 'tampon tampon-haut', 'aria-hidden': 'true' }, `${SYMBOLES[GARDE]} Je garde`),
           el('span', { class: 'tampon tampon-bas', 'aria-hidden': 'true' }, `${SYMBOLES[PASSE]} Je passe`)));
       carte.indice = i;
       carte.img = img;
       carte.choix = choix;
+      carte.etiquettes = etiquettes;
+      carte.boutonTags = boutonTags;
       // Tant qu'aucune image n'est affichée, la carte indique « Chargement… » ; « Image indisponible » en cas d'échec.
       img.addEventListener('load', () => { carte.classList.add('chargee'); carte.classList.remove('echec'); });
       images.mini(p.id, 1).then(url => { if (!carte.grande) img.src = url; }).catch(() => { carte.echecMini = true; signalerEchec(carte); });
@@ -382,6 +443,10 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       carte.dataset.valeur = estTrie(v) ? v : '';
       carte.choix.textContent = badgeDe(v);
       carte.choix.setAttribute('aria-label', `Choix : ${TEXTES[v] || 'à trier'}. Toucher pour changer.`);
+      const noms = nomsTags(etat, photos[carte.indice].id);
+      carte.etiquettes.replaceChildren(...noms.map(n => el('span', { class: 'tag' }, n)));
+      carte.boutonTags.classList.toggle('actif', noms.length > 0);
+      carte.boutonTags.title = noms.length ? `Tags : ${noms.join(', ')}` : 'Tags de la photo';
     }
 
     function chargerGrande(carte) {
@@ -663,6 +728,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       allerA: (n, leger) => allerPos(n, { leger, silencieux: true }),
       defiler: sens => defilerSelonGeste(sens),
       choisir,
+      majToutes() { for (const c of cartes.values()) majCarte(c); },
       majPhoto(i) {
         const c = cartes.get(i);
         if (c) majCarte(c);
@@ -730,6 +796,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       const vignette = el('div', { class: 'vignette' },
         el('button', { class: 'ouvrir', 'aria-label': `Photo ${p.ordre}` }, img),
         el('span', { class: 'etoile-mini', 'aria-hidden': 'true' }, '★'),
+        el('span', { class: 'tag-mini', 'aria-hidden': 'true' }, '🏷'),
         el('span', { class: 'coche', 'aria-hidden': 'true' }, '✓'),
         pastille);
       vignette.indice = i;
@@ -744,6 +811,9 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       const vignette = vignettes[i];
       const pastille = vignette.querySelector('.pastille');
       vignette.dataset.valeur = estTrie(v) ? v : '';
+      const noms = nomsTags(etat, photos[i].id);
+      vignette.classList.toggle('taguee', noms.length > 0);
+      vignette.title = noms.length ? `Tags : ${noms.join(', ')}` : '';
       vignette.hidden = !visible(i);
       vignette.classList.toggle('courante', i === cur);
       vignette.classList.toggle('choisie', selection.has(i));
@@ -760,6 +830,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       el('button', { class: 'btn-rond garde', title: 'Je garde', onclick: appliquerA(GARDE) }, SYMBOLES[GARDE]),
       el('button', { class: 'btn-rond etoile-bas', title: 'Coup de cœur', onclick: appliquerA(COEUR) }, '★'),
     ];
+    boutonsChoix.push(el('button', { class: 'btn-rond petit btn-tags-grille', title: 'Tags des photos sélectionnées', onclick: () => ouvrirTags([...selection].sort((a, b) => a - b)) }, '🏷'));
     const annuler = el('button', { class: 'btn-selection annuler', title: 'Annuler la sélection (Échap)', onclick: viderSelection }, '✕');
     const barre = el('div', { class: 'tri-actions barre-grille' }, compteSelection, ...boutonsChoix, annuler);
     const aide = el('p', { class: 'aide-grille' });
@@ -890,6 +961,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       afficher() { requestAnimationFrame(() => vignettes[cur]?.scrollIntoView({ block: 'center' })); },
       detruire() { observateur.disconnect(); annulerAppui(); },
       majPhoto(i) { maj(i); majVide(); },
+      majToutes() { vignettes.forEach((v, i) => maj(i)); majVide(); },
       selection: () => [...selection].sort((a, b) => a - b),
       position: () => ({ n: 0, total: 0 }),
       clavier(e) {
@@ -946,8 +1018,11 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
 
   function clavier(e) {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (document.querySelector('dialog[open]')) return; // fenêtre ouverte (aide, gestion des tags…) : elle a la main
     if (e.key === 'Escape') {
       e.preventDefault();
+      const menuOuvert = document.querySelector('details.menu-filtre[open]');
+      if (menuOuvert) { menuOuvert.open = false; return; } // Échap referme d'abord le menu « Afficher »
       if (!vue?.clavier(e)) nav.accueil();
       return;
     }
@@ -957,7 +1032,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     if ((e.key === 'Enter' || e.key === ' ') && e.target.closest?.('button')) return;
     const touche = e.key.toLowerCase();
     if (touche === 'g' || touche === 'r') {
-      if (touche === 'r') changerFiltre(new Set(toutAffiche() ? FILTRE_DEFAUT : CATEGORIES.map(c => c.id)));
+      if (touche === 'r') { const tout = toutAffiche(); filtreTags = new Set(); changerFiltre(new Set(tout ? FILTRE_DEFAUT : CATEGORIES.map(c => c.id))); }
       else changerMode(mode === 'grille' ? 'photo' : 'grille');
       e.preventDefault();
       return;
@@ -973,6 +1048,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     position: () => ({ ensembleId, index: cur, mode }),
     detruire() {
       fermerFin();
+      fermerPanneauTags();
       document.removeEventListener('keydown', clavier);
       vue?.detruire();
       visionneuse?.fermer();

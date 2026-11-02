@@ -4,10 +4,10 @@
 // arrière-plan et à la fermeture. En cas d'échec, nouvel essai avec délai croissant.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi, cleLocale } from './config.js?v=0.17.0';
-import { backendSimule } from './simulation.js?v=0.17.0';
-import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.17.0';
-import { appliquer } from './etat.js?v=0.17.0';
+import { CONFIG, modeDemo, urlApi, cleLocale } from './config.js?v=0.18.0';
+import { backendSimule } from './simulation.js?v=0.18.0';
+import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.18.0';
+import { appliquer } from './etat.js?v=0.18.0';
 
 // ---------------------------------------------------------------- back-end Apps Script
 // Les requêtes POST sont en text/plain (corps JSON) pour éviter la requête CORS préalable.
@@ -81,7 +81,9 @@ const backendHttp = {
     const json = await appel('original', { testeur: nom, id });
     return { nom: json.nom, blob: base64VersBlob(json.donnees, json.type) };
   },
-  // Écartement automatique : { mode: 'liste' | 'appliquer' | 'raz', personnes }.
+  // Gestion de la liste des tags : { op: 'ajouter' | 'renommer' | 'ordonner' | 'affiches', … } → { tags, tagsAffiches }.
+  tags: (nom, donnees) => appel('tags', { testeur: nom, ...donnees }),
+  // Écartement automatique : { mode: 'liste' | 'appliquer' | 'raz', personnes, saufTags }.
   ecartement: (nom, donnees) => appel('ecartement', { testeur: nom, ...donnees }),
   erreur: (nom, message) => appel('erreur', { testeur: nom, message }),
 };

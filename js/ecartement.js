@@ -5,17 +5,26 @@
 // un choix ordinaire. Le calcul est fait par le serveur, qui inscrit « A » dans le fichier des choix.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el } from './ludique.js?v=0.17.0';
-import { cleLocale } from './config.js?v=0.17.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.17.0';
+import { el } from './ludique.js?v=0.18.0';
+import { cleLocale } from './config.js?v=0.18.0';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.18.0';
 
-// options : { backend, jeton, file, surTermine(message) }
-export function ouvrirEcartement({ backend, jeton, file, surTermine }) {
+// options : { backend, jeton, file, tags (liste commune), surTermine(message) }
+export function ouvrirEcartement({ backend, jeton, file, tags = [], surTermine }) {
   // Personnes décochées la dernière fois (une nouvelle personne est cochée d'office).
   const cleExclues = cleLocale('ecartement-exclues');
   const exclues = new Set(lireStockage(cleExclues, []));
   const liste = el('div', { class: 'ecartement-liste' }, el('p', { class: 'ecartement-attente' }, 'Chargement de la liste…'));
   const message = el('p', { class: 'ecartement-message', 'aria-live': 'polite' });
+  // « Sauf les photos qui ont l'un de ces tags » (choix retenu sur l'appareil).
+  const cleSauf = cleLocale('ecartement-sauf-tags');
+  const sauf = new Set(lireStockage(cleSauf, []));
+  const casesTags = tags.map(t => ({ id: t.id, input: el('input', { type: 'checkbox', checked: sauf.has(t.id) }) }));
+  const zoneTags = tags.length ? [
+    el('h3', {}, 'Sauf les photos qui ont l\'un de ces tags'),
+    el('div', { class: 'ecartement-liste' }, tags.map((t, k) => el('label', { class: 'ecartement-personne' }, casesTags[k].input,
+      el('span', { class: 'ecartement-nom' }, `🏷 ${t.nom}`)))),
+  ] : [];
   const appliquer = el('button', { class: 'btn-principal', disabled: true }, 'Écarter automatiquement');
   const raz = el('button', { class: 'btn-secondaire' }, 'Annuler l\'écartement automatique');
   const fenetre = el('dialog', { class: 'aide ecartement' },
@@ -28,6 +37,7 @@ export function ouvrirEcartement({ backend, jeton, file, surTermine }) {
         + 'vous pouvez toujours les changer. Relancer l\'outil recalcule tout.'),
       el('h3', {}, 'Personnes prises en compte'),
       liste,
+      zoneTags,
       message,
       el('div', { class: 'ecartement-boutons' }, appliquer, raz)));
   fenetre.addEventListener('keydown', e => e.stopPropagation());
@@ -53,13 +63,15 @@ export function ouvrirEcartement({ backend, jeton, file, surTermine }) {
     if (mode === 'appliquer') {
       if (!personnes.length) { message.textContent = 'Cochez au moins une personne.'; return; }
       ecrireStockage(cleExclues, cases.filter(c => !c.input.checked).map(c => c.nom));
+      ecrireStockage(cleSauf, casesTags.filter(c => c.input.checked).map(c => c.id));
     }
+    const saufTags = casesTags.filter(c => c.input.checked).map(c => c.id);
     appliquer.disabled = true;
     raz.disabled = true;
     message.textContent = 'Calcul en cours…';
     try {
       await file.envoyer?.(); // le serveur doit connaître mes derniers choix
-      const r = await backend.ecartement(jeton, { mode, personnes });
+      const r = await backend.ecartement(jeton, { mode, personnes, saufTags });
       const texte = mode === 'raz'
         ? `${r.retirees} photo${r.retirees > 1 ? 's' : ''} remise${r.retirees > 1 ? 's' : ''} à trier.`
         : `${r.ecartees} photo${r.ecartees > 1 ? 's' : ''} écartée${r.ecartees > 1 ? 's' : ''} automatiquement (A).`;

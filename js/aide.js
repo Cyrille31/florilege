@@ -1,8 +1,8 @@
 // Florilège — menu « ? » : mode d'emploi, tutoriel animé, à propos (licence BAL, CGExcel).
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.17.0';
-import { el } from './ludique.js?v=0.17.0';
+import { CONFIG, modeDemo } from './config.js?v=0.18.0';
+import { el } from './ludique.js?v=0.18.0';
 
 const PHRASE_BAL = 'En échange de l\'usage libre et gratuit de ce logiciel, une seule chose vous est demandée, sur l\'honneur : '
   + 'faire une bonne action chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -49,6 +49,13 @@ function modeEmploi() {
         + '❤️ gardées, ⊙ à trier, ✖️ écartées, A écartées automatiquement. Par défaut : ⭐ ❤️ ⊙ (les photos écartées sont cachées).',
       'Touche R : tout afficher, ou revenir au choix par défaut.',
       '« Suivante après choix » existe aussi dans tous les modes ; en Imagettes, la photo suivante est sélectionnée après un choix.'),
+    rubrique('Tags',
+      'Touchez 🏷 en bas à droite de la photo (en « une à une » ou en plein écran) : la liste des tags s\'ouvre à droite ; cochez-les. '
+        + 'Toute autre action (choisir, défiler, toucher ailleurs) referme la liste.',
+      'En Imagettes, le bouton 🏷 du bas tague toutes les photos sélectionnées.',
+      'La liste des tags et les tags posés sur les photos sont communs à tous. « Gérer les tags » permet d\'en ajouter, de les renommer, '
+        + 'de changer leur ordre et de choisir ceux qui vous sont proposés (ce choix n\'appartient qu\'à vous).',
+      'Le menu « Afficher » peut ne montrer que les photos ayant certains tags ; l\'écartement automatique peut épargner les photos ayant certains tags.'),
     rubrique('Écartement automatique',
       'Sur l\'écran d\'accueil, « Écartement automatique… » écarte d\'office (A) vos photos encore à trier qu\'au moins une des '
         + 'personnes cochées a écartées et qu\'aucune n\'a gardées. Décochez les personnes à ne pas prendre en compte (des essais, par exemple).',

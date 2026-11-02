@@ -4,7 +4,7 @@
 // la reprise après fermeture de l'onglet.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.17.0';
+import { lireStockage, ecrireStockage, supprimerStockage } from './stockage.js?v=0.18.0';
 
 const parametres = new URLSearchParams(location.search);
 // Latence simulée d'une requête (ms), pour juger l'effet du préchargement : ?latence=800
@@ -61,6 +61,15 @@ function votesFictifs(nom) {
     if (h < 4) votes[p.id] = 0; else if (h < 6) votes[p.id] = 1; else if (h < 7) votes[p.id] = 2;
   }
   return votes;
+}
+
+// Tags de la démonstration : liste et tags des photos communs à tous les noms (comme sur le serveur).
+const CLE_TAGS = 'florilege-demo-tags';
+function lireTagsDemo() {
+  return lireStockage(CLE_TAGS, {
+    tags: [{ id: 't1', nom: 'Famille' }, { id: 't2', nom: 'Paysage' }, { id: 't3', nom: 'Floue' }, { id: 't4', nom: 'Doublon' }],
+    photos: {},
+  });
 }
 
 function cleServeur(jeton) {
@@ -183,6 +192,9 @@ export const backendSimule = {
       photos: PHOTOS,
       votes,
       collectif: { faits: Math.min(total, faitsParLesAutres + faitsParMoi), total },
+      tags: lireTagsDemo().tags,
+      tagsPhotos: Object.fromEntries(Object.entries(lireTagsDemo().photos).filter(([, v]) => v.tags.length).map(([id, v]) => [id, v.tags])),
+      tagsAffiches: serveur.tagsAffiches ?? null,
     };
   },
 
@@ -191,9 +203,15 @@ export const backendSimule = {
     await reseau();
     const serveur = lireServeur(jeton);
     const vus = new Set(serveur.vus);
+    const tagsDemo = lireTagsDemo();
     for (const ev of evenements) {
       if (vus.has(ev.event_id)) continue;
       vus.add(ev.event_id);
+      if (ev.type === 'tags') {
+        const avant = tagsDemo.photos[ev.photo_id];
+        if (!avant || avant.horodatage <= ev.horodatage) tagsDemo.photos[ev.photo_id] = { tags: ev.tags || [], horodatage: ev.horodatage };
+        continue;
+      }
       if (ev.type !== 'tri') continue;
       const avant = serveur.votes[ev.photo_id];
       if (!avant || avant.horodatage <= ev.horodatage) {
@@ -202,6 +220,7 @@ export const backendSimule = {
     }
     serveur.vus = [...vus];
     ecrireStockage(cleServeur(jeton), serveur);
+    ecrireStockage(CLE_TAGS, tagsDemo);
     return { acceptes: evenements.map(e => e.event_id) };
   },
 
@@ -216,8 +235,36 @@ export const backendSimule = {
     return res;
   },
 
+  // Gestion de la liste des tags (même logique que le serveur).
+  async tags(jeton, { op, nom, id, ids }) {
+    await reseau();
+    const t = lireTagsDemo();
+    const serveur = lireServeur(jeton);
+    const propre = n => String(n || '').replace(/[;\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+    let ajoute;
+    if (op === 'affiches') { serveur.tagsAffiches = ids; ecrireStockage(cleServeur(jeton), serveur); }
+    else if (op === 'ajouter') {
+      const n = propre(nom);
+      if (!n) throw new Error('Donnez un nom au tag.');
+      let tag = t.tags.find(x => x.nom.toLowerCase() === n.toLowerCase());
+      if (!tag) { tag = { id: `t${t.tags.reduce((m, x) => Math.max(m, Number(x.id.slice(1)) || 0), 0) + 1}`, nom: n }; t.tags.push(tag); }
+      ajoute = tag.id;
+    } else if (op === 'renommer') {
+      const tag = t.tags.find(x => x.id === id);
+      const n = propre(nom);
+      if (!tag || !n) throw new Error('Nom invalide.');
+      if (t.tags.some(x => x !== tag && x.nom.toLowerCase() === n.toLowerCase())) throw new Error(`Le tag « ${n} » existe déjà.`);
+      tag.nom = n;
+    } else if (op === 'ordonner') {
+      const rang = x => { const k = ids.indexOf(x.id); return k < 0 ? ids.length : k; };
+      t.tags.sort((a, b) => rang(a) - rang(b));
+    }
+    ecrireStockage(CLE_TAGS, t);
+    return { tags: t.tags, tagsAffiches: serveur.tagsAffiches ?? null, ajoute };
+  },
+
   // Écartement automatique (même règle que le serveur), avec trois autres testeurs fictifs.
-  async ecartement(jeton, { mode, personnes = [] }) {
+  async ecartement(jeton, { mode, personnes = [], saufTags = [] }) {
     await reseau();
     const autres = AUTRES_TESTEURS.map(nom => ({ nom, votes: votesFictifs(nom) }));
     if (mode === 'liste') {
@@ -233,6 +280,7 @@ export const backendSimule = {
     if (mode === 'appliquer') {
       const choisis = autres.filter(a => personnes.includes(a.nom));
       for (const p of PHOTOS) {
+        if ((lireTagsDemo().photos[p.id]?.tags || []).some(id => saufTags.includes(id))) continue;
         const valeurs = choisis.map(a => a.votes[p.id]);
         if (!valeurs.includes(0) || valeurs.some(v => v === 1 || v === 2)) continue;
         const mien = serveur.votes[p.id];
