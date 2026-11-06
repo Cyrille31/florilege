@@ -242,7 +242,11 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
   .icone-mode { display: none; }
   .tri-entete .selecteur-mode { flex: 0 1 220px; }
   .tri-entete .selecteur-mode button { font-size: .82rem; padding: 0 4px; }
-  .ligne-modes { gap: 0 12px; }
+  .ligne-modes { gap: 0 8px; flex-wrap: nowrap; }
+  .ligne-modes .option-tri .libelle-long { display: none; }
+  .ligne-modes .option-tri .libelle-court { display: inline; }
+  .btn-telecharger { width: 38px; height: 38px; }
+  body.avec-tags .ligne-modes { flex-wrap: wrap; }
   .option-tri { font-size: .85rem; }
 }
 .tri-entete .selecteur-mode button { padding: 0 8px; }

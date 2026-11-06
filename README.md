@@ -312,6 +312,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.19.1 | Annulation : l'historique est gardé en changeant d'année (l'annulation ramène sur la photo concernée) ; sur téléphone, ↶ sur la même ligne que les autres boutons (libellé « Suivante » raccourci). |
 | 0.19.0 | Bouton ↶ « Annuler la dernière action » (et Ctrl+Z), dans tous les modes, plein écran compris : annule un choix, un choix appliqué à plusieurs imagettes, ou un tag posé ; plusieurs annulations de suite possibles dans la même année. |
 | 0.18.2 | Panneau des tags : un quart de la largeur de l'écran au plus (texte plus petit), la photo se réduit pour rester visible à côté ; un appui dans le panneau hors d'un tag ne le referme plus. |
 | 0.18.1 | Suppression d'un tag (🗑 dans « Gérer les tags », après confirmation) : retiré de la liste commune et de toutes les photos. |

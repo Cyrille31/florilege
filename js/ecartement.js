@@ -5,9 +5,9 @@
 // un choix ordinaire. Le calcul est fait par le serveur, qui inscrit « A » dans le fichier des choix.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el } from './ludique.js?v=0.19.0';
-import { cleLocale } from './config.js?v=0.19.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.19.0';
+import { el } from './ludique.js?v=0.19.1';
+import { cleLocale } from './config.js?v=0.19.1';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.19.1';
 
 // options : { backend, jeton, file, tags (liste commune), surTermine(message) }
 export function ouvrirEcartement({ backend, jeton, file, tags = [], surTermine }) {

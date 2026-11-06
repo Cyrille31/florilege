@@ -11,14 +11,14 @@
 import {
   PASSE, GARDE, COEUR, AUTO, categorie, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, tagsDe, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.19.0';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.19.0';
-import { ouvrirVisionneuse } from './zoom.js?v=0.19.0';
-import { CONFIG } from './config.js?v=0.19.0';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.19.0';
-import { boutonAide } from './aide.js?v=0.19.0';
-import { telechargerOriginaux } from './telechargement.js?v=0.19.0';
-import { ouvrirPanneauTags, ouvrirGestionTags, nomsTags, fermerPanneauTags } from './tags.js?v=0.19.0';
+} from './etat.js?v=0.19.1';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.19.1';
+import { ouvrirVisionneuse } from './zoom.js?v=0.19.1';
+import { CONFIG } from './config.js?v=0.19.1';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.19.1';
+import { boutonAide } from './aide.js?v=0.19.1';
+import { telechargerOriginaux } from './telechargement.js?v=0.19.1';
+import { ouvrirPanneauTags, ouvrirGestionTags, nomsTags, fermerPanneauTags } from './tags.js?v=0.19.1';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐', [AUTO]: 'A' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur', [AUTO]: 'A Écartée automatiquement' };
@@ -75,13 +75,15 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   let visionneuse = null;
   let vue = null; // vue affichée : { racine, afficher, detruire, majPhoto(i), clavier(e), position() }
 
-  // ---- annulation (bouton ↶, Ctrl+Z) : historique des choix et des tags faits dans cet ensemble.
-  // Une action peut regrouper plusieurs photos (choix appliqué à une sélection, tag posé sur plusieurs photos).
-  const historique = [];
+  // ---- annulation (bouton ↶, Ctrl+Z) : historique des choix et des tags, gardé d'une année à l'autre (ctx).
+  // Une action peut regrouper plusieurs photos (choix appliqué à une sélection, tag posé sur plusieurs photos) ;
+  // chaque élément garde l'identifiant de la photo et l'année, pour pouvoir y revenir.
+  ctx.historique = ctx.historique || [];
+  const historique = ctx.historique;
   let groupe = null;      // action en cours de constitution
   let enAnnulation = false;
   const boutonsAnnuler = new Set();
-  function debutGroupe() { groupe = { choix: [], tags: [] }; }
+  function debutGroupe() { groupe = { ensembleId, choix: [], tags: [] }; }
   function finGroupe() {
     const g = groupe;
     groupe = null;
@@ -114,18 +116,30 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     const action = historique.pop();
     majAnnuler();
     if (!action) { signaler('Rien à annuler.'); return; }
+    const nb = new Set([...action.choix, ...action.tags].map(x => x.id)).size;
+    const texte = nb > 1 ? `Annulé (${nb} photos).` : 'Annulé.';
+    if (action.ensembleId !== ensembleId) {
+      // Action faite dans une autre année : on l'annule, puis on va la montrer.
+      for (const { id, avant } of [...action.choix].reverse()) ctx.voter(id, avant);
+      for (const { id, avant } of [...action.tags].reverse()) ctx.poserTags(id, avant);
+      const index = photosDe(etat, action.ensembleId).findIndex(p => p.id === (action.choix[0] || action.tags[0]).id);
+      nav.ensemble(action.ensembleId, mode, Math.max(0, index));
+      notifier(texte);
+      return;
+    }
+    const indice = id => photos.findIndex(p => p.id === id);
     enAnnulation = true;
     try {
-      for (const { i, avant } of [...action.choix].reverse()) voter(i, avant);
-      for (const { i, avant } of [...action.tags].reverse()) ctx.poserTags(photos[i].id, avant);
+      for (const { id, avant } of [...action.choix].reverse()) voter(indice(id), avant);
+      for (const { id, avant } of [...action.tags].reverse()) ctx.poserTags(id, avant);
     } finally {
       enAnnulation = false;
     }
-    const indices = [...new Set([...action.choix, ...action.tags].map(x => x.i))];
+    const indices = [...new Set([...action.choix, ...action.tags].map(x => indice(x.id)))];
     for (const i of indices) vue?.majPhoto(i);
     vue?.montrer?.(indices[0]);
     if (visionneuse) visionneuse.maj(etatVisionneuse());
-    signaler(indices.length > 1 ? `Annulé (${indices.length} photos).` : 'Annulé.');
+    signaler(texte);
   }
 
 
@@ -138,7 +152,8 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       el('span', { class: 'icone-mode', 'aria-hidden': 'true' }, `${m.icone} `), m.libelle)));
   const caseAvance = el('input', { type: 'checkbox', checked: avanceAuto });
   caseAvance.addEventListener('change', () => basculerAvance(caseAvance.checked));
-  const optionAvance = el('label', { class: 'option-tri', title: 'Passer à la photo suivante après un choix' }, caseAvance, ' Suivante après choix');
+  const optionAvance = el('label', { class: 'option-tri', title: 'Passer à la photo suivante après un choix' }, caseAvance,
+    el('span', { class: 'libelle-long' }, ' Suivante après choix'), el('span', { class: 'libelle-court' }, ' Suivante'));
   const boutonTelecharger = el('button', { class: 'btn-telecharger', title: 'Télécharger la photo d\'origine (en imagettes : les photos sélectionnées)',
     'aria-label': 'Télécharger', onclick: () => telecharger() }, '⬇️');
   const ligneModes = el('div', { class: 'ligne-modes' },
@@ -181,7 +196,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
 
   function voter(i, valeur) {
     const avant = etat.votes[photos[i].id] ?? null;
-    if (avant !== (valeur ?? null)) noter('choix', { i, avant });
+    if (avant !== (valeur ?? null)) noter('choix', { id: photos[i].id, avant });
     ctx.voter(photos[i].id, valeur);
     vue?.majPhoto(i);
     actualiserEntete();
@@ -298,8 +313,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       photoIds: indices.map(i => photos[i].id),
       poser: (id, tags) => {
         if (!groupe) debutGroupe(); // les tags posés d'un même geste forment une seule action
-        const i = photos.findIndex(p => p.id === id);
-        groupe.tags.push({ i, avant: [...tagsDe(etat, id)] });
+        groupe.tags.push({ id, avant: [...tagsDe(etat, id)] });
         ctx.poserTags(id, tags);
       },
       surChangement: () => {

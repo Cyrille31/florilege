@@ -1,19 +1,19 @@
 // Florilège — interface des sélectionneurs : démarrage, accueil, navigation entre écrans.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo, urlApi } from './config.js?v=0.19.0';
+import { CONFIG, modeDemo, urlApi } from './config.js?v=0.19.1';
 import {
   backend, lireNom, memoriserNom, oublierNom, nettoyerNom, cleNom, FileEvenements, chargerEtat, memoriserEtat,
   memoriserMotDePasse, oublierMotDePasse,
   nouvelEvenement, ErreurServeur, signalerErreur, mesures,
-} from './api.js?v=0.19.0';
-import { ChargeurImages } from './images.js?v=0.19.0';
-import { appliquer, estTrie, ensembleAContinuer } from './etat.js?v=0.19.0';
-import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.19.0';
-import { ecranEnsemble } from './tri.js?v=0.19.0';
-import { supprimerStockage } from './stockage.js?v=0.19.0';
-import { boutonAide, ouvrirAide } from './aide.js?v=0.19.0';
-import { ouvrirEcartement } from './ecartement.js?v=0.19.0';
+} from './api.js?v=0.19.1';
+import { ChargeurImages } from './images.js?v=0.19.1';
+import { appliquer, estTrie, ensembleAContinuer } from './etat.js?v=0.19.1';
+import { el, carteEnsembles, jaugeCollective, rangeeBadges, notifier } from './ludique.js?v=0.19.1';
+import { ecranEnsemble } from './tri.js?v=0.19.1';
+import { supprimerStockage } from './stockage.js?v=0.19.1';
+import { boutonAide, ouvrirAide } from './aide.js?v=0.19.1';
+import { ouvrirEcartement } from './ecartement.js?v=0.19.1';
 
 const PHRASES_PHASE = {
   manche1: 'Triez les photos : ✖️ je passe, ❤️ je garde, ⭐ coup de cœur.',
@@ -67,9 +67,10 @@ const nav = {
     else montrerAccueil();
   },
   // mode : 'photo' (photo par photo), 'grille' (imagettes) ; sans mode, le dernier utilisé.
-  ensemble(ensembleId, mode) {
+  // index : photo à montrer (sinon la prochaine à trier).
+  ensemble(ensembleId, mode, index) {
     entrer({ ecran: 'ensemble', ensembleId });
-    montrer(ecranEnsemble(ctx, ensembleId, nav, { mode }));
+    montrer(ecranEnsemble(ctx, ensembleId, nav, { mode, index }));
   },
 };
 
