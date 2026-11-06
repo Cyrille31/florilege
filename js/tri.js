@@ -11,14 +11,14 @@
 import {
   PASSE, GARDE, COEUR, AUTO, categorie, estTrie, photosDe, progressionEnsemble, peutMettreCoeur,
   ensembleAContinuer, tagsDe, valeurSuivante, prochaineATrier, comptesEnsemble, valeurApresFleche,
-} from './etat.js?v=0.18.2';
-import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.18.2';
-import { ouvrirVisionneuse } from './zoom.js?v=0.18.2';
-import { CONFIG } from './config.js?v=0.18.2';
-import { lireStockage, ecrireStockage } from './stockage.js?v=0.18.2';
-import { boutonAide } from './aide.js?v=0.18.2';
-import { telechargerOriginaux } from './telechargement.js?v=0.18.2';
-import { ouvrirPanneauTags, ouvrirGestionTags, nomsTags, fermerPanneauTags } from './tags.js?v=0.18.2';
+} from './etat.js?v=0.19.0';
+import { el, notifier, confettis, encouragement, nouveauxBadges, annoncerBadge } from './ludique.js?v=0.19.0';
+import { ouvrirVisionneuse } from './zoom.js?v=0.19.0';
+import { CONFIG } from './config.js?v=0.19.0';
+import { lireStockage, ecrireStockage } from './stockage.js?v=0.19.0';
+import { boutonAide } from './aide.js?v=0.19.0';
+import { telechargerOriginaux } from './telechargement.js?v=0.19.0';
+import { ouvrirPanneauTags, ouvrirGestionTags, nomsTags, fermerPanneauTags } from './tags.js?v=0.19.0';
 
 export const SYMBOLES = { [PASSE]: '✖️', [GARDE]: '❤️', [COEUR]: '⭐', [AUTO]: 'A' };
 const TEXTES = { [PASSE]: '✖️ Je passe', [GARDE]: '❤️ Je garde', [COEUR]: '❤️ ⭐ Coup de cœur', [AUTO]: 'A Écartée automatiquement' };
@@ -75,6 +75,60 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   let visionneuse = null;
   let vue = null; // vue affichée : { racine, afficher, detruire, majPhoto(i), clavier(e), position() }
 
+  // ---- annulation (bouton ↶, Ctrl+Z) : historique des choix et des tags faits dans cet ensemble.
+  // Une action peut regrouper plusieurs photos (choix appliqué à une sélection, tag posé sur plusieurs photos).
+  const historique = [];
+  let groupe = null;      // action en cours de constitution
+  let enAnnulation = false;
+  const boutonsAnnuler = new Set();
+  function debutGroupe() { groupe = { choix: [], tags: [] }; }
+  function finGroupe() {
+    const g = groupe;
+    groupe = null;
+    if (!g || (!g.choix.length && !g.tags.length)) return;
+    historique.push(g);
+    if (historique.length > 200) historique.shift();
+    majAnnuler();
+  }
+  function noter(type, element) {
+    if (enAnnulation) return;
+    if (groupe) { groupe[type].push(element); return; }
+    debutGroupe();
+    groupe[type].push(element);
+    finGroupe();
+  }
+  function majAnnuler() {
+    for (const b of boutonsAnnuler) {
+      if (!b.isConnected) { boutonsAnnuler.delete(b); continue; }
+      b.disabled = !historique.length;
+    }
+  }
+  function boutonAnnuler(classe) {
+    const b = el('button', { class: classe, title: 'Annuler la dernière action (Ctrl+Z)', 'aria-label': 'Annuler la dernière action', disabled: !historique.length,
+      onclick: e => { e.stopPropagation(); annuler(); } }, '↶');
+    b.addEventListener('pointerdown', e => e.stopPropagation());
+    boutonsAnnuler.add(b);
+    return b;
+  }
+  function annuler() {
+    const action = historique.pop();
+    majAnnuler();
+    if (!action) { signaler('Rien à annuler.'); return; }
+    enAnnulation = true;
+    try {
+      for (const { i, avant } of [...action.choix].reverse()) voter(i, avant);
+      for (const { i, avant } of [...action.tags].reverse()) ctx.poserTags(photos[i].id, avant);
+    } finally {
+      enAnnulation = false;
+    }
+    const indices = [...new Set([...action.choix, ...action.tags].map(x => x.i))];
+    for (const i of indices) vue?.majPhoto(i);
+    vue?.montrer?.(indices[0]);
+    if (visionneuse) visionneuse.maj(etatVisionneuse());
+    signaler(indices.length > 1 ? `Annulé (${indices.length} photos).` : 'Annulé.');
+  }
+
+
   // Les miniatures sont demandées au fur et à mesure de l'affichage (pas toutes d'un coup : la file d'attente
   // serait occupée longtemps et la photo affichée attendrait).
 
@@ -89,7 +143,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     'aria-label': 'Télécharger', onclick: () => telecharger() }, '⬇️');
   const ligneModes = el('div', { class: 'ligne-modes' },
     menuFiltre(),
-    optionAvance, boutonTelecharger);
+    optionAvance, boutonTelecharger, boutonAnnuler('btn-telecharger btn-annuler'));
   const stats = el('div', { class: 'tri-stats' });
   const barre = el('span');
   const corps = el('div', { class: 'tri-corps' });
@@ -126,6 +180,8 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   // ---- enregistrement d'un choix (commun à tous les modes)
 
   function voter(i, valeur) {
+    const avant = etat.votes[photos[i].id] ?? null;
+    if (avant !== (valeur ?? null)) noter('choix', { i, avant });
     ctx.voter(photos[i].id, valeur);
     vue?.majPhoto(i);
     actualiserEntete();
@@ -189,7 +245,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   function ouvrirGrand() {
     if (visionneuse || !photos.length || !vue?.position?.().total) return;
     visionneuse = ouvrirVisionneuse(images, photos[cur].id, {
-      extras: [menuFiltre(true)],
+      extras: [menuFiltre(true), boutonAnnuler('visionneuse-option visionneuse-telecharger btn-annuler')],
       ratio: ratioDe(photos[cur]),
       surFermeture: () => { visionneuse = null; },
       actions: {
@@ -240,8 +296,14 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
     ouvrirPanneauTags({
       etat,
       photoIds: indices.map(i => photos[i].id),
-      poser: (id, tags) => ctx.poserTags(id, tags),
+      poser: (id, tags) => {
+        if (!groupe) debutGroupe(); // les tags posés d'un même geste forment une seule action
+        const i = photos.findIndex(p => p.id === id);
+        groupe.tags.push({ i, avant: [...tagsDe(etat, id)] });
+        ctx.poserTags(id, tags);
+      },
       surChangement: () => {
+        finGroupe();
         for (const i of indices) vue?.majPhoto(i);
         if (visionneuse) visionneuse.maj(etatVisionneuse());
       },
@@ -734,6 +796,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       allerA: (n, leger) => allerPos(n, { leger, silencieux: true }),
       defiler: sens => defilerSelonGeste(sens),
       choisir,
+      montrer(i) { if (i !== cur && ordre.includes(i)) allerPhoto(i); },
       majToutes() { for (const c of cartes.values()) majCarte(c); },
       majPhoto(i) {
         const c = cartes.get(i);
@@ -883,7 +946,9 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
           return;
         }
       }
+      debutGroupe();
       for (const i of indices) voter(i, valeur);
+      finGroupe();
       notifier(`${indices.length} photo${indices.length > 1 ? 's' : ''} : ${TEXTES[valeur] || 'à trier'}`);
       viderSelection();
       // « Suivante après choix » : une seule photo choisie → la suivante est sélectionnée à son tour.
@@ -968,6 +1033,7 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
       detruire() { observateur.disconnect(); annulerAppui(); },
       majPhoto(i) { maj(i); majVide(); },
       majToutes() { vignettes.forEach((v, i) => maj(i)); majVide(); },
+      montrer(i) { if (vignettes[i] && !vignettes[i].hidden) vignettes[i].scrollIntoView({ block: 'nearest', behavior: 'smooth' }); },
       selection: () => [...selection].sort((a, b) => a - b),
       position: () => ({ n: 0, total: 0 }),
       clavier(e) {
@@ -1023,8 +1089,13 @@ export function ecranEnsemble(ctx, ensembleId, nav, options = {}) {
   // ---------------------------------------------------------------- clavier
 
   function clavier(e) {
-    if (e.altKey || e.ctrlKey || e.metaKey) return;
     if (document.querySelector('dialog[open]')) return; // fenêtre ouverte (aide, gestion des tags…) : elle a la main
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !e.target.closest?.('input[type="text"], textarea')) {
+      e.preventDefault();
+      annuler();
+      return;
+    }
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
     if (e.key === 'Escape') {
       e.preventDefault();
       const menuOuvert = document.querySelector('details.menu-filtre[open]');

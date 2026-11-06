@@ -3,8 +3,8 @@
 // les tags proposés au cochage. Le panneau (à droite de l'écran) se referme dès qu'on fait autre chose.
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { el, notifier } from './ludique.js?v=0.18.2';
-import { tagsDe, tagsProposes } from './etat.js?v=0.18.2';
+import { el, notifier } from './ludique.js?v=0.19.0';
+import { tagsDe, tagsProposes } from './etat.js?v=0.19.0';
 
 let panneau = null; // panneau ouvert : { racine, fermer }
 

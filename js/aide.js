@@ -1,8 +1,8 @@
 // Florilège — menu « ? » : mode d'emploi, tutoriel animé, à propos (licence BAL, CGExcel).
 // © 2026 Cyrille Gindre — CGExcel — Licence MIT + BAL 1.0 (voir LICENSE).
 
-import { CONFIG, modeDemo } from './config.js?v=0.18.2';
-import { el } from './ludique.js?v=0.18.2';
+import { CONFIG, modeDemo } from './config.js?v=0.19.0';
+import { el } from './ludique.js?v=0.19.0';
 
 const PHRASE_BAL = 'En échange de l\'usage libre et gratuit de ce logiciel, une seule chose vous est demandée, sur l\'honneur : '
   + 'faire une bonne action chaque jour. Aider un voisin, sourire à un inconnu, ramasser un papier… c\'est vous qui voyez.';
@@ -60,6 +60,9 @@ function modeEmploi() {
       'Sur l\'écran d\'accueil, « Écartement automatique… » écarte d\'office (A) vos photos encore à trier qu\'au moins une des '
         + 'personnes cochées a écartées et qu\'aucune n\'a gardées. Décochez les personnes à ne pas prendre en compte (des essais, par exemple).',
       'Relancer l\'outil recalcule tout ; « Annuler l\'écartement automatique » remet les A à trier. Une photo A changée à la main garde votre choix.'),
+    rubrique('Annuler',
+      'Le bouton ↶ (à côté de ⬇️, et en haut en plein écran) ou Ctrl+Z annule la dernière action : un choix, un choix appliqué à '
+        + 'plusieurs imagettes, ou des tags posés. On peut remonter ainsi plusieurs actions de suite, tant qu\'on reste dans la même année.'),
     rubrique('Télécharger',
       'Le bouton ⬇️ (à côté des cases, et en haut en plein écran) télécharge la photo d\'origine, en pleine qualité.',
       'En mode Imagettes, il télécharge toutes les photos sélectionnées, l\'une après l\'autre.'),
@@ -67,7 +70,7 @@ function modeEmploi() {
       'Chaque choix est enregistré aussitôt. Sans connexion, il est gardé sur l\'appareil et envoyé plus tard.',
       'Pour continuer sur un autre appareil, ouvrez le même lien et donnez le même prénom.'),
     rubrique('Clavier (ordinateur)',
-      '← → défiler · ↑ je garde · ↓ je passe · E coup de cœur · Suppr effacer · Entrée voir en grand · G imagettes · R tout afficher / par défaut · Échap accueil.'));
+      '← → défiler · ↑ je garde · ↓ je passe · E coup de cœur · Suppr effacer · Entrée voir en grand · G imagettes · R tout afficher / par défaut · Ctrl+Z annuler · Échap accueil.'));
 }
 
 // ---------------------------------------------------------------- tutoriel animé

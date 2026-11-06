@@ -312,6 +312,7 @@ Après un dépôt sur GitHub, la mise en ligne prend une à deux minutes. GitHub
 
 | Version | Contenu |
 |---|---|
+| 0.19.0 | Bouton ↶ « Annuler la dernière action » (et Ctrl+Z), dans tous les modes, plein écran compris : annule un choix, un choix appliqué à plusieurs imagettes, ou un tag posé ; plusieurs annulations de suite possibles dans la même année. |
 | 0.18.2 | Panneau des tags : un quart de la largeur de l'écran au plus (texte plus petit), la photo se réduit pour rester visible à côté ; un appui dans le panneau hors d'un tag ne le referme plus. |
 | 0.18.1 | Suppression d'un tag (🗑 dans « Gérer les tags », après confirmation) : retiré de la liste commune et de toutes les photos. |
 | 0.18.0 | Tags : bouton 🏷 en bas à droite de la photo (une à une, plein écran ; en Imagettes pour la sélection) ouvrant à droite la liste des tags à cocher, refermée par toute autre action ; « Gérer les tags » (ajouter, renommer, réordonner, choisir ses tags proposés) ; liste et tags des photos communs à tous, tags proposés propres à chacun ; filtre par tags dans le menu « Afficher » ; écartement automatique « sauf les photos qui ont l'un de ces tags ». |

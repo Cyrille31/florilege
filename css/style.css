@@ -283,6 +283,9 @@ a.btn-principal, a.btn-secondaire { display: flex; align-items: center; justify-
   font-size: 1.15rem; line-height: 1;
 }
 .btn-telecharger:hover { background: var(--bord); }
+.btn-annuler { font-size: 1.35rem; font-weight: 700; color: var(--texte); }
+.btn-annuler:disabled { opacity: .35; cursor: default; }
+.visionneuse-option.btn-annuler { color: #fff; font-size: 1.1rem; }
 .option-tri input { width: 20px; height: 20px; accent-color: var(--vert-fonce); }
 .selecteur-mode {
   display: flex;
